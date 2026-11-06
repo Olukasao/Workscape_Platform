@@ -8,6 +8,13 @@ export interface ChangelogEntry {
 
 export const changelog: ChangelogEntry[] = [
   {
+    versao: "0.6.8",
+    data: "2026-11-06",
+    itens: [
+      "Suporte T.I.: em \"Este computador\", cada pessoa vê o próprio código e senha de acesso para informar ao T.I. por telefone ou chat. Com os dois, qualquer administrador conecta direto, sem pedir aceite na tela.",
+    ],
+  },
+  {
     versao: "0.6.7",
     data: "2026-11-06",
     itens: [

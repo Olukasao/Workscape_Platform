@@ -1,27 +1,62 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Headset, MonitorSmartphone, Send } from "lucide-react";
+import { Copy, Eye, EyeOff, Headset, LogIn, MonitorSmartphone, Send } from "lucide-react";
 import { Button } from "../components/ui/button";
 import { EmptyState, PageHeader } from "../components/ui/primitives";
 import { clients, errorMessage } from "../services/api";
+import { useRemotoLocal } from "../stores/remotoLocal";
 import { useSession } from "../stores/workspace";
 
 interface Dispositivo { usuarioId: number; nome: string; online: boolean; visto: string | null }
 interface Painel {
   dispositivos: Dispositivo[];
   pedidos: { usuarioId: number; nome: string; mensagem: string; em: string }[];
-  auditoria: { em: string; admin: string; alvo: string; modo: "direta" | "pedido" }[];
-  /** Só esta conta entra direto, sem a pessoa aceitar (senha permanente dela). As demais pedem aceite, como sempre. */
-  master: boolean;
+  auditoria: { em: string; admin: string; alvo: string; modo: "pedido" | "manual" }[];
 }
 const hora = (iso: string) => new Date(iso).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
+
+function copiar(texto: string) { void navigator.clipboard?.writeText(texto).catch(() => undefined); }
+
+/** Este computador: cada pessoa vê o próprio ID e senha de acesso, para informar ao T.I. quando pedir ajuda. */
+function MeuAcesso() {
+  const { id, senha } = useRemotoLocal();
+  const [mostrar, setMostrar] = useState(false);
+  if (!window.desktop?.remotoIniciar) return null;
+  return (
+    <section className="panel settings-section">
+      <div className="section-title">
+        <span className="section-icon"><MonitorSmartphone size={17} /></span>
+        <div>
+          <h2>Este computador</h2>
+          <p>Se o T.I. pedir, informe este código e esta senha por telefone ou pelo chat. Com eles, o T.I. acessa este computador sem precisar que você clique em nada.</p>
+        </div>
+      </div>
+      <div className="atalho-linha">
+        <span>Código (ID)</span>
+        {id ? <kbd className="atalho-tecla">{id}</kbd> : <span className="muted">carregando…</span>}
+        {id && <button type="button" className="atalho-botao" aria-label="Copiar código" title="Copiar" onClick={() => copiar(id)}><Copy size={14} /></button>}
+      </div>
+      <div className="atalho-linha">
+        <span>Senha</span>
+        {senha ? <kbd className="atalho-tecla">{mostrar ? senha : "••••••••••••"}</kbd> : <span className="muted">carregando…</span>}
+        {senha && (
+          <>
+            <button type="button" className="atalho-botao" aria-label={mostrar ? "Esconder senha" : "Mostrar senha"} title={mostrar ? "Esconder" : "Mostrar"} onClick={() => setMostrar((v) => !v)}>{mostrar ? <EyeOff size={14} /> : <Eye size={14} />}</button>
+            <button type="button" className="atalho-botao" aria-label="Copiar senha" title="Copiar" onClick={() => copiar(senha)}><Copy size={14} /></button>
+          </>
+        )}
+      </div>
+      {!senha && id && <p className="muted">Este computador ainda não guardou uma senha. Reabra o Workspace e, se persistir, avise o T.I.</p>}
+    </section>
+  );
+}
 
 function PedirSuporte() {
   const [mensagem, setMensagem] = useState("");
   const [aviso, setAviso] = useState("");
   const enviar = useMutation({
     mutationFn: async () => (await clients.chat.post("/remoto/pedir", { mensagem })).data,
-    onSuccess: () => { setMensagem(""); setAviso("Pedido enviado. O T.I. vai entrar em contato e você precisará aceitar a conexão na tela."); },
+    onSuccess: () => { setMensagem(""); setAviso("Pedido enviado. O T.I. vai entrar em contato."); },
     onError: (e) => setAviso(errorMessage(e)),
   });
   return (
@@ -30,7 +65,7 @@ function PedirSuporte() {
         <span className="section-icon"><Headset size={17} /></span>
         <div>
           <h2>Pedir suporte técnico</h2>
-          <p>Descreva o problema. O T.I. recebe o seu pedido e pode acessar este computador, mas só depois que você aceitar a conexão na tela.</p>
+          <p>Descreva o problema. Se precisar acessar este computador, o T.I. vai pedir o código e a senha acima.</p>
         </div>
       </div>
       <form className="respostas-form" onSubmit={(e) => { e.preventDefault(); setAviso(""); enviar.mutate(); }}>
@@ -38,6 +73,39 @@ function PedirSuporte() {
         <Button type="submit" disabled={enviar.isPending}><Send size={14} /> Enviar pedido</Button>
       </form>
       {aviso && <p className="muted" role="status">{aviso}</p>}
+    </section>
+  );
+}
+
+/** Admin: conecta digitando o código e a senha que a pessoa informou por telefone ou chat. Entra direto, sem pedir aceite na tela dela. */
+function ConectarComCodigo({ aoConectar }: { aoConectar: () => void }) {
+  const [id, setId] = useState("");
+  const [senha, setSenha] = useState("");
+  const [erro, setErro] = useState("");
+  const conectar = useMutation({
+    mutationFn: async () => {
+      const r = await window.desktop?.remotoConectar?.(id.trim(), senha.trim());
+      if (!r?.ok) throw new Error(r?.erro || "Não foi possível abrir a conexão neste computador.");
+      await clients.chat.post("/admin/remoto/conectar-manual", { id: id.trim() }).catch(() => undefined);
+    },
+    onSuccess: () => { setSenha(""); setErro(""); aoConectar(); },
+    onError: (e) => setErro(errorMessage(e)),
+  });
+  return (
+    <section className="panel settings-section">
+      <div className="section-title">
+        <span className="section-icon"><LogIn size={17} /></span>
+        <div>
+          <h2>Conectar com código e senha</h2>
+          <p>Peça para a pessoa abrir "Suporte T.I." &gt; "Este computador" e ler o código e a senha. Com os dois certos, a conexão entra direto, sem ela precisar aceitar.</p>
+        </div>
+      </div>
+      <form className="respostas-form" onSubmit={(e) => { e.preventDefault(); setErro(""); conectar.mutate(); }}>
+        <input aria-label="Código (ID)" placeholder="Código (ID)" value={id} onChange={(e) => setId(e.target.value)} />
+        <input aria-label="Senha" placeholder="Senha" value={senha} onChange={(e) => setSenha(e.target.value)} />
+        <Button type="submit" disabled={conectar.isPending || !id.trim() || !senha.trim()}>Conectar</Button>
+      </form>
+      {erro && <p className="atalho-aviso" role="alert">{erro}</p>}
     </section>
   );
 }
@@ -52,24 +120,23 @@ function PainelTI() {
   });
   const conectar = useMutation({
     mutationFn: async (d: Dispositivo) => {
-      const { id, senha } = (await clients.chat.post<{ id: string; senha?: string }>("/admin/remoto/conectar", { usuarioId: d.usuarioId })).data;
-      const r = await window.desktop?.remotoConectar?.(id, senha);
+      const { id } = (await clients.chat.post<{ id: string }>("/admin/remoto/conectar", { usuarioId: d.usuarioId })).data;
+      const r = await window.desktop?.remotoConectar?.(id);
       if (!r?.ok) throw new Error(r?.erro || "Não foi possível abrir a conexão neste computador.");
     },
     onSuccess: () => { setErro(""); void query.invalidateQueries({ queryKey: ["remoto", "painel"] }); },
     onError: (e) => setErro(errorMessage(e)),
   });
   const dados = painel.data;
+  const atualizar = () => void query.invalidateQueries({ queryKey: ["remoto", "painel"] });
   return (
     <>
       {erro && <p className="atalho-aviso" role="alert">{erro}</p>}
-      {dados?.master && (
-        <p className="muted" role="status">Esta conta entra direto nos computadores que já avisaram a senha, sem a pessoa precisar aceitar. Toda conexão fica no registro abaixo.</p>
-      )}
+      <ConectarComCodigo aoConectar={atualizar} />
       <section className="panel settings-section">
         <div className="section-title">
           <span className="section-icon"><MonitorSmartphone size={17} /></span>
-          <div><h2>Computadores</h2><p>Quem está com o Workspace aberto aparece como online.{dados?.master ? "" : " A pessoa precisa aceitar a conexão na tela dela."}</p></div>
+          <div><h2>Computadores</h2><p>Quem está com o Workspace aberto aparece aqui. Clicar em "Conectar" pede o aceite da pessoa na tela dela.</p></div>
         </div>
         {!dados?.dispositivos.length ? <EmptyState title="Nenhum computador apareceu ainda">Os computadores aparecem aqui depois de atualizar o Workspace e abri-lo.</EmptyState> : dados.dispositivos.map((d) => (
           <div key={d.usuarioId} className="atalho-linha">
@@ -88,8 +155,8 @@ function PainelTI() {
       )}
       {!!dados?.auditoria.length && (
         <section className="panel settings-section">
-          <div className="section-title"><div><h2>Registro de conexões</h2><p>Quem conectou em qual computador, direto ou por pedido de aceite.</p></div></div>
-          {dados.auditoria.map((a, i) => <div key={i} className="atalho-linha"><span>{hora(a.em)} · {a.admin} → {a.alvo} <small className="muted">({a.modo === "direta" ? "direta, sem aceite" : "com aceite"})</small></span></div>)}
+          <div className="section-title"><div><h2>Registro de conexões</h2><p>Quem conectou em qual computador.</p></div></div>
+          {dados.auditoria.map((a, i) => <div key={i} className="atalho-linha"><span>{hora(a.em)} · {a.admin} → {a.alvo} <small className="muted">({a.modo === "manual" ? "código e senha" : "com aceite"})</small></span></div>)}
         </section>
       )}
     </>
@@ -101,6 +168,7 @@ export default function SuporteRemoto() {
   return (
     <div className="page narrow-page settings-page">
       <PageHeader icon={Headset} title="Suporte T.I." description={admin ? "Acesse os computadores da equipe para dar suporte." : "Peça ajuda ao T.I."} />
+      <MeuAcesso />
       {admin ? <PainelTI /> : <PedirSuporte />}
     </div>
   );
