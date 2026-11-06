@@ -10,6 +10,7 @@ import { DESTAQUES, FUNDOS, COR_PADRAO } from "../services/aparencia";
 import { PageHeader } from "../components/ui/primitives";
 import { useZoomPreference } from "../services/useApplicationZoom";
 import { DEFAULT_ZOOM, MIN_ZOOM, MAX_ZOOM, ZOOM_STEP } from "../services/zoom";
+import AtalhosConfig from "../components/AtalhosConfig";
 import UpdateSettings from "../components/UpdateSettings";
 import DiagnosticoConexao from "../components/DiagnosticoConexao";
 import { defaultConfig } from "../../electron/policy";
@@ -88,6 +89,7 @@ export default function Settings() {
         </label>
         <p className="muted">Atalho Ctrl \ : com a opção ligada, fixa a barra aberta (ou solta de novo).</p>
       </section>
+      <AtalhosConfig />
       <section className="panel settings-section" aria-labelledby="assistente-flut-title">
         <div className="section-title">
           <span className="section-icon"><MonitorCog size={17} /></span>

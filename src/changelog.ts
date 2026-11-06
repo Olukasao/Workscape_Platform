@@ -8,6 +8,13 @@ export interface ChangelogEntry {
 
 export const changelog: ChangelogEntry[] = [
   {
+    versao: "0.6.2",
+    data: "2026-11-06",
+    itens: [
+      "Novo em Configurações: Atalhos de teclado. Crie combinações como Ctrl + , para abrir o telefone, o Chat Interno e outras telas.",
+    ],
+  },
+  {
     versao: "0.6.1",
     data: "2026-11-06",
     itens: [

@@ -7739,3 +7739,14 @@ button.tool-card {
 .novidade-icone { display: grid; place-items: center; width: 52px; height: 52px; border-radius: 16px; color: #fff; background: linear-gradient(135deg, #3ad6ff, #2f6bff); }
 .novidade-nota { font-size: 13px; color: var(--ink-3); }
 .novidade-card button { align-self: flex-end; }
+
+/* Atalhos de teclado (Configurações) */
+.atalhos-grupo { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
+.atalhos-grupo h3 { margin: 0 0 2px; font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); }
+.atalho-linha { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid var(--line); }
+.atalho-linha > span:first-child { flex: 1; }
+.atalho-tecla { font: inherit; font-size: 13px; padding: 4px 10px; border-radius: 8px; background: var(--surface-3); color: var(--ink); border: 1px solid var(--line-strong); }
+.atalho-tecla.gravando { border-color: var(--cyan-400); color: var(--ink); cursor: pointer; }
+.atalho-botao { font: inherit; font-size: 12.5px; padding: 4px 10px; border-radius: 8px; background: transparent; color: var(--ink-2); border: 1px solid var(--line-strong); cursor: pointer; display: inline-flex; align-items: center; }
+.atalho-botao:hover { background: var(--surface-3); color: var(--ink); }
+.atalho-aviso { margin: 8px 0 0; color: var(--signal-red); font-size: 13px; }
