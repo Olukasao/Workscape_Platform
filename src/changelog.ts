@@ -8,6 +8,13 @@ export interface ChangelogEntry {
 
 export const changelog: ChangelogEntry[] = [
   {
+    versao: "0.5.118",
+    data: "2026-11-06",
+    itens: [
+      "Corrigido: o aviso do telefone ficava ilegível no tema escuro. Agora ele se adapta ao tema claro e escuro.",
+    ],
+  },
+  {
     versao: "0.5.117",
     data: "2026-11-06",
     itens: [

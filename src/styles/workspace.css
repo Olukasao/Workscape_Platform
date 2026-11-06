@@ -7730,12 +7730,12 @@ button.tool-card {
 
 /* Aviso único de novidade (NovidadeTelefone) */
 .novidade-fundo { position: fixed; inset: 0; z-index: 400; display: grid; place-items: center; padding: 16px; background: rgba(3, 7, 22, 0.62); backdrop-filter: blur(4px); }
-.novidade-card { width: min(460px, 100%); display: flex; flex-direction: column; gap: 12px; padding: 24px; border-radius: 22px; background: var(--surface-1, #0e1838); color: var(--ink, #f2f6ff); border: 1px solid var(--line-strong, rgba(255,255,255,.18)); box-shadow: 0 30px 80px -20px rgba(0, 0, 0, .7); }
+.novidade-card { width: min(460px, 100%); display: flex; flex-direction: column; gap: 12px; padding: 24px; border-radius: 22px; background: var(--surface); color: var(--ink); border: 1px solid var(--line-strong, rgba(255,255,255,.18)); box-shadow: 0 30px 80px -20px rgba(0, 0, 0, .7); }
 .novidade-card h2 { margin: 0; font-size: 20px; }
 .novidade-card p { margin: 0; line-height: 1.45; }
 .novidade-card ul { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 8px; }
 .novidade-card li { display: flex; gap: 8px; align-items: flex-start; line-height: 1.4; }
 .novidade-card li svg { flex: none; margin-top: 3px; color: #3ad6ff; }
-.novidade-icone { display: grid; place-items: center; width: 52px; height: 52px; border-radius: 16px; color: #04122b; background: linear-gradient(135deg, #3ad6ff, #2f6bff); }
-.novidade-nota { font-size: 13px; color: var(--ink-soft, var(--muted)); }
+.novidade-icone { display: grid; place-items: center; width: 52px; height: 52px; border-radius: 16px; color: #fff; background: linear-gradient(135deg, #3ad6ff, #2f6bff); }
+.novidade-nota { font-size: 13px; color: var(--ink-3); }
 .novidade-card button { align-self: flex-end; }
