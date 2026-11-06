@@ -8,6 +8,14 @@ export interface ChangelogEntry {
 
 export const changelog: ChangelogEntry[] = [
   {
+    versao: "0.6.4",
+    data: "2026-11-06",
+    itens: [
+      "Chat Interno: respostas rápidas. Em Configurações crie um atalho (ex.: /bomdia) e, no chat, digite /bomdia e aperte Espaço, Tab ou Enter para inserir o texto pronto.",
+      "Aviso automático, uma vez por dia, de quantos chamados dos últimos 7 dias ficaram sem atendimento (para quem acompanha a Agenda de Técnicos).",
+    ],
+  },
+  {
     versao: "0.6.3",
     data: "2026-11-06",
     itens: [

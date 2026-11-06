@@ -62,6 +62,7 @@ const Cursos = lazy(() => import("../modules/cursos/Cursos"));
 const Chamados = lazy(() => import("../modules/Chamados"));
 import ContratacoesFlutuante from "../components/ContratacoesFlutuante";
 import AssistenteFlutuante from "../components/AssistenteFlutuante";
+import AvisoChamadosAtrasados from "../components/AvisoChamadosAtrasados";
 import AtalhosTeclado from "../components/AtalhosTeclado";
 import TelefoneFlutuante, { TelefoneJanela } from "../components/TelefoneFlutuante";
 import TelefoneMotor from "../components/TelefoneMotor";
@@ -318,6 +319,7 @@ function Shell() {
       <TelefoneMotor />
       <NovidadeTelefone />
       <AtalhosTeclado />
+      <AvisoChamadosAtrasados ativo={agendaAllowed} />
       <ChamadaRecebida />
       <TelefoneFlutuante />
       <AlarmeLembretes />
