@@ -9,6 +9,7 @@ export const browserSites = {
   sgp: { label: "SGP", url: "https://acessanet.sgp.net.br/accounts/login?next=/admin/" },
   mundiale: { label: "Mundiale", url: "https://account.withub.ai/" },
   olt: { label: "OLT", url: "https://acessanet.oltcloud.co/dashboards/home" },
+  callcenter: { label: "Call Center", url: "https://login-acessanet.vipsolutions.com.br/callcenter" },
   zabbix: { label: "Zabbix", url: "http://192.168.1.160/zabbix.php?action=dashboard.view&dashboardid=1" },
   grafana: { label: "Grafana", url: "http://192.168.1.160:3000/login" },
   comum: { label: "Navegador comum", url: "https://www.google.com/" },

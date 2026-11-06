@@ -11,6 +11,7 @@ export const changelog: ChangelogEntry[] = [
     versao: "0.5.118",
     data: "2026-11-06",
     itens: [
+      "Nova aba \"Call Center\" no Navegador do Workspace.",
       "Corrigido: o aviso do telefone ficava ilegível no tema escuro. Agora ele se adapta ao tema claro e escuro.",
     ],
   },

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ArrowLeft, ArrowRight, Globe, Home, RefreshCw, Network, Sparkles, Router, Activity, ChartLine, ZoomIn, ZoomOut, ExternalLink, PanelTopClose } from "lucide-react";
+import { ArrowLeft, ArrowRight, Globe, Home, RefreshCw, Network, Sparkles, Router, Activity, ChartLine, Headset, ZoomIn, ZoomOut, ExternalLink, PanelTopClose } from "lucide-react";
 import { clsx } from "clsx";
 import type { BrowserSite, BrowserState } from "../../electron/browserTabs";
 import { EVENTO_SITE_NAVEGADOR } from "../services/navegadorInterno";
@@ -10,6 +10,7 @@ const SITES: { id: BrowserSite; label: string; icon: typeof Globe }[] = [
   { id: "sgp", label: "SGP", icon: Network },
   { id: "mundiale", label: "Mundiale", icon: Sparkles },
   { id: "olt", label: "OLT", icon: Router },
+  { id: "callcenter", label: "Call Center", icon: Headset },
   { id: "zabbix", label: "Zabbix", icon: Activity },
   { id: "grafana", label: "Grafana", icon: ChartLine },
   { id: "comum", label: "Navegador comum", icon: Globe },
