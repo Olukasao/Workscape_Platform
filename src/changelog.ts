@@ -8,6 +8,13 @@ export interface ChangelogEntry {
 
 export const changelog: ChangelogEntry[] = [
   {
+    versao: "0.6.3",
+    data: "2026-11-06",
+    itens: [
+      "Telefone: a transferência ficou bem mais rápida. A chamada sai da sua tela assim que a central aceita, sem esperar o destino atender, e aparece \"Transferindo…\".",
+    ],
+  },
+  {
     versao: "0.6.2",
     data: "2026-11-06",
     itens: [

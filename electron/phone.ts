@@ -22,6 +22,8 @@ export interface PhoneCall {
   espera: boolean;
   /** Resultado da última transferência pedida (mensagem de erro quando a central recusa). */
   avisoTransferencia?: string;
+  /** A transferência foi pedida e a central ainda não respondeu: a tela mostra "Transferindo…". */
+  transferindo?: boolean;
 }
 export interface PhoneSnapshot {
   motor: PhoneEngineState;
@@ -121,6 +123,16 @@ export function createPhone(options: PhoneOptions) {
   const publicar = () => options.send({ type: "state", snapshot: copia() });
   const ajustar = (parcial: Partial<PhoneSnapshot>) => { Object.assign(snapshot, parcial); publicar(); };
   const chamada = (id: number) => snapshot.chamadas.find((c) => c.id === id);
+  // Transferência: depois que a central aceita o pedido, a perna do operador sai logo (com uma folga curta para uma recusa).
+  const FOLGA_RECUSA_MS = 700;
+  const saidas = new Map<number, ReturnType<typeof setTimeout>>();
+  const cancelarSaidaTransferida = (id: number) => { const t = saidas.get(id); if (t) { clearTimeout(t); saidas.delete(id); } };
+  const encerrarPernaTransferida = (id: number, apos: number) => {
+    if (saidas.has(id) && apos > 0) return; // já agendado
+    cancelarSaidaTransferida(id);
+    const sair = () => { saidas.delete(id); try { enviar({ cmd: "hangup", id }); } catch { /* motor já caiu */ } };
+    if (apos <= 0) sair(); else saidas.set(id, setTimeout(sair, apos));
+  };
 
   function enviar(cmd: Record<string, unknown>) {
     if (!engine || engine.killed || !engine.stdin.writable) throw new Error("O telefone não está ligado.");
@@ -230,10 +242,15 @@ export function createPhone(options: PhoneOptions) {
         const c = chamada(int(m.id, -1));
         if (!c) break;
         const codigo = int(m.status);
-        if (codigo >= 200 && codigo < 300) {
-          // A central aceitou: nossa perna não é mais necessária.
-          if (m.final === true) { c.avisoTransferencia = undefined; enviar({ cmd: "hangup", id: c.id }); }
-        } else if (codigo >= 300 && m.final === true) {
+        if (codigo >= 100 && codigo < 300) {
+          c.avisoTransferencia = undefined;
+          // A central já aceitou o pedido: não adianta esperar o destino atender (isso levava de 5 a 10 segundos).
+          // Se uma recusa chegar nesta folga curta, a ligação continua e o aviso aparece; senão, nossa perna sai.
+          if (codigo >= 200 && m.final === true) encerrarPernaTransferida(c.id, 0);
+          else encerrarPernaTransferida(c.id, FOLGA_RECUSA_MS);
+        } else if (codigo >= 300) {
+          cancelarSaidaTransferida(c.id);
+          c.transferindo = false;
           c.avisoTransferencia = codigo === 404 ? "A central não achou esse destino. Confira o ramal da fila." : codigo === 403 ? "A central não permitiu transferir para esse destino." : `A central recusou a transferência (${codigo}).`;
           publicar();
         }
@@ -249,6 +266,7 @@ export function createPhone(options: PhoneOptions) {
         }
         const c = chamada(id);
         if (!c) break;
+        cancelarSaidaTransferida(id);
         snapshot.chamadas = snapshot.chamadas.filter((x) => x.id !== id);
         fecharChamada(c, int(m.status), int(m.durationSec));
         publicar();
@@ -406,7 +424,9 @@ export function createPhone(options: PhoneOptions) {
     },
     transferir(v: unknown) {
       const { id, to } = z.object({ id: z.number().int().min(0), to: z.string().regex(NUMERO) }).parse(v);
+      const c = chamada(id);
       enviar({ cmd: "transfer", id, to });
+      if (c) { c.transferindo = true; c.avisoTransferencia = undefined; publicar(); }
     },
     /** Liga ou desliga o Não perturbe. Vale já para a próxima chamada e não derruba as que estão em andamento. */
     definirNaoPerturbe(on: unknown) {

@@ -119,7 +119,7 @@ function EmChamada({ chamada, equipe }: { chamada: Chamada; equipe: Map<string, 
     return r?.ok;
   };
   const quem = identificarChamador(chamada.numero, chamada.nome, equipe);
-  const estado = chamada.estado === "chamando" ? "Chamando…" : chamada.espera ? "Em espera" : chamada.estado === "tocando" ? "Tocando" : null;
+  const estado = chamada.transferindo && !chamada.avisoTransferencia ? "Transferindo…" : chamada.estado === "chamando" ? "Chamando…" : chamada.espera ? "Em espera" : chamada.estado === "tocando" ? "Tocando" : null;
   return (
     <div className="telefone-chamada">
       <div className="telefone-chamada-quem">
