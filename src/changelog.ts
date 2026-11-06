@@ -8,7 +8,7 @@ export interface ChangelogEntry {
 
 export const changelog: ChangelogEntry[] = [
   {
-    versao: "0.5.118",
+    versao: "0.6.0",
     data: "2026-11-06",
     itens: [
       "Nova aba \"Call Center\" no Navegador do Workspace.",
