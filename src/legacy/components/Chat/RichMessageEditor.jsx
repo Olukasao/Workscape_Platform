@@ -5,6 +5,7 @@ import {
   useImperativeHandle,
   useRef,
 } from 'react';
+import { expansaoPara, useRespostasRapidas } from '../../../services/respostasRapidas';
 
 const FORMATTING_REGEX = /(\*\*([\s\S]+?)\*\*|__([\s\S]+?)__|~~([\s\S]+?)~~|==([\s\S]+?)==|\*([^*\n]+?)\*)/g;
 const BLOCK_TAGS = new Set(['DIV', 'P']);
@@ -617,6 +618,18 @@ const RichMessageEditor = forwardRef(function RichMessageEditor({
   }, [value]);
 
   const handleKeyDown = (event) => {
+    // Resposta rápida: "/nome" + Espaço, Tab ou Enter vira o texto salvo em Configurações.
+    if ((event.key === ' ' || event.key === 'Tab' || (event.key === 'Enter' && !event.shiftKey)) && !event.ctrlKey && !event.altKey && !event.metaKey) {
+      const respostas = useRespostasRapidas.getState().respostas;
+      const editor = editorRef.current;
+      const expansao = respostas.length && editor ? expansaoPara(getTextBeforeCursor(editor), respostas) : null;
+      if (expansao) {
+        event.preventDefault();
+        replaceTextRange(expansao.inicio, getTextBeforeCursor(editor).length, expansao.texto);
+        return;
+      }
+    }
+
     onKeyDown?.(event);
 
     if (event.defaultPrevented) return;

@@ -7750,3 +7750,9 @@ button.tool-card {
 .atalho-botao { font: inherit; font-size: 12.5px; padding: 4px 10px; border-radius: 8px; background: transparent; color: var(--ink-2); border: 1px solid var(--line-strong); cursor: pointer; display: inline-flex; align-items: center; }
 .atalho-botao:hover { background: var(--surface-3); color: var(--ink); }
 .atalho-aviso { margin: 8px 0 0; color: var(--signal-red); font-size: 13px; }
+
+/* Respostas rápidas do chat (Configurações) */
+.respostas-form { display: flex; flex-direction: column; gap: 8px; margin: 10px 0; }
+.respostas-form input, .respostas-form textarea { font: inherit; padding: 8px 10px; border-radius: 8px; background: var(--surface-2); color: var(--ink); border: 1px solid var(--line-strong); resize: vertical; }
+.respostas-form .atalho-botao { align-self: flex-start; }
+.respostas-texto { flex: 1; color: var(--ink-2); white-space: pre-wrap; overflow-wrap: anywhere; }
