@@ -10,7 +10,9 @@ interface Dispositivo { usuarioId: number; nome: string; online: boolean; visto:
 interface Painel {
   dispositivos: Dispositivo[];
   pedidos: { usuarioId: number; nome: string; mensagem: string; em: string }[];
-  auditoria: { em: string; admin: string; alvo: string }[];
+  auditoria: { em: string; admin: string; alvo: string; modo: "direta" | "pedido" }[];
+  /** Só esta conta entra direto, sem a pessoa aceitar (senha permanente dela). As demais pedem aceite, como sempre. */
+  master: boolean;
 }
 const hora = (iso: string) => new Date(iso).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
 
@@ -50,8 +52,8 @@ function PainelTI() {
   });
   const conectar = useMutation({
     mutationFn: async (d: Dispositivo) => {
-      const { id } = (await clients.chat.post<{ id: string }>("/admin/remoto/conectar", { usuarioId: d.usuarioId })).data;
-      const r = await window.desktop?.remotoConectar?.(id);
+      const { id, senha } = (await clients.chat.post<{ id: string; senha?: string }>("/admin/remoto/conectar", { usuarioId: d.usuarioId })).data;
+      const r = await window.desktop?.remotoConectar?.(id, senha);
       if (!r?.ok) throw new Error(r?.erro || "Não foi possível abrir a conexão neste computador.");
     },
     onSuccess: () => { setErro(""); void query.invalidateQueries({ queryKey: ["remoto", "painel"] }); },
@@ -61,10 +63,13 @@ function PainelTI() {
   return (
     <>
       {erro && <p className="atalho-aviso" role="alert">{erro}</p>}
+      {dados?.master && (
+        <p className="muted" role="status">Esta conta entra direto nos computadores que já avisaram a senha, sem a pessoa precisar aceitar. Toda conexão fica no registro abaixo.</p>
+      )}
       <section className="panel settings-section">
         <div className="section-title">
           <span className="section-icon"><MonitorSmartphone size={17} /></span>
-          <div><h2>Computadores</h2><p>Quem está com o Workspace aberto aparece como online. A pessoa precisa aceitar a conexão na tela dela.</p></div>
+          <div><h2>Computadores</h2><p>Quem está com o Workspace aberto aparece como online.{dados?.master ? "" : " A pessoa precisa aceitar a conexão na tela dela."}</p></div>
         </div>
         {!dados?.dispositivos.length ? <EmptyState title="Nenhum computador apareceu ainda">Os computadores aparecem aqui depois de atualizar o Workspace e abri-lo.</EmptyState> : dados.dispositivos.map((d) => (
           <div key={d.usuarioId} className="atalho-linha">
@@ -83,8 +88,8 @@ function PainelTI() {
       )}
       {!!dados?.auditoria.length && (
         <section className="panel settings-section">
-          <div className="section-title"><div><h2>Registro de conexões</h2><p>Quem pediu acesso a qual computador.</p></div></div>
-          {dados.auditoria.map((a, i) => <div key={i} className="atalho-linha"><span>{hora(a.em)} · {a.admin} → {a.alvo}</span></div>)}
+          <div className="section-title"><div><h2>Registro de conexões</h2><p>Quem conectou em qual computador, direto ou por pedido de aceite.</p></div></div>
+          {dados.auditoria.map((a, i) => <div key={i} className="atalho-linha"><span>{hora(a.em)} · {a.admin} → {a.alvo} <small className="muted">({a.modo === "direta" ? "direta, sem aceite" : "com aceite"})</small></span></div>)}
         </section>
       )}
     </>

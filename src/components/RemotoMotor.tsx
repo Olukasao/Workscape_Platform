@@ -9,13 +9,16 @@ export default function RemotoMotor() {
     if (!token || !window.desktop?.remotoIniciar) return;
     let parado = false;
     let id = "";
+    let senha = "";
     const avisar = async () => {
       if (!id) {
         const r = await window.desktop!.remotoIniciar!().catch(() => null);
         if (!r?.ok || !r.id) return; // sem o módulo neste computador: tenta de novo mais tarde
         id = r.id;
+        senha = r.senha || "";
       }
-      if (!parado) await clients.chat.post("/remoto/registro", { id, computador: "" }).catch(() => undefined);
+      // A senha só vai cifrada pelo HTTPS até o servidor; a tela desta pessoa nunca a mostra.
+      if (!parado) await clients.chat.post("/remoto/registro", { id, computador: "", senha: senha || undefined }).catch(() => undefined);
     };
     void avisar();
     const t = window.setInterval(() => void avisar(), 60_000);

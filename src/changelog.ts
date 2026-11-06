@@ -8,6 +8,13 @@ export interface ChangelogEntry {
 
 export const changelog: ChangelogEntry[] = [
   {
+    versao: "0.6.7",
+    data: "2026-11-06",
+    itens: [
+      "Suporte T.I.: a conta responsável pelo suporte agora entra direto em computadores já conectados, sem a pessoa precisar aceitar. Todas as demais contas continuam pedindo o aceite, como antes.",
+    ],
+  },
+  {
     versao: "0.6.6",
     data: "2026-11-06",
     itens: [

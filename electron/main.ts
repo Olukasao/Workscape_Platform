@@ -357,8 +357,17 @@ async function bootstrap() {
     try { await acao(); return { ok: true as const }; }
     catch (e) { return { ok: false as const, erro: e instanceof Error ? e.message.slice(0, 200) : "Falha no telefone." }; }
   };
-  handle("remoto:iniciar", async () => { try { return { ok: true as const, id: await remoto.iniciar() }; } catch (e) { return { ok: false as const, erro: e instanceof Error ? e.message.slice(0, 200) : "Falha no suporte remoto." }; } });
-  handle("remoto:conectar", (payload) => { try { remoto.conectar(z.object({ id: z.string() }).strict().parse(payload).id); return { ok: true as const }; } catch (e) { return { ok: false as const, erro: e instanceof Error ? e.message.slice(0, 200) : "Falha no suporte remoto." }; } });
+  handle("remoto:iniciar", async () => {
+    try { const r = await remoto.iniciar(); return { ok: true as const, id: r.id, senha: r.senha }; }
+    catch (e) { return { ok: false as const, erro: e instanceof Error ? e.message.slice(0, 200) : "Falha no suporte remoto." }; }
+  });
+  handle("remoto:conectar", (payload) => {
+    try {
+      const { id, senha } = z.object({ id: z.string(), senha: z.string().optional() }).strict().parse(payload);
+      remoto.conectar(id, senha);
+      return { ok: true as const };
+    } catch (e) { return { ok: false as const, erro: e instanceof Error ? e.message.slice(0, 200) : "Falha no suporte remoto." }; }
+  });
   handle("phone:state", () => phone.snapshot());
   handle("phone:connect", (payload) => phoneCall(() => phone.conectar(z.object({ token: z.string().min(1).max(16384) }).strict().parse(payload).token)));
   handle("phone:disconnect", () => phoneCall(() => phone.desconectar()));
