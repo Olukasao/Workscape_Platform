@@ -47,6 +47,7 @@ import { createDashboardFeed } from "./dashboardFeed";
 import { LocalAi, type LocalAiTask } from "./localAi";
 import { deviceInfo } from "./deviceInfo";
 import { createPhone } from "./phone";
+import { createRemoto } from "./remoto";
 import { ServicoTerminal } from "./terminal";
 import { nomeParaSalvar } from "./nomeArquivo";
 import { conflitoDeRede, corrigirRotaVpn, listarVpns, redeDe, testarPorta, type LinhaTeste } from "./vpn";
@@ -319,6 +320,10 @@ async function bootstrap() {
       : app.isPackaged ? path.join(process.resourcesPath, "phone", phoneEngineFile) : path.join(app.getAppPath(), "resources", "phone-win-x64", phoneEngineFile);
     return existsSync(candidato) ? candidato : null;
   })();
+  const remotoExe = process.platform === "win32"
+    ? (app.isPackaged ? path.join(process.resourcesPath, "remote", "rustdesk.exe") : path.join(app.getAppPath(), "resources", "remote-win-x64", "rustdesk.exe"))
+    : null;
+  const remoto = createRemoto({ exePath: remotoExe, configDir: process.env.APPDATA ? path.join(process.env.APPDATA, "RustDesk", "config") : null });
   const phone = createPhone({
     enginePath: phoneEnginePath,
     chatOrigin: () => config.chat,
@@ -352,6 +357,8 @@ async function bootstrap() {
     try { await acao(); return { ok: true as const }; }
     catch (e) { return { ok: false as const, erro: e instanceof Error ? e.message.slice(0, 200) : "Falha no telefone." }; }
   };
+  handle("remoto:iniciar", async () => { try { return { ok: true as const, id: await remoto.iniciar() }; } catch (e) { return { ok: false as const, erro: e instanceof Error ? e.message.slice(0, 200) : "Falha no suporte remoto." }; } });
+  handle("remoto:conectar", (payload) => { try { remoto.conectar(z.object({ id: z.string() }).strict().parse(payload).id); return { ok: true as const }; } catch (e) { return { ok: false as const, erro: e instanceof Error ? e.message.slice(0, 200) : "Falha no suporte remoto." }; } });
   handle("phone:state", () => phone.snapshot());
   handle("phone:connect", (payload) => phoneCall(() => phone.conectar(z.object({ token: z.string().min(1).max(16384) }).strict().parse(payload).token)));
   handle("phone:disconnect", () => phoneCall(() => phone.desconectar()));

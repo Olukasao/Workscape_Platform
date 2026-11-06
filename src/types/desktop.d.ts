@@ -110,6 +110,8 @@ declare global {
       phoneMute?(id: number, on: boolean): Promise<{ ok: boolean; erro?: string }>;
       phoneHold?(id: number, on: boolean): Promise<{ ok: boolean; erro?: string }>;
       phoneDtmf?(id: number, digits: string): Promise<{ ok: boolean; erro?: string }>;
+      remotoIniciar?(): Promise<{ ok: boolean; id?: string; erro?: string }>;
+      remotoConectar?(id: string): Promise<{ ok: boolean; erro?: string }>;
       phoneTransfer?(id: number, to: string): Promise<{ ok: boolean; erro?: string }>;
       phoneDiretorio?(lista: { ramal: string; nome: string }[]): Promise<{ ok: boolean; erro?: string }>;
       phoneDnd?(on: boolean): Promise<{ ok: boolean; erro?: string }>;

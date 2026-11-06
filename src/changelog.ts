@@ -8,6 +8,13 @@ export interface ChangelogEntry {
 
 export const changelog: ChangelogEntry[] = [
   {
+    versao: "0.6.5",
+    data: "2026-11-06",
+    itens: [
+      "Nova tela \"Suporte T.I.\": o T.I. acessa os computadores da equipe (a pessoa precisa aceitar) e todos podem pedir ajuda técnica.",
+    ],
+  },
+  {
     versao: "0.6.4",
     data: "2026-11-06",
     itens: [

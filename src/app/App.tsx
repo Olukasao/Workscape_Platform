@@ -57,12 +57,14 @@ const Resumo = lazy(() => import("../modules/Resumo"));
 const Contratacoes = lazy(() => import("../modules/Contratacoes"));
 const Changelog = lazy(() => import("../modules/Changelog"));
 const Lembretes = lazy(() => import("../modules/Lembretes"));
+const SuporteRemoto = lazy(() => import("../modules/SuporteRemoto"));
 const Marketing = lazy(() => import("../modules/Marketing"));
 const Cursos = lazy(() => import("../modules/cursos/Cursos"));
 const Chamados = lazy(() => import("../modules/Chamados"));
 import ContratacoesFlutuante from "../components/ContratacoesFlutuante";
 import AssistenteFlutuante from "../components/AssistenteFlutuante";
 import AvisoChamadosAtrasados from "../components/AvisoChamadosAtrasados";
+import RemotoMotor from "../components/RemotoMotor";
 import AtalhosTeclado from "../components/AtalhosTeclado";
 import TelefoneFlutuante, { TelefoneJanela } from "../components/TelefoneFlutuante";
 import TelefoneMotor from "../components/TelefoneMotor";
@@ -85,7 +87,7 @@ import { useSobreposicao } from "../services/sobreposicao";
 import { JANELA_DESTACADA, MINIAPPS, useDestacada, useSincronizacaoAgenda, useSincronizacaoGeral, usePresencaChat, destacar, reintegrar, trazerDeVolta, fixarSobre, type JanelaKind } from "../services/janelaDestacada";
 import ModuleLinkBoundary from "../components/ModuleLinkBoundary";
 import { Titlebar } from "./shell/Titlebar";
-import { SquareTerminal, ExternalLink, PanelTopOpen, PanelTopClose, Pin, PinOff, Maximize2, Minimize2 } from "lucide-react";
+import { Headset, SquareTerminal, ExternalLink, PanelTopOpen, PanelTopClose, Pin, PinOff, Maximize2, Minimize2 } from "lucide-react";
 import { Sidebar, type NavEntry, type NavGroup } from "./shell/Sidebar";
 import { Topbar } from "./shell/Topbar";
 import { CommandPalette } from "./shell/CommandPalette";
@@ -281,6 +283,7 @@ function Shell() {
         { path: "/tools", label: "Ferramentas", icon: Wrench },
         ...(window.desktop ? [{ path: "/terminal", label: "Terminal", icon: SquareTerminal }] : []),
         { path: "/navegador", label: "Navegador", icon: Globe },
+        ...(window.desktop ? [{ path: "/suporte", label: "Suporte T.I.", icon: Headset }] : []),
       ],
     },
     {
@@ -319,6 +322,7 @@ function Shell() {
       <TelefoneMotor />
       <NovidadeTelefone />
       <AtalhosTeclado />
+      <RemotoMotor />
       <AvisoChamadosAtrasados ativo={agendaAllowed} />
       <ChamadaRecebida />
       <TelefoneFlutuante />
@@ -439,6 +443,7 @@ function Shell() {
                     <Route path="/disparo" element={<Navigate to="/chat?aba=disparo" replace />} />
                     <Route path="/changelog" element={<Changelog />} />
                     <Route path="/lembretes" element={<Lembretes />} />
+                    <Route path="/suporte" element={<SuporteRemoto />} />
                     <Route path="/settings" element={<Settings />} />
                     <Route path="/profile" element={<Profile />} />
                     <Route path="/notifications" element={<Notifications />} />

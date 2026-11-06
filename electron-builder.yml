@@ -23,6 +23,9 @@ extraResources:
 # Sem o arquivo, o app abre normalmente e o telefone cai no MicroSIP.
   - from: resources/phone-win-x64
     to: phone
+# Módulo de suporte remoto (programa de acesso remoto, só Windows), ligado ao nosso servidor interno.
+  - from: resources/remote-win-x64
+    to: remote
 win:
   icon: assets/icon.ico
   target:

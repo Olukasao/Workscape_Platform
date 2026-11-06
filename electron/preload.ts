@@ -82,6 +82,8 @@ contextBridge.exposeInMainWorld("desktop", {
   testarConexao: () => ipcRenderer.invoke("vpn:testar"),
   corrigirVpn: () => ipcRenderer.invoke("vpn:corrigir"),
   alarmAttention: () => ipcRenderer.invoke("alarm:attention"),
+  remotoIniciar: () => ipcRenderer.invoke("remoto:iniciar"),
+  remotoConectar: (id: string) => ipcRenderer.invoke("remoto:conectar", { id }),
   phoneState: () => ipcRenderer.invoke("phone:state"),
   phoneConnect: (token: string) => ipcRenderer.invoke("phone:connect", { token }),
   phoneDisconnect: () => ipcRenderer.invoke("phone:disconnect"),
