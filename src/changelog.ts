@@ -8,6 +8,13 @@ export interface ChangelogEntry {
 
 export const changelog: ChangelogEntry[] = [
   {
+    versao: "0.6.6",
+    data: "2026-11-06",
+    itens: [
+      "Suporte T.I.: corrigido o erro \"ID não existe\" ao conectar. O computador agora se registra no servidor da empresa.",
+    ],
+  },
+  {
     versao: "0.6.5",
     data: "2026-11-06",
     itens: [

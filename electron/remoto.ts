@@ -27,6 +27,15 @@ export const idValido = (v: unknown): v is string => typeof v === "string" && ID
 export function createRemoto(options: { exePath: string | null; configDir: string | null }) {
   let iniciado = false;
   const disponivel = () => !!options.exePath && existsSync(options.exePath);
+  // Uma cópia do programa já aberta antes desta configuração usa os servidores de fábrica e nunca aparece no nosso. Reinicia uma única vez.
+  function precisaReiniciar(): boolean {
+    if (!options.configDir) return false;
+    const marca = path.join(options.configDir, "workspace-servidor.v2");
+    if (existsSync(marca)) return false;
+    try { mkdirSync(options.configDir, { recursive: true }); writeFileSync(marca, "ok", "utf8"); } catch { /* tenta de novo na próxima vez */ }
+    return true;
+  }
+  const pausa = (ms: number) => new Promise((r) => setTimeout(r, ms));
   function gravarConfiguracao() {
     if (!options.configDir) return;
     const arquivo = path.join(options.configDir, "RustDesk2.toml");
@@ -53,7 +62,13 @@ export function createRemoto(options: { exePath: string | null; configDir: strin
       gravarConfiguracao();
       if (!iniciado) {
         iniciado = true;
-        spawn(options.exePath!, ["--tray"], { detached: true, stdio: "ignore", windowsHide: true }).unref();
+        if (precisaReiniciar()) {
+          await new Promise<void>((r) => execFile("taskkill", ["/F", "/IM", path.basename(options.exePath!)], { windowsHide: true }, () => r()));
+          await pausa(1500);
+        }
+        // "--server" é o modo de segundo plano: registra este computador no nosso servidor e atende os pedidos de conexão, sem abrir janela.
+        spawn(options.exePath!, ["--server"], { detached: true, stdio: "ignore", windowsHide: true }).unref();
+        await pausa(3000);
       }
       return lerId();
     },
