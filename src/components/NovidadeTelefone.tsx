@@ -5,7 +5,7 @@ import { useSession } from "../stores/workspace";
 import { usePhone } from "../stores/phone";
 
 // Aviso único (por pessoa, neste computador) sobre o 0 automático do telefone. Para soltar outro aviso, troque a chave.
-const CHAVE = "workspace:novidade:telefone-zero:v1";
+const CHAVE = "workspace:novidade:telefone-zero:v2";
 const jaViu = () => { try { return localStorage.getItem(CHAVE) === "1"; } catch { return false; } };
 const marcar = () => { try { localStorage.setItem(CHAVE, "1"); } catch { /* vale só até fechar o app */ } };
 

@@ -8,6 +8,13 @@ export interface ChangelogEntry {
 
 export const changelog: ChangelogEntry[] = [
   {
+    versao: "0.6.1",
+    data: "2026-11-06",
+    itens: [
+      "O aviso \"Telefone: não precisa mais digitar o 0\" aparece de novo para todos, já legível no tema escuro.",
+    ],
+  },
+  {
     versao: "0.6.0",
     data: "2026-11-06",
     itens: [
