@@ -17,7 +17,9 @@ export function useClienteLigacao(numero: string, externo: boolean, ddd = "") {
     queryKey: ["cliente-ligacao", limpo, ddd],
     queryFn: async () => (await api.get<RespostaLigacao>("/clientes/ligacao", { params: { numero, ...(ddd ? { ddd } : {}) } })).data,
     enabled: externo && limpo.length >= 8,
-    staleTime: 5 * 60_000,
+    // Sempre busca de novo a cada ligação: um chamado aberto agora há pouco precisa aparecer na ficha.
+    staleTime: 0,
+    refetchOnMount: "always",
     retry: 1,
   });
 }

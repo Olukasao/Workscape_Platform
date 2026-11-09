@@ -12,6 +12,7 @@ export const changelog: ChangelogEntry[] = [
     data: "2026-11-09",
     itens: [
       "A notificação de avaliação do atendimento não mostra mais \"enviada por\" e o nome de quem mandou.",
+      "Ficha do cliente na ligação: busca os dados de novo a cada ligação, então um chamado aberto há pouco passa a aparecer na hora.",
     ],
   },
   {
