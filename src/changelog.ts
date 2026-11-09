@@ -8,6 +8,13 @@ export interface ChangelogEntry {
 
 export const changelog: ChangelogEntry[] = [
   {
+    versao: "0.6.24",
+    data: "2026-11-09",
+    itens: [
+      "Na lista de chamadas recentes do telefone, as ligações transferidas deixam de mostrar \"asterisk\" como número: não dá mais para copiar nem ligar de volta para ele.",
+    ],
+  },
+  {
     versao: "0.6.23",
     data: "2026-11-09",
     itens: [

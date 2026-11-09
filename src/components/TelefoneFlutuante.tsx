@@ -6,7 +6,7 @@ import { definirNaoPerturbe, iniciarTelefone, marcarVistas, observarTelefone, us
 import { useDiretorio, useNomesPorRamal } from "../services/ramais";
 import { useSituacoes } from "../services/situacao";
 import { definirFichaAutomatica, fichaDisponivel, useFichaAutomatica } from "../services/fichaAuto";
-import { iniciais, identificarChamador, nivelParaAnel } from "../services/chamador";
+import { iniciais, identificarChamador, nivelParaAnel, numeroUtil } from "../services/chamador";
 import { avisarTransferencia, useChamadaReal } from "../services/transferencia";
 import { duracaoCurta, foiPerdida, rotuloDaChamada, type ChamadaRecente } from "../services/chamadasRecentes";
 import { useSession } from "../stores/workspace";
@@ -59,9 +59,10 @@ function Recentes({ nomes, podeLigar, aoLigar }: { nomes: Map<string, string>; p
       {recentes.slice(0, 30).map((c) => {
         const quem = identificarChamador(c.numero, "", nomes);
         const nome = quem.titulo;
+        const numero = numeroUtil(c.numero); // "asterisk" (transferência) não é número: não dá para copiar nem ligar de volta
         return (
           <li key={c.id}>
-            <button type="button" className={foiPerdida(c) ? "perdida" : undefined} disabled={!c.numero} aria-expanded={aberta === c.id} onClick={() => setAberta(aberta === c.id ? null : c.id)}
+            <button type="button" className={foiPerdida(c) ? "perdida" : undefined} disabled={!numero} aria-expanded={aberta === c.id} onClick={() => setAberta(aberta === c.id ? null : c.id)}
               aria-label={`${nome}. ${foiPerdida(c) ? "Chamada perdida" : c.direcao === "in" ? "Recebida" : "Feita"} ${rotuloDaChamada(c.inicio)}. Abrir opções`}>
               <span className="telefone-recente-icone">{icone(c)}</span>
               <span className="telefone-recente-texto">
@@ -70,12 +71,12 @@ function Recentes({ nomes, podeLigar, aoLigar }: { nomes: Map<string, string>; p
               </span>
             </button>
             {aberta === c.id ? (
-              <div className="telefone-recente-acoes" role="group" aria-label={`Opções para ${c.numero}`}>
-                <span className="telefone-recente-numero">{c.numero}</span>
-                <button type="button" onClick={() => void copiar(c.id, c.numero)}>
+              <div className="telefone-recente-acoes" role="group" aria-label={`Opções para ${numero}`}>
+                <span className="telefone-recente-numero">{numero}</span>
+                <button type="button" onClick={() => void copiar(c.id, numero)}>
                   <Copy size={15} aria-hidden="true" />{copiado === c.id ? "Copiado!" : "Copiar número"}
                 </button>
-                <button type="button" className="ligar" disabled={!podeLigar} title={podeLigar ? undefined : "O telefone não está conectado"} onClick={() => { setAberta(null); aoLigar(c.numero); }}>
+                <button type="button" className="ligar" disabled={!podeLigar} title={podeLigar ? undefined : "O telefone não está conectado"} onClick={() => { setAberta(null); aoLigar(numero); }}>
                   <PhoneCall size={15} aria-hidden="true" />Ligar novamente
                 </button>
               </div>
