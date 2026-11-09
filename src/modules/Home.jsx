@@ -31,6 +31,7 @@ import HomeHighlightsCarousel from "../legacy/components/HomeHighlightsCarousel"
 import HomeBanner from "../legacy/components/HomeBanner";
 import AgendaTecnicosCard from "../legacy/components/AgendaTecnicosCard";
 import MassivoAlertCard from "../legacy/components/MassivoAlertCard";
+import AvaliacaoDestaqueCard from "../components/AvaliacaoDestaqueCard";
 import CcnaCompetitionHighlightCard from "../legacy/components/CcnaCompetitionHighlightCard";
 import { NOVIDADES_MOTIONS } from "../legacy/data/novidades";
 import { normalizeHomeBannerContent } from "../legacy/utils/homeBanner";
@@ -490,6 +491,7 @@ export default function Home() {
         >
           <HomeBanner key="banner" content={banner.data || normalizeHomeBannerContent()} />
           <div key="destaques" className="chat-home-secondary-grid">
+            <AvaliacaoDestaqueCard />
             <CcnaCompetitionHighlightCard onOpen={() => navigate("/competicao-ccna")} />
             <MassivoAlertCard
               conectado={connected}

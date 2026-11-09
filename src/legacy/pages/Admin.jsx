@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Bot, CheckCircle2, Eye, Gift, History, Image as ImageIcon, LayoutDashboard, LayoutTemplate, Megaphone, MessageSquareReply, MonitorSmartphone, Search, ShieldCheck, Trash2, Upload, Users, UsersRound, X, PhoneCall } from "lucide-react";
+import { Activity, Bot, CheckCircle2, FileText, Globe, Eye, Gift, History, Image as ImageIcon, LayoutDashboard, LayoutTemplate, Megaphone, MessageSquareReply, MonitorSmartphone, Search, ShieldCheck, Trash2, Upload, Users, UsersRound, X, PhoneCall } from "lucide-react";
 import InternalNoticeModal from "../components/InternalNoticeModal";
 import api from "../services/api";
 import { disconnectSocket } from "../services/socket";
@@ -11,6 +11,10 @@ import UsandoAgora from "../../components/UsandoAgora";
 import VersoesWorkspace from "../../components/VersoesWorkspace";
 import ControleIA from "../../components/ControleIA";
 import ControleTelefone from "../../components/ControleTelefone";
+import ControleFuncoes from "../../components/ControleFuncoes";
+import ControleSaude from "../../components/ControleSaude";
+import ControleRelatorio from "../../components/ControleRelatorio";
+import ControleNavegador from "../../components/ControleNavegador";
 
 const BOAS_PRATICAS_DUVIDAS_PAGINA = "/boas-praticas-duvidas";
 const perfilOptions = PERFIS_USUARIO;
@@ -19,6 +23,10 @@ const ABAS = [
   { id: "geral", rotulo: "Visão geral", Icone: LayoutDashboard },
   { id: "usuarios", rotulo: "Usuários", Icone: Users },
   { id: "grupos", rotulo: "Grupos", Icone: UsersRound },
+  { id: "funcoes", rotulo: "Funções", Icone: ShieldCheck },
+  { id: "navegador", rotulo: "Navegador", Icone: Globe },
+  { id: "saude", rotulo: "Saúde", Icone: Activity },
+  { id: "relatorio", rotulo: "Relatório", Icone: FileText },
   { id: "comunicacao", rotulo: "Comunicação", Icone: Megaphone },
   { id: "retorno", rotulo: "Retorno", Icone: MessageSquareReply },
   { id: "versoes", rotulo: "Versões", Icone: MonitorSmartphone },
@@ -2869,6 +2877,10 @@ export default function Admin() {
           {aba === "versoes" && <VersoesWorkspace />}
           {aba === "ia" && <ControleIA />}
           {aba === "telefone" && <ControleTelefone />}
+          {aba === "funcoes" && <ControleFuncoes />}
+          {aba === "navegador" && <ControleNavegador />}
+          {aba === "saude" && <ControleSaude />}
+          {aba === "relatorio" && <ControleRelatorio />}
 
           {aba === "retorno" && (
           <>

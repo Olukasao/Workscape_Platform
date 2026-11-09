@@ -39,7 +39,7 @@ import { isPinnedAgendaCertificate } from "./agendaTrust";
 import { isPinnedUpdateCertificate } from "./updateTrust";
 import { showToast, initToasts, closeAllToasts } from "./toast";
 import { initDetachedWindows, openDetached, closeDetached, setDetachedOnTop, setDetachedCompact, captureDetachedLayout, closeAllDetached, detachedContents, detachedKindOf, detachedKinds, isDetachedOpen, type DetachedKind } from "./detachedWindows";
-import { initBrowserTabs, showBrowser, updateBrowserBounds, hideBrowser, moveBrowserTabs, browserAction, browserOpenUrl, closeBrowserTabs, resetBrowserTabs, setAgendaWebSession, browserSites } from "./browserTabs";
+import { initBrowserTabs, showBrowser, updateBrowserBounds, hideBrowser, moveBrowserTabs, browserAction, browserOpenUrl, closeBrowserTabs, resetBrowserTabs, setAgendaWebSession, browserSites, isKnownSite, registerCustomSites, type BrowserSite } from "./browserTabs";
 import { deleteWorkspace, findWorkspace, listWorkspaces, saveWorkspace, tileLayout, workspaceItemSchema } from "./workspaces";
 import { attachContextMenu, configureSpellChecker } from "./contextMenu";
 import { startUpdates, consumeSilentRelaunch } from "./updates";
@@ -52,6 +52,14 @@ import { ServicoTerminal } from "./terminal";
 import { nomeParaSalvar } from "./nomeArquivo";
 import { conflitoDeRede, corrigirRotaVpn, listarVpns, redeDe, testarPorta, type LinhaTeste } from "./vpn";
 import { updateOrigin } from "./updateDeployment";
+import { ambienteTeste, nomeDoApp } from "./ambiente";
+import { abrirAssinaturas, tokenValido } from "./assinaturasJanela";
+import { abrirFicha, fecharFicha, fichaContents, fimDaLigacao } from "./fichaClienteJanela";
+// App de testes: nome e pasta de dados próprios (não divide sessão, configuração nem trava de instância com o oficial).
+if (ambienteTeste) {
+  app.setName(nomeDoApp);
+  app.setPath("userData", path.join(app.getPath("appData"), nomeDoApp));
+}
 if (!app.isPackaged && process.env.WORKSPACE_TEST_USER_DATA)
   app.setPath("userData", path.resolve(process.env.WORKSPACE_TEST_USER_DATA));
 const dev =
@@ -74,6 +82,8 @@ let win: BrowserWindow;
 let tray: Tray;
 let quitting = false;
 let activeTransfers = 0;
+/** O cartão do softphone está aberto na tela (avisado pela janela principal): atualização espera ele fechar. */
+let telefoneAbertoNaTela = false;
 let lastNotification = 0;
 let lastNotificationKey = "";
 const configPath = () => path.join(app.getPath("userData"), "config.json");
@@ -83,7 +93,7 @@ const BASE_CHANNELS = ["config:get", "api:request", "session:get", "window:zoom"
 const DETACHED_CHANNELS: Record<DetachedKind, Set<string>> = {
   agenda: new Set([...BASE_CHANNELS, "clipboard:write-text", "browser:show", "browser:bounds", "browser:hide", "browser:action", "agenda-web:session"]),
   chat: new Set([...BASE_CHANNELS, "clipboard:write-text", "clipboard:write-image", "asset:download", "localai:status", "localai:complete"]),
-  navegador: new Set([...BASE_CHANNELS, "browser:show", "browser:bounds", "browser:hide", "browser:action"]),
+  navegador: new Set([...BASE_CHANNELS, "browser:show", "browser:bounds", "browser:hide", "browser:action", "browser:sites"]),
   rede: new Set([...BASE_CHANNELS, "clipboard:write-text"]),
   dashboard: new Set([...BASE_CHANNELS, "dashboard:refresh", "external:open"]),
   resumo: new Set([...BASE_CHANNELS, "dashboard:refresh", "external:open"]),
@@ -92,6 +102,14 @@ const DETACHED_CHANNELS: Record<DetachedKind, Set<string>> = {
   telefone: new Set([...BASE_CHANNELS, "phone:state", "phone:connect", "phone:call", "phone:answer", "phone:reject", "phone:hangup", "phone:mute", "phone:hold", "phone:dtmf", "phone:transfer", "phone:dnd", "phone:devices", "phone:set-devices"]),
 };
 function trusted(e: IpcMainInvokeEvent, channel: string) {
+  // Janela da ficha do cliente: só lê configuração/sessão, consulta a API e pede para fechar.
+  if (
+    e.sender === fichaContents() &&
+    e.senderFrame === e.sender.mainFrame &&
+    (BASE_CHANNELS.includes(channel) || channel === "ficha:fechar") &&
+    isAppSender(e.senderFrame?.url || "", dev)
+  )
+    return;
   const kind = detachedKindOf(e.sender);
   if (
     kind &&
@@ -286,7 +304,7 @@ async function bootstrap() {
     ),
   );
   tray = new Tray(icon);
-  tray.setToolTip("Acessa Workspace");
+  tray.setToolTip(nomeDoApp);
   tray.setContextMenu(
     Menu.buildFromTemplate([
       {
@@ -601,7 +619,24 @@ async function bootstrap() {
       return null;
     }
   });
+  // Gerador de assinaturas de e-mail: janela própria do Workspace; o login do chat vai direto para ela, sem passar por URL.
+  handle("assinaturas:abrir", async (payload) => {
+    const { token } = z.object({ token: z.string().max(2000) }).strict().parse(payload);
+    if (!tokenValido(token)) throw new Error("Entre no Workspace de novo para abrir o gerador de assinaturas.");
+    await abrirAssinaturas(config.chat, token);
+    return { ok: true as const };
+  });
+  // Ficha do cliente na ligação: a janela principal avisa quando uma ligação externa começa e quando termina.
+  handle("ficha:abrir", async (payload) => {
+    const v = z.object({ numero: z.string().min(1).max(40), nome: z.string().max(80), direcao: z.enum(["in", "out"]), estado: z.enum(["tocando", "chamando", "conversando"]), atendidaMs: z.number().int().positive().nullable() }).strict().parse(payload);
+    await abrirFicha(v, { base: detachedBase, preload: path.join(__dirname, "preload.cjs"), icon: path.join(app.getAppPath(), process.platform === "win32" ? "assets/icon.ico" : "assets/icon.png") });
+    return { ok: true as const };
+  });
+  handle("ficha:fim", () => { fimDaLigacao(); return { ok: true as const }; });
+  handle("ficha:fechar", () => { fecharFicha(); return { ok: true as const }; });
+  app.on("before-quit", () => fecharFicha());
   handle("session:clear", async () => {
+    fecharFicha();
     await rm(tokenPath(), { force: true });
     await resetBrowserTabs();
     closeAllDetached();
@@ -727,7 +762,13 @@ async function bootstrap() {
     return captureDetachedLayout();
   });
   handle("workspaces:close-all", () => { closeAllDetached(); });
-  const siteSchema = z.enum(Object.keys(browserSites) as [keyof typeof browserSites, ...(keyof typeof browserSites)[]]);
+  const siteSchema = z.string().refine(isKnownSite, "Site desconhecido.").transform((s) => s as BrowserSite);
+  // Sites extras cadastrados pelo administrador: a tela manda a lista que veio do servidor; o endereço é revalidado aqui.
+  handle("browser:sites", (payload) => {
+    const lista = z.array(z.object({ id: z.string().max(20), label: z.string().max(30), url: z.string().max(300) }).strict()).max(30).parse(payload);
+    registerCustomSites(lista);
+    return { ok: true as const };
+  });
   const boundsSchema = z.object({ x: z.number().finite(), y: z.number().finite(), width: z.number().finite().min(0), height: z.number().finite().min(0) }).strict();
   // O Navegador pode estar na janela principal ou na destacada: tudo é relativo à janela que chamou.
   const callerWindow = (e: IpcMainInvokeEvent) => BrowserWindow.fromWebContents(e.sender);
@@ -841,16 +882,18 @@ async function bootstrap() {
     const total = z.number().int().min(0).max(1000000).parse(payload);
     app.setBadgeCount(total);
     tray.setToolTip(
-      total ? `Acessa Workspace · ${total} não lidas` : "Acessa Workspace",
+      total ? `${nomeDoApp} · ${total} não lidas` : nomeDoApp,
     );
-    win.setTitle(total ? `(${total}) Acessa Workspace` : "Acessa Workspace");
+    win.setTitle(total ? `(${total}) ${nomeDoApp}` : nomeDoApp);
     if (process.platform === "win32")
       win.setOverlayIcon(
         total ? icon : null,
         total ? `${total} mensagens não lidas` : "",
       );
   });
-  const updates = await startUpdates(win, () => { closeAllToasts(); }, () => activeTransfers === 0 && !phone.temChamadaAtiva());
+  const updates = await startUpdates(win, () => { closeAllToasts(); }, () => activeTransfers === 0 && !phone.temChamadaAtiva() && !telefoneAbertoNaTela && !isDetachedOpen("telefone"));
+  win.webContents.on("did-start-loading", () => { telefoneAbertoNaTela = false; }); // recarregou: a tela avisa de novo se o cartão estiver aberto
+  handle("phone:ui", (payload) => { telefoneAbertoNaTela = z.object({ aberto: z.boolean() }).strict().parse(payload).aberto; return { ok: true as const }; });
   handle("updates:status", () => updates.status());
   handle("device:info", () => deviceInfo());
   handle("updates:check", () => updates.check());

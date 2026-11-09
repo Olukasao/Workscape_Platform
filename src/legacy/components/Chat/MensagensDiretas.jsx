@@ -18,6 +18,7 @@ import SharedFilesPanel from './SharedFilesPanel';
 import StickerPickerButton from './StickerPickerButton';
 import useChatFileDrop from './useChatFileDrop';
 import { useRamais, ligarPara } from '../../../services/ramais';
+import { useSituacoes } from '../../../services/situacao';
 import ChatAppearanceModal from './ChatAppearanceModal';
 import { CHAT_APPEARANCE_DEFAULTS, buildChatAppearanceCssVars, mergeAppearance } from './chatAppearance';
 import {
@@ -175,6 +176,8 @@ export default function MensagensDiretas({
   const [usuarioInfo, setUsuarioInfo] = useState(null);
   const ramais = useRamais();
   const ramalDoContato = usuarioInfo?.id ? ramais.get(Number(usuarioInfo.id)) : undefined;
+  const { rotuloDe: situacaoDe } = useSituacoes();
+  const situacaoDoContato = usuarioInfo?.id ? situacaoDe(usuarioInfo.id) : '';
   const [novaMsg, setNovaMsg] = useState('');
   const [carregando, setCarregando] = useState(true);
   const [erroCarregamento, setErroCarregamento] = useState('');
@@ -1901,6 +1904,7 @@ export default function MensagensDiretas({
             <p className={styles.chatHeaderStatus} title={statusInfo.title}>
               <span className={`${styles.inlineStatusDot} ${statusInfo.className}`} />
               {statusInfo.label}
+              {situacaoDoContato ? <span className="situacao-selo">{situacaoDoContato}</span> : null}
             </p>
             {usuarioInfo?.setor_nome && (
               <div className={styles.chatHeaderGroups}>

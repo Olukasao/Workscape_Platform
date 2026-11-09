@@ -1,6 +1,6 @@
 {
   "name": "acessa-workspace-desktop",
-  "version": "0.6.8",
+  "version": "0.6.17",
   "private": true,
   "description": "Workspace corporativo AcessaNet para Windows",
   "author": "AcessaNet",
@@ -15,11 +15,13 @@
     "audit:integration": "node scripts/audit-integration.mjs",
     "start": "node scripts/start.mjs",
     "dist:win": "npm run build && node scripts/dist-win.mjs",
+    "dist:teste": "WORKSPACE_AMBIENTE=teste VITE_AMBIENTE=teste WORKSPACE_UPDATE_URL=https://192.168.1.133:8643/windows/pilot/ npm run dist:win",
     "test": "vitest run",
     "test:e2e": "playwright test",
     "test:desktop": "node scripts/smoke-electron.mjs",
     "dist:win:release": "npm run build && node scripts/dist-win.mjs --release",
-    "dev:live": "vite --config vite.live.config.ts --mode live"
+    "dev:live": "vite --config vite.live.config.ts --mode live",
+    "dev:teste": "VITE_AMBIENTE=teste vite --config vite.teste.config.ts --mode live"
   },
   "dependencies": {
     "@fontsource-variable/manrope": "^5.3.0",

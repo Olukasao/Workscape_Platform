@@ -6,6 +6,7 @@ import {
 } from '../../utils/chatDatas';
 import { removerFormatacaoMensagem } from '../../utils/formatacaoMensagem';
 import { nomesGruposUsuario } from '../../utils/usuarioGrupos';
+import { useSituacoes } from '../../../services/situacao';
 
 export default function ConversasDiretas({
   conversas,
@@ -18,6 +19,7 @@ export default function ConversasDiretas({
   mostrarUsuarios = false,
   busca = '',
 }) {
+  const { rotuloDe } = useSituacoes();
   const [menuAbertoId, setMenuAbertoId] = useState(null);
   const [conversaParaRemover, setConversaParaRemover] = useState(null);
   const [removendoId, setRemovendoId] = useState(null);
@@ -198,6 +200,7 @@ export default function ConversasDiretas({
               <div className={styles.conversaInfo}>
                 <div className={styles.conversaNameRow}>
                   <p className={styles.conversaNome}>{usuario.nome}</p>
+                  {rotuloDe(usuario.id) ? <span className="situacao-selo">{rotuloDe(usuario.id)}</span> : null}
                   {renderResumoGruposUsuario(usuario)}
                 </div>
                 <p className={styles.conversaPreview}>
@@ -260,6 +263,7 @@ export default function ConversasDiretas({
               <div className={styles.conversaInfo}>
                 <div className={styles.conversaNameRow}>
                   <p className={styles.conversaNome}>{nome}</p>
+                  {rotuloDe(conversa.usuario_outro_id) ? <span className="situacao-selo">{rotuloDe(conversa.usuario_outro_id)}</span> : null}
                   {conversa.favorito && (
                     <span className={styles.favoriteMark} title="Favorito">★</span>
                   )}

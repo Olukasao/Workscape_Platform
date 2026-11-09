@@ -47,6 +47,12 @@ declare global {
         bounds: { x: number; y: number; width: number; height: number };
       }): Promise<void>;
       browserBounds(value: { x: number; y: number; width: number; height: number }): Promise<void>;
+      assinaturasAbrir?(token: string): Promise<{ ok: boolean }>;
+      fichaAbrir?(value: { numero: string; nome: string; direcao: "in" | "out"; estado: "tocando" | "chamando" | "conversando"; atendidaMs: number | null }): Promise<{ ok: boolean }>;
+      fichaFim?(): Promise<{ ok: boolean }>;
+      fichaFechar?(): Promise<{ ok: boolean }>;
+      onFichaEvento?(callback: (evento: { tipo: "nova"; numero: string; nome: string; direcao: "in" | "out"; estado: "tocando" | "chamando" | "conversando"; atendidaMs: number | null } | { tipo: "fim"; fechaEm: number }) => void): () => void;
+      browserSites?(lista: { id: string; label: string; url: string }[]): Promise<{ ok: boolean }>;
       browserHide(): Promise<void>;
       agendaWebSession(value: { token: string }): Promise<void>;
       browserAction(value: {
@@ -115,6 +121,7 @@ declare global {
       phoneTransfer?(id: number, to: string): Promise<{ ok: boolean; erro?: string }>;
       phoneDiretorio?(lista: { ramal: string; nome: string }[]): Promise<{ ok: boolean; erro?: string }>;
       phoneDnd?(on: boolean): Promise<{ ok: boolean; erro?: string }>;
+      phoneUi?(aberto: boolean): Promise<{ ok: boolean }>;
       phoneDevices?(): Promise<{ ok: boolean; erro?: string }>;
       phoneSetDevices?(value: { capture?: number; playback?: number }): Promise<{ ok: boolean; erro?: string }>;
       phoneDiagnostico?(): Promise<{ motor: string | null; log: string[] }>;

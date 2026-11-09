@@ -112,6 +112,7 @@ export async function startUpdates(window: BrowserWindow, prepareQuit: () => voi
         phase: current.phase,
         obrigatoria: !!current.forced?.obrigatoria,
         canInstall: canInstall(),
+        ignorarRegra: !!current.forced?.ignorarRegra,
         idleSeconds: powerMonitor.getSystemIdleTime(),
         windowVisible: visible,
       })) return;
@@ -146,7 +147,7 @@ export async function startUpdates(window: BrowserWindow, prepareQuit: () => voi
         await rememberSignal(signal.id);
         // Na primeira leitura o sinal é só a linha de base: o que já existia não é reexecutado.
         if (first) return;
-        controller?.setForced({ obrigatoria: signal.obrigatoria, mensagem: signal.mensagem });
+        controller?.setForced({ obrigatoria: signal.obrigatoria, mensagem: signal.mensagem, ignorarRegra: signal.ignorarRegra });
         void controller?.check();
       } catch { /* Sem rede ou sinal inválido: tenta de novo no próximo ciclo. */ }
       finally { polling = false; }

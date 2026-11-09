@@ -27,4 +27,26 @@ if (feed) {
     config.forceCodeSigning = true;
   }
 }
+// App de TESTES: instalado ao lado do oficial, com nome, chaves de registro e executável próprios.
+if (process.env.WORKSPACE_AMBIENTE === 'teste') {
+  const path = require('node:path');
+  if (!feed || !/\/windows\/pilot\/?$/.test(feed)) throw new Error('O app de testes só pode usar o canal /windows/pilot/.');
+  const dir = path.join(__dirname, 'build', 'teste');
+  fs.mkdirSync(dir, { recursive: true });
+  const trocar = (texto) => texto
+    .replaceAll('Acessa Workspace.exe', 'Acessa Workspace Teste.exe')
+    .replaceAll('Software\\AcessaWorkspace', 'Software\\AcessaWorkspaceTeste')
+    .replaceAll('Uninstall\\AcessaWorkspace', 'Uninstall\\AcessaWorkspaceTeste')
+    .replaceAll('Acessa Workspace', 'Acessa Workspace Teste')
+    .replaceAll('Acessa Workspace Teste Teste', 'Acessa Workspace Teste')
+    .replace('${PROJECT_DIR}/assets/prepare-update.ps1', dir.replaceAll('\\', '/') + '/prepare-update.ps1');
+  fs.writeFileSync(path.join(dir, 'installer.nsh'), trocar(fs.readFileSync(path.join(__dirname, 'assets/installer.nsh'), 'utf8')));
+  fs.writeFileSync(path.join(dir, 'prepare-update.ps1'), trocar(fs.readFileSync(path.join(__dirname, 'assets/prepare-update.ps1'), 'utf8')));
+  config.appId = 'br.com.acessanet.workspace.teste';
+  config.productName = 'Acessa Workspace Teste';
+  config.nsis.include = path.join(dir, 'installer.nsh');
+  config.nsis.menuCategory = 'Acessa Workspace Teste';
+  config.portable.artifactName = 'AcessaWorkspaceTeste-Portable.exe';
+  config.directories = { ...config.directories, output: 'release-teste' };
+}
 module.exports = config;

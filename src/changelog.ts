@@ -8,6 +8,78 @@ export interface ChangelogEntry {
 
 export const changelog: ChangelogEntry[] = [
   {
+    versao: "0.6.17",
+    data: "2026-11-09",
+    itens: [
+      "Ficha do cliente com visual novo: a janela mostra quem está ligando, o tempo de ligação, a situação do contrato, a última avaliação num medidor de sinal e os chamados numa linha do tempo, com os abertos em destaque. Fica em tema escuro para aparecer bem sobre qualquer tela.",
+      "Ficha do cliente: o cliente é achado pelo telefone no SGP e, se ele tem mais de um contrato, a ficha junta os chamados de todos.",
+      "Ligação discada sem DDD: o sistema descobre o DDD sozinho por uma lista dos telefones dos clientes (só os números, atualizada toda madrugada) e pelos números que já identificou antes. Se houver mais de um DDD possível, a ficha pergunta qual é, e se não achar, pede o DDD. A lista aparece em Administração > Saúde, com botão para atualizar na hora.",
+    ],
+  },
+  {
+    versao: "0.6.16",
+    data: "2026-11-09",
+    itens: [
+      "Navegador por setor: na Administração, aba \"Navegador\", o administrador escolhe quais sites cada setor vê (SGP, OLT, Zabbix etc.) e pode cadastrar sites novos para liberar a quem precisar.",
+      "Telefone: a ficha do cliente agora abre numa janela flutuante própria, sempre por cima (por exemplo, sobre o SGP), quando uma ligação de número externo toca ou é feita, sem tirar o foco do que você está fazendo. Ela fecha sozinha alguns segundos depois da ligação. Dá para desligar pelo botão de ficha no cabeçalho do telefone.",
+      "Assinaturas de e-mail: o botão \"Criar assinatura\" voltou a funcionar. O gerador abre numa janela do Workspace, já com a lista de membros do chat para preencher nome, e-mail e foto.",
+    ],
+  },
+  {
+    versao: "0.6.15",
+    data: "2026-11-09",
+    itens: [
+      "Avaliações: os botões \"Destacar no Início\" e o novo \"Notificar equipe\" agora ficam bem visíveis embaixo de cada avaliação (para administradores). Notificar equipe manda a avaliação, como aviso, para todo mundo que está online.",
+    ],
+  },
+  {
+    versao: "0.6.14",
+    data: "2026-11-09",
+    itens: [
+      "Avaliações: quando um cliente avalia o atendimento, chega uma notificação como a de mensagem (no sino e no canto da tela) para quem tem a área Chamados. Clicar abre a aba Avaliações.",
+      "Avaliações em destaque: o administrador pode destacar uma avaliação em Chamados > Avaliações, e ela aparece num cartão no Início para todo mundo.",
+      "Telefone: ao ligar ou receber uma ligação de número externo, o cartão mostra o cliente do SGP, os últimos chamados e a última avaliação. Se o número ainda não é de nenhum cliente, dá para vincular pelo contrato e ele aparece sozinho nas próximas ligações.",
+      "Situação: na barra lateral você marca \"em almoço\", \"em visita\", \"em reunião\" ou \"ocupado\". \"Em ligação\" aparece sozinho enquanto você está no telefone. Todos veem no chat e na nova aba Equipe do telefone, que lista os ramais.",
+      "Administração: nova aba \"Saúde\" mostra se o chat, o banco, o site, o SGP e o servidor de atualizações estão respondendo, e nova aba \"Relatório\" liga o resumo semanal da gestão, enviado pelo chat com nota média, chamados atrasados, massivos e contratações.",
+    ],
+  },
+  {
+    versao: "0.6.13",
+    data: "2026-11-09",
+    itens: [
+      "Atualizações: o Workspace não reinicia sozinho enquanto o telefone estiver aberto na tela, tocando, chamando ou em ligação. Fechando o telefone, a atualização acontece.",
+      "Administração > Versões: nova opção \"Ignorar a regra de ligação\" ao forçar a atualização, para casos em que a TI precisa atualizar mesmo com telefone aberto ou ligação em andamento.",
+    ],
+  },
+  {
+    versao: "0.6.12",
+    data: "2026-11-09",
+    itens: [
+      "Depois de cada atualização, o Workspace mostra um aviso no canto da tela com as novidades da versão. Ele aparece uma vez e some quando você clica em Entendi.",
+    ],
+  },
+  {
+    versao: "0.6.11",
+    data: "2026-11-09",
+    itens: [
+      "Chamados > Avaliações com visual novo: nota média em destaque, notas por técnico e os comentários dos clientes em primeiro plano, com faixa verde, amarela ou vermelha conforme a nota.",
+    ],
+  },
+  {
+    versao: "0.6.10",
+    data: "2026-11-09",
+    itens: [
+      "Chamados: nova aba \"Avaliações\" com as notas e comentários que os clientes dão ao atendimento no site e no app, com nota média, nota por técnico e filtros.",
+    ],
+  },
+  {
+    versao: "0.6.9",
+    data: "2026-11-09",
+    itens: [
+      "Administração: nova aba \"Funções\". Para cada setor, o administrador marca o que aparece no Workspace (por exemplo, o Atendimento não vê Rede (OLT)). Setor sem função salva continua vendo tudo.",
+    ],
+  },
+  {
     versao: "0.6.8",
     data: "2026-11-06",
     itens: [

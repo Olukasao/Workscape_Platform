@@ -10,7 +10,7 @@ export interface UpdateStatus {
   percent?: number;
   message: string;
   /** Presente quando a TI forçou a atualização para todos os computadores. */
-  forced?: { obrigatoria: boolean; mensagem?: string };
+  forced?: { obrigatoria: boolean; mensagem?: string; ignorarRegra?: boolean };
 }
 
 /** Sinal publicado pela TI no canal (signal.json) para forçar a verificação imediata nos computadores. */
@@ -19,9 +19,10 @@ export function parseUpdateSignal(input: unknown) {
     id: z.string().trim().min(1).max(64),
     obrigatoria: z.boolean().optional(),
     mensagem: z.string().trim().max(200).optional(),
+    ignorarRegra: z.boolean().optional(),
   }).passthrough().safeParse(input);
   return result.success
-    ? { id: result.data.id, obrigatoria: result.data.obrigatoria === true, mensagem: result.data.mensagem || undefined }
+    ? { id: result.data.id, obrigatoria: result.data.obrigatoria === true, mensagem: result.data.mensagem || undefined, ignorarRegra: result.data.ignorarRegra === true }
     : null;
 }
 
@@ -79,7 +80,10 @@ export function shouldApplySilently(input: {
   canInstall: boolean;
   idleSeconds: number;
   windowVisible: boolean;
+  /** A TI mandou atualizar ignorando ligação, telefone aberto e envios: reinicia assim que estiver pronta. */
+  ignorarRegra?: boolean;
 }) {
+  if (input.phase === "ready" && !input.obrigatoria && input.ignorarRegra) return true;
   if (input.phase !== "ready" || input.obrigatoria || !input.canInstall) return false;
   return !input.windowVisible || input.idleSeconds >= SILENT_IDLE_SECONDS;
 }

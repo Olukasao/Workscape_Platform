@@ -44,6 +44,16 @@ contextBridge.exposeInMainWorld("desktop", {
   agendaWebSession: (value: unknown) => ipcRenderer.invoke("agenda-web:session", value),
   browserHide: () => ipcRenderer.invoke("browser:hide"),
   browserAction: (value: unknown) => ipcRenderer.invoke("browser:action", value),
+  browserSites: (value: unknown) => ipcRenderer.invoke("browser:sites", value),
+  assinaturasAbrir: (token: string) => ipcRenderer.invoke("assinaturas:abrir", { token }),
+  fichaAbrir: (value: unknown) => ipcRenderer.invoke("ficha:abrir", value),
+  fichaFim: () => ipcRenderer.invoke("ficha:fim"),
+  fichaFechar: () => ipcRenderer.invoke("ficha:fechar"),
+  onFichaEvento: (callback: (evento: unknown) => void) => {
+    const handler = (_e: unknown, evento: unknown) => callback(evento);
+    ipcRenderer.on("ficha:evento", handler);
+    return () => ipcRenderer.removeListener("ficha:evento", handler);
+  },
   onBrowserState: (callback: (value: unknown) => void) => {
     const listener = (_event: unknown, value: unknown) => callback(value);
     ipcRenderer.on("browser:state", listener);
@@ -97,6 +107,7 @@ contextBridge.exposeInMainWorld("desktop", {
   phoneTransfer: (id: number, to: string) => ipcRenderer.invoke("phone:transfer", { id, to }),
   phoneDiretorio: (lista: { ramal: string; nome: string }[]) => ipcRenderer.invoke("phone:diretorio", lista),
   phoneDnd: (on: boolean) => ipcRenderer.invoke("phone:dnd", { on }),
+  phoneUi: (aberto: boolean) => ipcRenderer.invoke("phone:ui", { aberto }),
   phoneDevices: () => ipcRenderer.invoke("phone:devices"),
   phoneSetDevices: (value: { capture?: number; playback?: number }) => ipcRenderer.invoke("phone:set-devices", value),
   phoneDiagnostico: () => ipcRenderer.invoke("phone:diagnostico"),

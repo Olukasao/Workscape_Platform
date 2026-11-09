@@ -1,14 +1,17 @@
 import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent as TeclaEvento, type PointerEvent } from "react";
-import { BellOff, Copy, Delete, Grid3x3, Mic, MicOff, Pause, Phone, PhoneCall, PhoneForwarded, PhoneIncoming, PhoneMissed, PhoneOff, PhoneOutgoing, Play, X, ExternalLink } from "lucide-react";
+import { UserSearch, BellOff, Copy, Delete, Grid3x3, Mic, MicOff, Pause, Phone, PhoneCall, PhoneForwarded, PhoneIncoming, PhoneMissed, PhoneOff, PhoneOutgoing, Play, X, ExternalLink } from "lucide-react";
 import type { PhoneCall as Chamada } from "../../electron/phone";
 import { useTelefone } from "../stores/telefone";
 import { definirNaoPerturbe, iniciarTelefone, marcarVistas, observarTelefone, useNiveis, usePerdidasNovas, usePhone } from "../stores/phone";
-import { useNomesPorRamal } from "../services/ramais";
+import { useDiretorio, useNomesPorRamal } from "../services/ramais";
+import { useSituacoes } from "../services/situacao";
+import { definirFichaAutomatica, fichaDisponivel, useFichaAutomatica } from "../services/fichaAuto";
 import { iniciais, identificarChamador, nivelParaAnel } from "../services/chamador";
 import { duracaoCurta, foiPerdida, rotuloDaChamada, type ChamadaRecente } from "../services/chamadasRecentes";
 import { useSession } from "../stores/workspace";
 import { useArrastar } from "./useArrastar";
 import { numeroDeSaida } from "../../electron/prefixoSaida";
+import ClienteDaLigacao from "./ClienteDaLigacao";
 import { JANELA_DESTACADA, destacar, podeDestacar, useDestacada } from "../services/janelaDestacada";
 
 const TECLAS = [
@@ -106,8 +109,32 @@ function AvatarChamada({ titulo, ativo }: { titulo: string; ativo: boolean }) {
 
 const FILAS: [string, string][] = [["Suporte", "100001"], ["Financeiro", "10002"], ["Comercial", "10003"]];
 
+/** Ramais da equipe com o que cada um está fazendo (disponível, em ligação, almoço…). Clique para ligar. */
+function EquipeRamais({ podeLigar, aoLigar }: { podeLigar: boolean; aoLigar: (ramal: string) => void }) {
+  const diretorio = useDiretorio();
+  const { rotuloDe, mapa } = useSituacoes();
+  const eu = useSession((s) => s.user?.id);
+  const lista = [...diretorio].filter((r) => r.usuarioId !== eu).sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
+  if (!lista.length) return <p className="telefone-vazio">Nenhum ramal cadastrado ainda.</p>;
+  return (
+    <ul className="telefone-equipe" aria-label="Ramais da equipe">
+      {lista.map((r) => {
+        const s = mapa.get(r.usuarioId)?.situacao ?? null;
+        return (
+          <li key={r.ramal}>
+            <span className={`equipe-ponto ${s === "ligacao" ? "ligacao" : s ? "ocupado" : "livre"}`} aria-hidden="true" />
+            <div><strong>{r.nome}</strong><small>Ramal {r.ramal} · {rotuloDe(r.usuarioId) || "Disponível"}</small></div>
+            <button type="button" disabled={!podeLigar} onClick={() => aoLigar(r.ramal)} aria-label={`Ligar para ${r.nome}`} title={s === "ligacao" ? "Está em outra ligação" : `Ligar para o ramal ${r.ramal}`}><PhoneCall size={15} aria-hidden="true" /></button>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
 /** Controles de uma ligação em andamento. A sessão SIP fica no processo principal: trocar de tela não derruba a chamada. */
 function EmChamada({ chamada, equipe }: { chamada: Chamada; equipe: Map<string, string> }) {
+  const fichaAuto = useFichaAutomatica();
   const [teclado, setTeclado] = useState(false);
   const [transferir, setTransferir] = useState(false);
   const [destino, setDestino] = useState("");
@@ -128,6 +155,7 @@ function EmChamada({ chamada, equipe }: { chamada: Chamada; equipe: Map<string, 
         {quem.sub ? <small>{quem.sub}</small> : null}
         <span className="telefone-chamada-estado" aria-live="polite">{estado ?? <Cronometro desde={chamada.atendidaMs} />}</span>
       </div>
+      {!(fichaAuto && fichaDisponivel()) ? <ClienteDaLigacao numero={chamada.numero} externo={quem.externo} /> : null}
       <div className="telefone-chamada-acoes" role="group" aria-label="Controles da chamada">
         <button type="button" aria-pressed={chamada.mudo} title={chamada.mudo ? "Ligar o microfone" : "Silenciar o microfone"} onClick={() => void executar(d?.phoneMute?.(chamada.id, !chamada.mudo))}>
           {chamada.mudo ? <MicOff size={19} aria-hidden="true" /> : <Mic size={19} aria-hidden="true" />}<span>Mudo</span>
@@ -188,8 +216,9 @@ export default function TelefoneFlutuante() {
   const [numero, setNumero] = useState("");
   const [aviso, setAviso] = useState("");
   const [ligando, setLigando] = useState(false);
-  const [aba, setAba] = useState<"teclado" | "recentes">("teclado");
+  const [aba, setAba] = useState<"teclado" | "recentes" | "equipe">("teclado");
   const [escala, setEscala] = useState(escalaSalva);
+  const fichaAuto = useFichaAutomatica();
   const perdidasNovas = usePerdidasNovas();
   const nomes = useNomesPorRamal();
   const campo = useRef<HTMLInputElement>(null);
@@ -295,6 +324,11 @@ export default function TelefoneFlutuante() {
           ) : null}
         </div>
         <span className="espaco" />
+        {fichaDisponivel() ? (
+          <button type="button" className="telefone-dnd" aria-pressed={fichaAuto} aria-label="Ficha do cliente em janela própria" title={fichaAuto ? "Ficha do cliente abre sozinha numa janela quando uma ligação externa toca. Clique para desligar." : "Ficha do cliente desligada: os dados aparecem dentro do telefone. Clique para abrir numa janela própria."} onClick={() => definirFichaAutomatica(!fichaAuto)}>
+            <UserSearch size={16} aria-hidden="true" />
+          </button>
+        ) : null}
         {temRamal ? (
           <button type="button" className="telefone-dnd" aria-pressed={phone.naoPerturbe} aria-label="Não perturbe" title={phone.naoPerturbe ? "Não perturbe ligado: clique para voltar a receber chamadas" : "Não perturbe: as chamadas recebidas não tocam"} onClick={() => void alternarNaoPerturbe()}>
             <BellOff size={16} aria-hidden="true" />
@@ -326,8 +360,9 @@ export default function TelefoneFlutuante() {
               Recentes
               {perdidasNovas > 0 && aba !== "recentes" ? <span className="telefone-abas-contador" aria-label={`${perdidasNovas} perdidas`}>{perdidasNovas > 9 ? "9+" : perdidasNovas}</span> : null}
             </button>
+            <button type="button" role="tab" aria-selected={aba === "equipe"} onClick={() => setAba("equipe")}>Equipe</button>
           </div>
-          {aba === "recentes" ? <Recentes nomes={nomes} podeLigar={pelaCentral} aoLigar={(n) => void religar(n)} /> : (
+          {aba === "equipe" ? <EquipeRamais podeLigar={pelaCentral} aoLigar={(n) => void religar(n)} /> : aba === "recentes" ? <Recentes nomes={nomes} podeLigar={pelaCentral} aoLigar={(n) => void religar(n)} /> : (
           <form onSubmit={ligar}>
             <p className="telefone-zero" role="note">
               <span className="telefone-zero-marca" aria-hidden="true">0</span>

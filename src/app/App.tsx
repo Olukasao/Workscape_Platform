@@ -45,6 +45,7 @@ import { initializeSocket, connectSocket, disconnectSocket, syncSocketUser } fro
 import { useRealtime } from "../services/realtime";
 import { useChatData, unreadCount } from "../services/data";
 import LegacyThemeBridge from "../components/LegacyThemeBridge";
+import FichaClienteJanela from "../components/FichaClienteJanela";
 import { ErrorBoundary } from "../components/ErrorBoundary";
 import { Button } from "../components/ui/button";
 import Login from "../modules/Login";
@@ -69,6 +70,8 @@ import AtalhosTeclado from "../components/AtalhosTeclado";
 import TelefoneFlutuante, { TelefoneJanela } from "../components/TelefoneFlutuante";
 import TelefoneMotor from "../components/TelefoneMotor";
 import NovidadeTelefone from "../components/NovidadeTelefone";
+import NovidadesVersao from "../components/NovidadesVersao";
+import AmbienteTeste from "../components/AmbienteTeste";
 import ChamadaRecebida from "../components/ChamadaRecebida";
 import AlarmeLembretes from "../components/AlarmeLembretes";
 import TourGuiado from "../components/TourGuiado";
@@ -77,14 +80,16 @@ import UpdateBanner from "../components/UpdateBanner";
 import CelebracaoVenda from "../components/CelebracaoVenda";
 import EfeitosSonorosRemotos from "../components/EfeitosSonorosRemotos";
 import { useContratacoes, useContratacoesFeed } from "../services/contratacoes";
+import { useAvaliacoesFeed } from "../services/avaliacoes";
 const Agenda = lazy(() => import("../modules/Agenda"));
 const Profile = lazy(() => import("../modules/Profile"));
 const Notifications = lazy(() => import("../modules/Notifications"));
 import { useAccess, allowedIds } from "../services/access";
+import { useFuncoes } from "../services/funcoes";
 import { useDashboardConnection } from "../services/dashboard";
 import { useIncidentesFiltrados } from "../services/redeOlt";
 import { useSobreposicao } from "../services/sobreposicao";
-import { JANELA_DESTACADA, MINIAPPS, useDestacada, useSincronizacaoAgenda, useSincronizacaoGeral, usePresencaChat, destacar, reintegrar, trazerDeVolta, fixarSobre, type JanelaKind } from "../services/janelaDestacada";
+import { JANELA_FICHA, JANELA_DESTACADA, MINIAPPS, useDestacada, useSincronizacaoAgenda, useSincronizacaoGeral, usePresencaChat, destacar, reintegrar, trazerDeVolta, fixarSobre, type JanelaKind } from "../services/janelaDestacada";
 import ModuleLinkBoundary from "../components/ModuleLinkBoundary";
 import { Titlebar } from "./shell/Titlebar";
 import { Headset, SquareTerminal, ExternalLink, PanelTopOpen, PanelTopClose, Pin, PinOff, Maximize2, Minimize2 } from "lucide-react";
@@ -138,6 +143,7 @@ function Shell() {
   useRenovarSessao();
   useDashboardConnection();
   useContratacoesFeed();
+  useAvaliacoesFeed();
   const contratacoesPendentes = useContratacoes((s) => s.pendentes);
   const user = useSession((s) => s.user),
     loc = useLocation(),
@@ -247,26 +253,28 @@ function Shell() {
     window.addEventListener("keydown", key);
     return () => window.removeEventListener("keydown", key);
   }, [toggleSidebar]);
+  const { pode } = useFuncoes();
   const allowed = allowedIds(access.data);
   const agendaAllowed =
-    allowed.has("agenda") ||
-    allowed.has("agenda-tecnicos") ||
-    user?.perfil === "admin";
+    pode("agenda") &&
+    (allowed.has("agenda") ||
+      allowed.has("agenda-tecnicos") ||
+      user?.perfil === "admin");
   const navGroups: NavGroup[] = [
     {
       label: "Visão geral",
       entries: [
         { path: "/", label: "Início", icon: HomeIcon },
-        { path: "/resumo", label: "Resumo", icon: LayoutDashboard },
-        { path: "/dashboard", label: "Dashboard", icon: ChartNoAxesCombined },
-        { path: "/assistente", label: "Inteligência Artificial", icon: Bot },
-        { path: "/lembretes", label: "Lembretes", icon: AlarmClock },
+        ...(pode("resumo") ? [{ path: "/resumo", label: "Resumo", icon: LayoutDashboard }] : []),
+        ...(pode("dashboard") ? [{ path: "/dashboard", label: "Dashboard", icon: ChartNoAxesCombined }] : []),
+        ...(pode("assistente") ? [{ path: "/assistente", label: "Inteligência Artificial", icon: Bot }] : []),
+        ...(pode("lembretes") ? [{ path: "/lembretes", label: "Lembretes", icon: AlarmClock }] : []),
       ],
     },
     {
       label: "Comunicação",
       entries: [
-        { path: "/chat", label: "Chat Interno", icon: MessageSquare, badge: unread },
+        ...(pode("chat") ? [{ path: "/chat", label: "Chat Interno", icon: MessageSquare, badge: unread }] : []),
       ],
     },
     {
@@ -275,22 +283,22 @@ function Shell() {
         ...(agendaAllowed
           ? [{ path: "/agenda", label: "Agenda de Técnicos", icon: CalendarDays }]
           : []),
-        { path: "/contratacoes", label: "Contratações", icon: ClipboardCheck, badge: contratacoesPendentes },
-        { path: "/chamados", label: "Chamados", icon: ClipboardList },
+        ...(pode("contratacoes") ? [{ path: "/contratacoes", label: "Contratações", icon: ClipboardCheck, badge: contratacoesPendentes }] : []),
+        ...(pode("chamados") ? [{ path: "/chamados", label: "Chamados", icon: ClipboardList }] : []),
         ...(rede.data && !rede.data.negado
           ? [{ path: "/rede", label: "Rede (OLT)", icon: RadioTower, badge: redeVisiveis.length }]
           : []),
-        { path: "/tools", label: "Ferramentas", icon: Wrench },
-        ...(window.desktop ? [{ path: "/terminal", label: "Terminal", icon: SquareTerminal }] : []),
-        { path: "/navegador", label: "Navegador", icon: Globe },
-        ...(window.desktop ? [{ path: "/suporte", label: "Suporte T.I.", icon: Headset }] : []),
+        ...(pode("tools") ? [{ path: "/tools", label: "Ferramentas", icon: Wrench }] : []),
+        ...(pode("terminal") && window.desktop ? [{ path: "/terminal", label: "Terminal", icon: SquareTerminal }] : []),
+        ...(pode("navegador") ? [{ path: "/navegador", label: "Navegador", icon: Globe }] : []),
+        ...(pode("suporte") && window.desktop ? [{ path: "/suporte", label: "Suporte T.I.", icon: Headset }] : []),
       ],
     },
     {
       label: "Conteúdo",
       entries: [
-        { path: "/cursos", label: "Cursos", icon: GraduationCap },
-        { path: "/marketing", label: "Marketing", icon: Megaphone },
+        ...(pode("cursos") ? [{ path: "/cursos", label: "Cursos", icon: GraduationCap }] : []),
+        ...(pode("marketing") ? [{ path: "/marketing", label: "Marketing", icon: Megaphone }] : []),
       ],
     },
     {
@@ -303,6 +311,12 @@ function Shell() {
       ],
     },
   ];
+  // Função do setor: quem não tem o módulo liberado volta ao Início se abrir o endereço na mão ou por um atalho.
+  const moduloDaRota = ["resumo", "dashboard", "assistente", "lembretes", "chat", "agenda", "contratacoes", "chamados", "rede", "tools", "terminal", "navegador", "suporte", "cursos", "marketing"].find((m) => path === `/${m}` || path.startsWith(`/${m}/`));
+  const rotaBloqueada = !!moduloDaRota && !pode(moduloDaRota);
+  useEffect(() => {
+    if (rotaBloqueada) navigate("/", { replace: true });
+  }, [rotaBloqueada, navigate]);
   const entries: NavEntry[] = navGroups.flatMap((g) => g.entries);
   const system: NavEntry[] = [
     { path: "/profile", label: "Perfil", icon: UserRound },
@@ -321,6 +335,8 @@ function Shell() {
       <AssistenteFlutuante />
       <TelefoneMotor />
       <NovidadeTelefone />
+      <NovidadesVersao />
+      <AmbienteTeste />
       <AtalhosTeclado />
       <RemotoMotor />
       <AvisoChamadosAtrasados ativo={agendaAllowed} />
@@ -802,6 +818,16 @@ function JanelaDestacada({ kind }: { kind: JanelaKind }) {
   );
 }
 export default function App() {
+  if (JANELA_FICHA)
+    return (
+      <QueryClientProvider client={query}>
+        <ErrorBoundary>
+          <LegacyThemeBridge>
+            <FichaClienteJanela />
+          </LegacyThemeBridge>
+        </ErrorBoundary>
+      </QueryClientProvider>
+    );
   if (JANELA_DESTACADA)
     return (
       <QueryClientProvider client={query}>

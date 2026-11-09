@@ -25,3 +25,7 @@ docs/live-preview.png
 
 # Binário de terceiros do suporte remoto (baixado do Release oficial, 1.5.1, SHA256 319206042390ebfcba934cf0baa2f612f34de463c78c843b7cb8c22097c4bf7b)
 resources/remote-win-x64/*.exe
+
+# Builds do ambiente de testes (gerados)
+release-teste/
+build/teste/

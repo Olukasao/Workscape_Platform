@@ -81,7 +81,7 @@ export class UpdateController {
   /** Instala a versão mais nova: antes de reiniciar, confere uma última vez se saiu algo mais novo que o baixado. */
   async installLatest() {
     if (this.status.phase !== "ready") throw new Error("A atualização ainda não está pronta.");
-    if (!this.canInstall()) throw new Error("Aguarde o envio, o download ou a ligação em andamento antes de reiniciar.");
+    if (!this.forced?.ignorarRegra && !this.canInstall()) throw new Error("Aguarde o envio, o download ou a ligação em andamento, ou feche o telefone, antes de reiniciar.");
     const deadline = Date.now() + 120_000;
     while (this.busy && Date.now() < deadline) await new Promise((resolve) => setTimeout(resolve, 250));
     await Promise.race([this.check(), new Promise<void>((resolve) => setTimeout(resolve, 120_000))]);
@@ -89,7 +89,7 @@ export class UpdateController {
   }
   install() {
     if (this.status.phase !== "ready") throw new Error("A atualização ainda não está pronta.");
-    if (!this.canInstall()) throw new Error("Aguarde o envio, o download ou a ligação em andamento antes de reiniciar.");
+    if (!this.forced?.ignorarRegra && !this.canInstall()) throw new Error("Aguarde o envio, o download ou a ligação em andamento, ou feche o telefone, antes de reiniciar.");
     this.set({ ...this.status, phase: "installing", message: "Reiniciando para concluir a atualização…" });
     this.prepareQuit();
     this.updater.quitAndInstall(true, true);

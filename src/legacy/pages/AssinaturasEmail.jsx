@@ -1,12 +1,35 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, ExternalLink, Mail, ShieldCheck } from 'lucide-react';
+import { useServers } from '../../stores/workspace';
 import { useInternalBack } from '../utils/internalNavigation';
 import styles from '../styles/AssinaturasEmail.module.css';
 
 export default function AssinaturasEmail() {
   const navigate = useNavigate();
   const voltarPaginaInterna = useInternalBack('/chat');
+  const [erro, setErro] = useState('');
+  const [abrindo, setAbrindo] = useState(false);
+
+  // No app Windows o gerador abre numa janela do Workspace (já com o login do chat, para listar os membros).
+  // Fora do app (navegador), abre a página no servidor do chat.
+  const abrirGerador = async () => {
+    setErro('');
+    setAbrindo(true);
+    try {
+      const token = sessionStorage.getItem('token') || '';
+      if (window.desktop?.assinaturasAbrir) {
+        await window.desktop.assinaturasAbrir(token);
+      } else {
+        const origem = useServers.getState().config.chat || window.location.origin;
+        window.open(`${origem}/email-signatures/index.html`, '_blank', 'noopener,noreferrer');
+      }
+    } catch (e) {
+      setErro(String(e?.message || '').replace(/^Error invoking remote method '[^']+': (Error: )?/, '') || 'Não foi possível abrir o gerador.');
+    } finally {
+      setAbrindo(false);
+    }
+  };
 
   useEffect(() => {
     if (!sessionStorage.getItem('token')) {
@@ -48,25 +71,22 @@ export default function AssinaturasEmail() {
           <button
             type="button"
             className={styles.primaryButton}
-            onClick={() => window.open('/email-signatures/index.html', '_blank', 'noopener,noreferrer')}
+            disabled={abrindo}
+            onClick={abrirGerador}
           >
-            Criar assinatura
+            {abrindo ? 'Abrindo…' : 'Criar assinatura'}
             <ExternalLink size={16} />
           </button>
         </section>
+        {erro ? <p role="alert" style={{ color: '#b42318', margin: '0 0 8px' }}>{erro}</p> : null}
 
         <section className={styles.readmeBox}>
           <div>
-            <strong>Guia de edição</strong>
-            <p>Consulte o README para detalhes sobre Gmail, Outlook, imagens e links preenchidos.</p>
+            <strong>Como usar a assinatura pronta</strong>
+            <p><b>Gmail:</b> Configurações, Ver todas as configurações, Geral, Assinatura, cole e salve.</p>
+            <p><b>Outlook:</b> Arquivo, Opções, Email, Assinaturas, cole no campo e salve.</p>
+            <p>Cole com Ctrl + V (não como texto simples) para manter imagens e links. Revise cargo, telefone e foto antes de copiar.</p>
           </div>
-          <button
-            type="button"
-            className={styles.secondaryButton}
-            onClick={() => window.open('/email-signatures/README.md', '_blank', 'noopener,noreferrer')}
-          >
-            Abrir README
-          </button>
         </section>
       </main>
     </div>

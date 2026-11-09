@@ -5,6 +5,7 @@ import { clsx } from "clsx";
 import logo from "../../assets/brand/logo-acessanet.png";
 import type { User } from "../../stores/workspace";
 import { Avatar, Kbd, StatusDot } from "../../components/ui/primitives";
+import SituacaoUsuario from "../../components/SituacaoUsuario";
 
 export type NavEntry = {
   path: string;
@@ -124,6 +125,7 @@ export function Sidebar({
       <div className="sidebar-bottom">
         <span className="nav-label">Sistema</span>
         <NavList entries={system} active={active} label="Sistema" />
+        <SituacaoUsuario />
         <div className="sidebar-status" data-live={live || undefined}>
           <StatusDot tone={live ? "live" : "warn"} pulse={!live} />
           <span className="nav-text">{status}</span>

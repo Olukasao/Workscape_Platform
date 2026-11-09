@@ -22,6 +22,9 @@ export const JANELA_DESTACADA: JanelaKind | null = (() => {
   return m ? (m[1] as JanelaKind) : null;
 })();
 
+/** Janela flutuante da ficha do cliente na ligação (não é um módulo destacável). */
+export const JANELA_FICHA = typeof location !== "undefined" && /^#\/ficha\?/.test(location.hash);
+
 const canal = (nome: string) => {
   try {
     return new BroadcastChannel(nome);

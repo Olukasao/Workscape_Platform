@@ -16,7 +16,25 @@ export const browserSites = {
   // Agenda original (versão web) dentro do app: não aparece nos atalhos do Navegador; abre pelo botão "Versão web" da agenda.
   agendaweb: { label: "Agenda (versão web)", url: agendaOrigin },
 } as const;
-export type BrowserSite = keyof typeof browserSites;
+export type BuiltinSite = keyof typeof browserSites;
+/** Sites padrão do app mais os extras que o administrador cadastrou (ids "site-<número>"). */
+export type BrowserSite = BuiltinSite | `site-${number}`;
+const customSites = new Map<string, { label: string; url: string }>();
+export const isKnownSite = (site: string): site is BrowserSite => site in browserSites || customSites.has(site);
+const siteUrl = (site: BrowserSite) => (site in browserSites ? browserSites[site as BuiltinSite].url : customSites.get(site)?.url ?? "about:blank");
+/** Troca a lista de sites extras (vinda do servidor). Só aceita http/https; sites que saíram da lista são descarregados. */
+export function registerCustomSites(list: { id: string; label: string; url: string }[]) {
+  const next = new Map<string, { label: string; url: string }>();
+  for (const s of list.slice(0, 30)) {
+    const url = parseWebUrl(String(s.url ?? ""));
+    if (/^site-\d{1,9}$/.test(String(s.id)) && url) next.set(s.id, { label: String(s.label).slice(0, 30), url });
+  }
+  for (const id of [...customSites.keys()]) {
+    if (next.get(id)?.url !== customSites.get(id)?.url) { unload(id as BrowserSite); entries.delete(id as BrowserSite); }
+  }
+  customSites.clear();
+  for (const [id, v] of next) customSites.set(id, v);
+}
 export type BrowserState = {
   site: BrowserSite;
   url: string;
@@ -66,7 +84,7 @@ export const searchUrl = (text: string) =>
 function entry(site: BrowserSite) {
   let e = entries.get(site);
   if (!e) {
-    e = { view: null, lastUrl: browserSites[site].url, hiddenAt: Date.now(), zoom: defaultZoom(site), host: null };
+    e = { view: null, lastUrl: siteUrl(site), hiddenAt: Date.now(), zoom: defaultZoom(site), host: null };
     entries.set(site, e);
   }
   return e;
@@ -270,7 +288,7 @@ export function browserAction(
   else if (action === "zoomIn") stepZoom(site, "in");
   else if (action === "zoomOut") stepZoom(site, "out");
   else if (action === "zoomReset") stepZoom(site, "reset");
-  else if (action === "home") void wc.loadURL(browserSites[site].url).catch(() => undefined);
+  else if (action === "home") void wc.loadURL(siteUrl(site)).catch(() => undefined);
   else if (action === "go" && value) {
     const target = parseWebUrl(value) ?? searchUrl(value);
     void wc.loadURL(target).catch(() => undefined);

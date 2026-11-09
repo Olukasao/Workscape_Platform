@@ -1,20 +1,40 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ArrowLeft, ArrowRight, Globe, Home, RefreshCw, Network, Sparkles, Router, Activity, ChartLine, Headset, ZoomIn, ZoomOut, ExternalLink, PanelTopClose } from "lucide-react";
 import { clsx } from "clsx";
+import { useQuery } from "@tanstack/react-query";
+import { api } from "../services/api";
 import type { BrowserSite, BrowserState } from "../../electron/browserTabs";
 import { EVENTO_SITE_NAVEGADOR } from "../services/navegadorInterno";
 import { JANELA_DESTACADA, destacar, reintegrar, podeDestacar } from "../services/janelaDestacada";
 
-// Os rótulos ficam aqui só para exibir; endereços e regras ficam no processo principal.
-const SITES: { id: BrowserSite; label: string; icon: typeof Globe }[] = [
-  { id: "sgp", label: "SGP", icon: Network },
-  { id: "mundiale", label: "Mundiale", icon: Sparkles },
-  { id: "olt", label: "OLT", icon: Router },
-  { id: "callcenter", label: "Call Center", icon: Headset },
-  { id: "zabbix", label: "Zabbix", icon: Activity },
-  { id: "grafana", label: "Grafana", icon: ChartLine },
-  { id: "comum", label: "Navegador comum", icon: Globe },
+// Quais sites aparecem vem do servidor (Admin > Navegador): cada setor vê os que o administrador liberou. Os endereços dos
+// sites padrão ficam no processo principal; os extras seguem do servidor e são revalidados lá.
+const ICONES: Record<string, typeof Globe> = { sgp: Network, mundiale: Sparkles, olt: Router, callcenter: Headset, zabbix: Activity, grafana: ChartLine, comum: Globe };
+const PADRAO: { id: string; nome: string }[] = [
+  { id: "sgp", nome: "SGP" }, { id: "mundiale", nome: "Mundiale" }, { id: "olt", nome: "OLT" }, { id: "callcenter", nome: "Call Center" },
+  { id: "zabbix", nome: "Zabbix" }, { id: "grafana", nome: "Grafana" }, { id: "comum", nome: "Navegador comum" },
 ];
+interface SiteDoServidor { id: string; nome: string; url?: string; personalizado: boolean }
+
+function useSitesDoNavegador() {
+  const q = useQuery({
+    queryKey: ["navegador", "sites"],
+    queryFn: async () => (await api.get<{ sites: SiteDoServidor[] }>("/navegador/sites")).data.sites,
+    staleTime: 60_000,
+    retry: 1,
+  });
+  const [pronto, setPronto] = useState(false);
+  const lista = q.data;
+  useEffect(() => {
+    if (q.isLoading) return;
+    // O processo principal precisa conhecer os sites extras antes de a página abrir.
+    const extras = (lista ?? []).filter((x) => x.personalizado && x.url).map((x) => ({ id: x.id, label: x.nome, url: x.url! }));
+    void Promise.resolve(window.desktop?.browserSites?.(extras)).catch(() => undefined).finally(() => setPronto(true));
+  }, [lista, q.isLoading]);
+  // Sem resposta do servidor, mostra os sites padrão em vez de deixar o Navegador vazio.
+  const sites = (lista ?? PADRAO.map((x) => ({ ...x, personalizado: false }))).map((x) => ({ id: x.id, label: x.nome, icon: ICONES[x.id] ?? Globe }));
+  return { sites, pronto };
+}
 
 /**
  * A página em si é uma visão nativa do Electron posta sobre a área vazia abaixo da barra.
@@ -22,7 +42,11 @@ const SITES: { id: BrowserSite; label: string; icon: typeof Globe }[] = [
  * visão só é escondida e a página continua exatamente como estava.
  */
 export default function Navegador({ active, paused }: { active: boolean; paused: boolean }) {
-  const [site, setSite] = useState<BrowserSite>("sgp");
+  const { sites: SITES, pronto } = useSitesDoNavegador();
+  const [escolhido, setEscolhido] = useState<BrowserSite>("sgp");
+  // Se o site escolhido não está liberado para o setor, abre o primeiro que estiver.
+  const site = (SITES.some((x) => x.id === escolhido) ? escolhido : (SITES[0]?.id ?? "sgp")) as BrowserSite;
+  const setSite = setEscolhido;
   const [states, setStates] = useState<Partial<Record<BrowserSite, BrowserState>>>({});
   const [draft, setDraft] = useState<string | null>(null);
   const area = useRef<HTMLDivElement>(null);
@@ -33,7 +57,7 @@ export default function Navegador({ active, paused }: { active: boolean; paused:
     return () => window.removeEventListener(EVENTO_SITE_NAVEGADOR, trocar);
   }, []);
   const state = states[site];
-  const visible = active && !paused;
+  const visible = active && !paused && pronto && SITES.length > 0;
 
   const bounds = useCallback(() => {
     const r = area.current?.getBoundingClientRect();
@@ -90,7 +114,7 @@ export default function Navegador({ active, paused }: { active: boolean; paused:
               aria-selected={site === s.id}
               className={clsx("navegador-site", site === s.id && "on")}
               onClick={() => {
-                setSite(s.id);
+                setSite(s.id as BrowserSite);
                 setDraft(null);
               }}
             >

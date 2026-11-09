@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { agendaOrigin, chatOrigin, dashboardOrigin } from "./agendaDeployment";
+import { ambienteTeste, chatTesteOrigin } from "./ambiente";
 export const serviceNames = ["chat", "agenda", "dashboard"] as const;
 export const configSchema = z
   .object({
@@ -15,7 +16,7 @@ export const configSchema = z
   .strict();
 export type ServerConfig = z.infer<typeof configSchema>;
 export const defaultConfig: ServerConfig = {
-  chat: chatOrigin,
+  chat: ambienteTeste ? chatTesteOrigin : chatOrigin,
   agenda: agendaOrigin,
   dashboard: dashboardOrigin,
   allowInsecureLan: false,
@@ -35,7 +36,9 @@ export function validateConfig(input: unknown): ServerConfig {
       !legacy.chat ||
       String(legacy.chat).replace(/\/+$/, "") === "https://chat.suaempresa.com.br"
     )
-      legacy.chat = chatOrigin;
+      legacy.chat = ambienteTeste ? chatTesteOrigin : chatOrigin;
+    // O app de testes nunca fala com o chat oficial, mesmo que a configuração salva aponte para ele.
+    else if (ambienteTeste && String(legacy.chat).replace(/\/+$/, "") === chatOrigin) legacy.chat = chatTesteOrigin;
     if (
       !legacy.agenda ||
       [
@@ -68,7 +71,7 @@ export function validateConfig(input: unknown): ServerConfig {
       );
     const local = ["localhost", "127.0.0.1", "[::1]"].includes(u.hostname);
     const pinnedDashboard = key === "dashboard" && u.origin === dashboardOrigin;
-    const corporateChat = key === "chat" && u.origin === chatOrigin;
+    const corporateChat = key === "chat" && (u.origin === chatOrigin || (ambienteTeste && u.origin === chatTesteOrigin));
     if (
       u.protocol !== "https:" &&
       !(u.protocol === "http:" && (local || corporateChat || pinnedDashboard || c.allowInsecureLan))
@@ -155,6 +158,8 @@ export function conversationTarget(target: string) {
   return (
     /^\/chat(?:\?(?:conversa|grupo)=\d+)?$/.test(target) ||
     target === "/contratacoes" ||
+    target === "/chamados?aba=avaliacoes" ||
+    target === "/" ||
     target === "/lembretes" ||
     target === "/rede" ||
     target === "/settings" ||

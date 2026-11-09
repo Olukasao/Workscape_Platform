@@ -19,7 +19,7 @@ export interface Dispositivo {
   primeiro_visto: string;
   ultimo_visto: string;
 }
-export interface SinalAtualizacao { id: string; versao: string; obrigatoria: boolean; mensagem?: string; criadoEm: string }
+export interface SinalAtualizacao { id: string; versao: string; obrigatoria: boolean; mensagem?: string; ignorarRegra?: boolean; criadoEm: string }
 interface Resposta { publicada: string | null; sinal: SinalAtualizacao | null; dispositivos: Dispositivo[] }
 export type Filtro = "todos" | "desatualizados" | "online" | "offline";
 
@@ -67,6 +67,7 @@ export default function VersoesWorkspace() {
   const [busca, setBusca] = useState("");
   const [forcando, setForcando] = useState(false);
   const [comAviso, setComAviso] = useState(false);
+  const [ignorarRegra, setIgnorarRegra] = useState(false);
   const [mensagem, setMensagem] = useState("");
   const [feito, setFeito] = useState("");
   const [confirmarRemocao, setConfirmarRemocao] = useState<number | null>(null);
@@ -85,11 +86,12 @@ export default function VersoesWorkspace() {
   }, [cliente]);
 
   const forcar = useMutation({
-    mutationFn: async () => (await api.post<{ sinal: SinalAtualizacao }>("/admin/workspace/forcar-atualizacao", { obrigatoria: comAviso, mensagem: comAviso ? mensagem : "" })).data.sinal,
+    mutationFn: async () => (await api.post<{ sinal: SinalAtualizacao }>("/admin/workspace/forcar-atualizacao", { obrigatoria: comAviso, mensagem: comAviso ? mensagem : "", ignorarRegra })).data.sinal,
     onSuccess: (sinal) => {
-      setFeito(`Pedido enviado: os computadores recebem em até 1 minuto (versão ${sinal.versao}, ${sinal.obrigatoria ? "com aviso na tela" : "em silêncio"}).`);
+      setFeito(`Pedido enviado: os computadores recebem em até 1 minuto (versão ${sinal.versao}, ${sinal.obrigatoria ? "com aviso na tela" : "em silêncio"}${sinal.ignorarRegra ? ", ignorando a regra de ligação" : ""}).`);
       setForcando(false);
       setMensagem("");
+      setIgnorarRegra(false);
       void cliente.invalidateQueries({ queryKey: ["admin", "workspace-dispositivos"] });
     },
   });
@@ -145,6 +147,10 @@ export default function VersoesWorkspace() {
           {comAviso ? (
             <input className="versoes-mensagem" value={mensagem} maxLength={200} onChange={(e) => setMensagem(e.target.value)} placeholder="Mensagem (opcional). Ex.: Nova versão com o Assistente de IA. Clique em Atualizar agora." aria-label="Mensagem do aviso" />
           ) : null}
+          <label className={clsx("versoes-opcao", "versoes-ignorar", ignorarRegra && "ativo")}>
+            <input type="checkbox" checked={ignorarRegra} onChange={(e) => setIgnorarRegra(e.target.checked)} />
+            <span><b>Ignorar a regra de ligação</b><small>Atualiza mesmo com telefone aberto, ligação em andamento ou envio de arquivo. {comAviso ? "Quem clicar em \"Atualizar agora\" reinicia na hora." : "O app reinicia sozinho assim que baixar, sem esperar o PC ficar parado."} Uma ligação em curso será encerrada.</small></span>
+          </label>
           {forcar.isError ? <p role="alert" className="form-error">{msgDe(forcar.error)}</p> : null}
           <div className="versoes-forcar-botoes">
             <button type="button" className="versoes-cancelar" onClick={() => setForcando(false)}>Cancelar</button>
@@ -157,7 +163,7 @@ export default function VersoesWorkspace() {
 
       {sinal ? (
         <p className="muted versoes-sinal">
-          Último pedido de atualização: versão {sinal.versao}, {sinal.obrigatoria ? "com aviso na tela" : "em silêncio"}, {vistoEm(sinal.criadoEm)}.
+          Último pedido de atualização: versão {sinal.versao}, {sinal.obrigatoria ? "com aviso na tela" : "em silêncio"}{sinal.ignorarRegra ? ", ignorando a regra de ligação" : ""}, {vistoEm(sinal.criadoEm)}.
         </p>
       ) : null}
 

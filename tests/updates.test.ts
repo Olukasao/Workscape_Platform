@@ -115,8 +115,9 @@ describe("canal interno sem assinatura", () => {
 
 describe("atualização forçada pela TI", () => {
   it("lê o sinal do canal e recusa conteúdo inválido", () => {
-    expect(parseUpdateSignal({ id: "abc-1", obrigatoria: true, mensagem: " Atualize " })).toEqual({ id: "abc-1", obrigatoria: true, mensagem: "Atualize" });
-    expect(parseUpdateSignal({ id: "abc-2" })).toEqual({ id: "abc-2", obrigatoria: false, mensagem: undefined });
+    expect(parseUpdateSignal({ id: "abc-1", obrigatoria: true, mensagem: " Atualize " })).toEqual({ id: "abc-1", obrigatoria: true, mensagem: "Atualize", ignorarRegra: false });
+    expect(parseUpdateSignal({ id: "abc-2" })).toEqual({ id: "abc-2", obrigatoria: false, mensagem: undefined, ignorarRegra: false });
+    expect(parseUpdateSignal({ id: "abc-3", ignorarRegra: true })?.ignorarRegra).toBe(true);
     for (const ruim of [null, {}, { id: "" }, { id: 7 }, { id: "x".repeat(65) }, { id: "a", mensagem: "m".repeat(201) }, "texto"])
       expect(parseUpdateSignal(ruim)).toBeNull();
   });
@@ -143,6 +144,29 @@ describe("atualização silenciosa", () => {
     expect(shouldApplySilently({ ...base, windowVisible: false, canInstall: false })).toBe(false);
     expect(shouldApplySilently({ ...base, windowVisible: false, phase: "downloading" })).toBe(false);
     expect(shouldApplySilently({ ...base, windowVisible: false, obrigatoria: true })).toBe(false);
+  });
+});
+
+describe("forçar ignorando a regra de ligação", () => {
+  const base = { phase: "ready" as const, obrigatoria: false, canInstall: false, idleSeconds: 0, windowVisible: true };
+  it("em silêncio reinicia assim que estiver pronta, mesmo em uso e com ligação", () => {
+    expect(shouldApplySilently({ ...base, ignorarRegra: true })).toBe(true);
+    expect(shouldApplySilently({ ...base, ignorarRegra: false })).toBe(false);
+  });
+  it("continua esperando o download e, com aviso, espera o clique", () => {
+    expect(shouldApplySilently({ ...base, ignorarRegra: true, phase: "downloading" })).toBe(false);
+    expect(shouldApplySilently({ ...base, ignorarRegra: true, obrigatoria: true })).toBe(false);
+  });
+  it("o botão Atualizar agora instala mesmo com ligação ativa só quando a TI mandou ignorar", async () => {
+    const bloqueada = setup(new Updater(), () => false);
+    bloqueada.controller.setForced({ obrigatoria: true });
+    await bloqueada.controller.check();
+    await expect(bloqueada.controller.installLatest()).rejects.toThrow(/ligação/);
+    const liberada = setup(new Updater(), () => false);
+    liberada.controller.setForced({ obrigatoria: true, ignorarRegra: true });
+    await liberada.controller.check();
+    await liberada.controller.installLatest();
+    expect(liberada.updater.quitAndInstall).toHaveBeenCalled();
   });
 });
 

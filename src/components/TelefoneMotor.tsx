@@ -1,15 +1,22 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useSession } from "../stores/workspace";
 import { useTelefone } from "../stores/telefone";
 import { iniciarTelefone, pararTelefone, registrarHistorico, usePhone } from "../stores/phone";
 import { iniciarToque, tocarSom } from "../services/toque";
 import { clients } from "../services/api";
+import { avisarLigacao } from "../services/situacao";
+import { useNomesPorRamal } from "../services/ramais";
+import { identificarChamador } from "../services/chamador";
+import { fichaDisponivel, useFichaAutomatica } from "../services/fichaAuto";
 
 /** Sem tela: liga o telefone ao entrar no Workspace, grava o histórico e toca quando alguém liga. */
 export default function TelefoneMotor() {
   const token = useSession((s) => s.token);
   const userId = useSession((s) => s.user?.id);
   const abrir = useTelefone((s) => s.abrir);
+  const cartaoAberto = useTelefone((s) => s.aberto);
+  // O processo principal só reinicia para atualizar com o cartão do telefone fechado.
+  useEffect(() => { void window.desktop?.phoneUi?.(cartaoAberto); }, [cartaoAberto]);
   const tocando = usePhone((s) => s.snapshot.chamadas.some((c) => c.direcao === "in" && c.estado === "tocando"));
   // Abre o cartão quando a conversa começa ou quando a pessoa liga (pelo chat, por exemplo). Chamada tocando mostra só a faixa.
   const emChamada = usePhone((s) => s.snapshot.chamadas.some((c) => c.estado === "conversando" || (c.direcao === "out" && c.estado === "chamando")));
@@ -27,6 +34,36 @@ export default function TelefoneMotor() {
   }, [token, userId, abrir]);
 
   useEffect(() => { if (tocando) return iniciarToque(); }, [tocando]);
+  // "Em ligação" nos colegas: só quando a conversa começa de fato (ou a pessoa está chamando), e some quando acaba.
+  const avisada = useRef(false);
+  useEffect(() => {
+    if (!token || !userId || avisada.current === emChamada) return;
+    avisada.current = emChamada;
+    avisarLigacao(emChamada);
+  }, [emChamada, token, userId]);
+  // Ficha do cliente: abre a janelinha quando uma ligação de número externo toca (ou é feita) e fecha depois que termina.
+  const equipe = useNomesPorRamal();
+  const fichaAuto = useFichaAutomatica();
+  const chamadas = usePhone((s) => s.snapshot.chamadas);
+  const externa = useMemo(
+    () => [...chamadas].filter((c) => c.estado !== "encerrada" && identificarChamador(c.numero, c.nome, equipe).externo).sort((a, b) => b.id - a.id)[0] ?? null,
+    [chamadas, equipe],
+  );
+  const fichaDaChamada = useRef<string | null>(null);
+  useEffect(() => {
+    if (!token || !userId || !fichaDisponivel()) return;
+    if (externa && fichaAuto) {
+      // Reenvia quando a ligação muda de fase (tocando -> em ligação), para a janela trocar o rótulo e começar o cronômetro.
+      const chave = `${externa.id}:${externa.estado}`;
+      if (fichaDaChamada.current === chave) return;
+      fichaDaChamada.current = chave;
+      const estado = externa.estado === "conversando" ? "conversando" : externa.estado === "chamando" ? "chamando" : "tocando";
+      void window.desktop?.fichaAbrir?.({ numero: externa.numero, nome: externa.nome || "", direcao: externa.direcao, estado, atendidaMs: externa.atendidaMs ?? null }).catch(() => undefined);
+    } else if (!externa && fichaDaChamada.current !== null) {
+      fichaDaChamada.current = null;
+      void window.desktop?.fichaFim?.().catch(() => undefined);
+    }
+  }, [externa, fichaAuto, token, userId]);
   // Avisa o servidor de que este ramal está registrado, para o administrador ver quem está online.
   const registro = usePhone((s) => s.snapshot.registro);
   const naoPerturbe = usePhone((s) => s.snapshot.naoPerturbe);
