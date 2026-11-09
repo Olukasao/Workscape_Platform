@@ -32,10 +32,12 @@ async function abrir(dados: FichaDados, opts: { base: string; preload: string; i
     return;
   }
   const area = screen.getPrimaryDisplay().workArea;
-  const largura = Math.min(420, area.width), altura = Math.min(620, area.height);
-  const pos = ultimaPosicao ?? { x: area.x + area.width - largura - 16, y: area.y + area.height - altura - 16, width: largura, height: altura };
+  // A janela é transparente: o cartão de vidro fica dentro dela, com uma margem para a sombra.
+  const largura = Math.min(444, area.width), altura = Math.min(644, area.height);
+  const pos = ultimaPosicao ? { ...ultimaPosicao, width: largura, height: altura } : { x: area.x + area.width - largura - 16, y: area.y + area.height - altura - 16, width: largura, height: altura };
   const w = new BrowserWindow({
-    ...pos, minWidth: 320, minHeight: 280, title: "Ficha do cliente", icon: opts.icon, backgroundColor: "#030716",
+    ...pos, width: largura, height: altura, title: "Ficha do cliente", icon: opts.icon, backgroundColor: "#00000000",
+    frame: false, transparent: true, hasShadow: false, resizable: false, maximizable: false, fullscreenable: false,
     autoHideMenuBar: true, show: false, alwaysOnTop: true, skipTaskbar: false,
     webPreferences: { preload: opts.preload, contextIsolation: true, nodeIntegration: false, sandbox: true, webSecurity: true, backgroundThrottling: false },
   });

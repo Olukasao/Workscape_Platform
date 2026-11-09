@@ -11,6 +11,7 @@ export const changelog: ChangelogEntry[] = [
     versao: "0.6.19",
     data: "2026-11-09",
     itens: [
+      "Ficha do cliente com visual de vidro, igual ao do telefone: janela sem moldura, cantos bem arredondados e fundo translúcido. Arraste pelo topo para mover.",
       "Corrigido: quando a janela da ficha do cliente aparece na ligação, a tela principal do Workspace não diminui mais.",
     ],
   },

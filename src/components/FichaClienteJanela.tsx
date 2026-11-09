@@ -142,6 +142,7 @@ export default function FichaClienteJanela() {
     document.documentElement.dataset.theme = "escuro";
     document.documentElement.dataset.anTheme = "dark";
     document.documentElement.style.colorScheme = "dark";
+    document.documentElement.classList.add("ficha-janela");
     document.title = "Ficha do cliente";
   }, [theme]);
   useEffect(() => {
