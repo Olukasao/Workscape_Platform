@@ -1,3 +1,4 @@
+import { deveEsconder, type EscopoEsconder } from "./browserHide";
 import { BrowserWindow, session, shell, WebContentsView } from "electron";
 import { agendaOrigin } from "./agendaDeployment";
 import { isPinnedAgendaCertificate } from "./agendaTrust";
@@ -259,8 +260,9 @@ function hideCurrent() {
   current = null;
 }
 /** Só esconde se a página visível estiver na janela que pediu (a outra janela pode estar usando). */
-export function hideBrowser(host: BrowserWindow | null) {
+export function hideBrowser(host: BrowserWindow | null, somente?: EscopoEsconder) {
   if (!current || entries.get(current)?.host !== host) return;
+  if (!deveEsconder(current, somente)) return;
   hideCurrent();
 }
 /** Leva todas as páginas abertas de uma janela para outra, sem recarregar. */

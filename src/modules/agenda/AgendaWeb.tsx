@@ -16,7 +16,7 @@ export default function AgendaWeb({ active, onBack }: { active: boolean; onBack:
   const [state, setState] = useState<BrowserState | null>(null);
   const [aviso, setAviso] = useState("");
   const [pronta, setPronta] = useState(false);
-  const paleta = useSobreposicao((s) => s.paleta);
+  const paleta = useSobreposicao((s) => s.paleta || s.chamada);
   const visible = active && !paleta && pronta;
 
   const bounds = useCallback(() => {
@@ -53,7 +53,7 @@ export default function AgendaWeb({ active, onBack }: { active: boolean; onBack:
     const desktop = window.desktop;
     if (!desktop) return;
     if (!visible) {
-      void desktop.browserHide();
+      void desktop.browserHide({ somente: "agendaweb" });
       return;
     }
     const b = bounds();
@@ -73,7 +73,7 @@ export default function AgendaWeb({ active, onBack }: { active: boolean; onBack:
     };
   }, [visible, bounds]);
   // A página nativa nunca pode ficar solta por cima do app ao sair desta tela.
-  useEffect(() => () => void window.desktop?.browserHide(), []);
+  useEffect(() => () => void window.desktop?.browserHide({ somente: "agendaweb" }), []);
 
   const act = (action: "reload" | "zoomIn" | "zoomOut" | "zoomReset") =>
     void window.desktop?.browserAction({ site: "agendaweb", action });

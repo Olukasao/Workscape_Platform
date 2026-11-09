@@ -777,7 +777,7 @@ async function bootstrap() {
     showBrowser(v.site, v.bounds, callerWindow(e));
   });
   handle("browser:bounds", (payload, e) => updateBrowserBounds(boundsSchema.parse(payload), callerWindow(e)));
-  handle("browser:hide", (_payload, e) => hideBrowser(callerWindow(e)));
+  handle("browser:hide", (payload, e) => hideBrowser(callerWindow(e), z.object({ somente: z.enum(["agendaweb", "navegador"]).optional() }).strict().optional().parse(payload)?.somente));
   handle("agenda-web:session", async (payload) => {
     const v = z.object({ token: z.string().max(4096) }).strict().parse(payload);
     await setAgendaWebSession(v.token);
@@ -892,7 +892,9 @@ async function bootstrap() {
       );
   });
   const updates = await startUpdates(win, () => { closeAllToasts(); }, () => activeTransfers === 0 && !phone.temChamadaAtiva() && !telefoneAbertoNaTela && !isDetachedOpen("telefone"));
-  win.webContents.on("did-start-loading", () => { telefoneAbertoNaTela = false; }); // recarregou: a tela avisa de novo se o cartão estiver aberto
+  win.webContents.on("did-start-loading", () => { telefoneAbertoNaTela = false; hideBrowser(win); }); // recarregou: a tela avisa de novo se o cartão estiver aberto
+  // A tela principal recarregou ou caiu: a página nativa (Navegador/agenda web) não pode ficar solta por cima do app novo.
+  win.webContents.on("render-process-gone", () => hideBrowser(win));
   handle("phone:ui", (payload) => { telefoneAbertoNaTela = z.object({ aberto: z.boolean() }).strict().parse(payload).aberto; return { ok: true as const }; });
   handle("updates:status", () => updates.status());
   handle("device:info", () => deviceInfo());

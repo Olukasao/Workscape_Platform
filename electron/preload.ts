@@ -42,7 +42,7 @@ contextBridge.exposeInMainWorld("desktop", {
   browserShow: (value: unknown) => ipcRenderer.invoke("browser:show", value),
   browserBounds: (value: unknown) => ipcRenderer.invoke("browser:bounds", value),
   agendaWebSession: (value: unknown) => ipcRenderer.invoke("agenda-web:session", value),
-  browserHide: () => ipcRenderer.invoke("browser:hide"),
+  browserHide: (opcoes?: { somente?: "agendaweb" | "navegador" }) => ipcRenderer.invoke("browser:hide", opcoes),
   browserAction: (value: unknown) => ipcRenderer.invoke("browser:action", value),
   browserSites: (value: unknown) => ipcRenderer.invoke("browser:sites", value),
   assinaturasAbrir: (token: string) => ipcRenderer.invoke("assinaturas:abrir", { token }),

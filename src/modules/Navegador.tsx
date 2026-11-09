@@ -70,7 +70,7 @@ export default function Navegador({ active, paused }: { active: boolean; paused:
     const desktop = window.desktop;
     if (!desktop) return;
     if (!visible) {
-      void desktop.browserHide();
+      void desktop.browserHide({ somente: "navegador" });
       return;
     }
     const b = bounds();
@@ -93,7 +93,7 @@ export default function Navegador({ active, paused }: { active: boolean; paused:
     };
   }, [visible, site, bounds]);
   // Ao sair da tela (desmontar) a visão nativa nunca pode ficar solta por cima do app.
-  useEffect(() => () => void window.desktop?.browserHide(), []);
+  useEffect(() => () => void window.desktop?.browserHide({ somente: "navegador" }), []);
 
   const act = (action: "back" | "forward" | "reload" | "home" | "zoomIn" | "zoomOut" | "zoomReset") =>
     void window.desktop?.browserAction({ site, action });

@@ -191,7 +191,8 @@ function Shell() {
     [chatVisited, setChatVisited] = useState(false),
     [agendaVisited, setAgendaVisited] = useState(false),
     [navegadorVisited, setNavegadorVisited] = useState(false),
-    [palette, setPalette] = useState(false);
+    [palette, setPalette] = useState(false),
+    chamadaTocando = useSobreposicao((s) => s.chamada);
   const { conversations, groups } = useChatData();
   const unread =
     unreadCount(conversations.data || []) + unreadCount(groups.data || []);
@@ -485,7 +486,7 @@ function Shell() {
                     {navegadorDestacado ? (
                       <JanelaEmOutraTela kind="navegador" />
                     ) : (
-                      <Navegador active={path === "/navegador"} paused={palette} />
+                      <Navegador active={path === "/navegador"} paused={palette || chamadaTocando} />
                     )}
                   </div>
                 )}

@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Phone, PhoneOff } from "lucide-react";
 import { usePhone } from "../stores/phone";
 import type { PhoneCall as Chamada } from "../../electron/phone";
@@ -5,6 +6,7 @@ import { useNomesPorRamal } from "../services/ramais";
 import { identificarChamador } from "../services/chamador";
 import { ResumoClienteLigacao } from "./ClienteDaLigacao";
 import { useChamadaReal } from "../services/transferencia";
+import { useSobreposicao } from "../services/sobreposicao";
 
 /** Faixa de chamada recebida: aparece em qualquer tela do Workspace, mesmo com o cartão do telefone fechado. */
 export default function ChamadaRecebida() {
@@ -16,6 +18,8 @@ export default function ChamadaRecebida() {
 
 function Faixa({ bruta, equipe }: { bruta: Chamada; equipe: Map<string, string> }) {
   const chamada = useChamadaReal(bruta);
+  // A faixa de atender é DOM: uma página nativa (agenda web, Navegador) ficaria por cima e não daria para atender. Ela se afasta enquanto toca.
+  useEffect(() => { useSobreposicao.getState().setChamada(true); return () => useSobreposicao.getState().setChamada(false); }, []);
   const quem = identificarChamador(chamada.numero, chamada.nome, equipe);
   return (
     <div className="chamada-recebida" role="alertdialog" aria-live="assertive" aria-label={`Chamada recebida de ${quem.titulo}${quem.sub ? `, ${quem.sub}` : ""}`}>
