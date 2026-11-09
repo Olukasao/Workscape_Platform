@@ -11,8 +11,8 @@ export const changelog: ChangelogEntry[] = [
     versao: "0.6.26",
     data: "2026-11-09",
     itens: [
-      "A Agenda de técnicos agora abre na versão web, com o mesmo visual do navegador, que é a que a equipe prefere. Para voltar à versão minimalista, use o botão \"Versão minimalista\" no topo; o app lembra a sua escolha neste computador.",
-      "Cuidados para a página da agenda e a do Navegador nunca ficarem por cima do app: cada uma só esconde a si mesma, ambas se escondem quando a tela do Workspace recarrega ou falha, e elas se afastam enquanto uma chamada está tocando para você poder atender.",
+      "Na Agenda de técnicos, o botão \"Versão web\" agora brilha em pulsos suaves, para ficar fácil de achar: é a versão com o visual que a equipe prefere.",
+      "Cuidados para a versão web da agenda e a página do Navegador nunca ficarem por cima do app: cada uma só esconde a si mesma, ambas se escondem quando a tela do Workspace recarrega ou falha, e elas se afastam enquanto uma chamada está tocando para você poder atender.",
     ],
   },
   {

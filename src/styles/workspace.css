@@ -7845,3 +7845,20 @@ button.tool-card {
 
 .saude-indice { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; padding: 14px 4px; border-bottom: 1px solid var(--line); }
 .saude-indice strong { display: block; font-size: var(--fs-lg); } .saude-indice small { display: block; margin-top: 2px; max-width: 52ch; color: var(--ink-3); font-size: var(--fs-sm); line-height: 1.45; }
+
+/* "Versão web" da agenda: brilha em pulsos suaves para a equipe lembrar que ela existe (é a que mais gostam). */
+.agenda-versao-web {
+  position: relative;
+  border-color: color-mix(in srgb, var(--primary) 70%, transparent);
+  color: var(--primary-text, var(--primary));
+  background: color-mix(in srgb, var(--primary) 12%, transparent);
+  animation: agenda-versao-web-brilho 2.2s ease-in-out infinite;
+}
+.agenda-versao-web:hover { animation-play-state: paused; }
+@keyframes agenda-versao-web-brilho {
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--primary) 0%, transparent), 0 0 6px 0 color-mix(in srgb, var(--primary) 35%, transparent); }
+  50% { box-shadow: 0 0 0 5px color-mix(in srgb, var(--primary) 22%, transparent), 0 0 18px 2px color-mix(in srgb, var(--primary) 60%, transparent); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .agenda-versao-web { animation: none; box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 22%, transparent), 0 0 14px 0 color-mix(in srgb, var(--primary) 45%, transparent); }
+}
