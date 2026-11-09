@@ -8,6 +8,13 @@ export interface ChangelogEntry {
 
 export const changelog: ChangelogEntry[] = [
   {
+    versao: "0.6.21",
+    data: "2026-11-09",
+    itens: [
+      "Corrigido: ligar para outro ramal da equipe não abre mais a ficha do cliente com \"este número não parece ser de cliente\". O ramal discado com o prefixo da central agora é reconhecido como ramal.",
+    ],
+  },
+  {
     versao: "0.6.20",
     data: "2026-11-09",
     itens: [

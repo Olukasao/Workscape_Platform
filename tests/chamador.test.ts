@@ -45,3 +45,22 @@ describe("identificar quem ligou", () => {
     expect(nivelParaAnel(-5)).toBe(0);
   });
 });
+
+describe("ramal discado com o prefixo da central", () => {
+  it("7781003 é ramal (não abre a ficha de cliente) e usa o nome da equipe pelo ramal curto", () => {
+    const equipe = new Map([["1003", "Ana"]]);
+    const r = identificarChamador("7781003", "", equipe);
+    expect(r.externo).toBe(false);
+    expect(r.titulo).toBe("Ana");
+    expect(r.ramal).toBe("1003");
+  });
+  it("sem nome na equipe ainda é ramal interno", () => {
+    const r = identificarChamador("7781999", "", new Map());
+    expect(r.externo).toBe(false);
+    expect(r.sub).toBe("Ramal interno");
+  });
+  it("telefone de cliente que apenas começa com 778 continua externo", () => {
+    expect(identificarChamador("77812345678", "", new Map()).externo).toBe(true);
+    expect(identificarChamador("11990211587", "", new Map()).externo).toBe(true);
+  });
+});

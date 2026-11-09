@@ -10,6 +10,8 @@ export interface Chamador {
 
 // Ramais da central têm poucos dígitos; telefones da rua têm 8 ou mais.
 const RAMAL_INTERNO = /^\d{2,6}$/;
+// Para discar um ramal a central exige um prefixo (778 + ramal, ex.: 7781003). Esse número com prefixo continua sendo ramal.
+const RAMAL_COM_PREFIXO = /^778(\d{2,5})$/;
 
 /** (24) 99999-1234 / (24) 3333-1234. Tira o +55 e o 0 de operadora; o que não for número brasileiro fica como veio. */
 export function formatarTelefone(bruto: string): string {
@@ -29,8 +31,10 @@ export function identificarChamador(numero: string, nomeSip: string, equipe: Map
   const n = numero.trim();
   const nomeLimpo = nomeSip.trim();
   if (!n) return { titulo: nomeLimpo || "Número desconhecido", sub: "", ramal: "", externo: false };
-  const daEquipe = equipe.get(n);
-  if (daEquipe) return { titulo: daEquipe, sub: `Ramal ${n}`, ramal: n, externo: false };
+  const semPrefixo = RAMAL_COM_PREFIXO.exec(n)?.[1] ?? "";
+  const daEquipe = equipe.get(n) ?? (semPrefixo ? equipe.get(semPrefixo) : undefined);
+  if (daEquipe) return { titulo: daEquipe, sub: `Ramal ${semPrefixo || n}`, ramal: semPrefixo || n, externo: false };
+  if (semPrefixo) return { titulo: nomeLimpo || `Ramal ${semPrefixo}`, sub: nomeLimpo ? `Ramal ${semPrefixo}` : "Ramal interno", ramal: semPrefixo, externo: false };
   if (RAMAL_INTERNO.test(n)) return { titulo: nomeLimpo || `Ramal ${n}`, sub: nomeLimpo ? `Ramal ${n}` : "Ramal interno", ramal: n, externo: false };
   const tel = formatarTelefone(n);
   return { titulo: nomeLimpo || tel, sub: nomeLimpo ? tel : "Número externo", ramal: "", externo: true };
