@@ -8,6 +8,8 @@ import { avisarLigacao } from "../services/situacao";
 import { useNomesPorRamal } from "../services/ramais";
 import { identificarChamador } from "../services/chamador";
 import { fichaDisponivel, useFichaAutomatica } from "../services/fichaAuto";
+import { useReceberTransferencias, useTransferencias } from "../services/transferencia";
+import { chamadaReal } from "../services/transferenciaChamada";
 
 /** Sem tela: liga o telefone ao entrar no Workspace, grava o histórico e toca quando alguém liga. */
 export default function TelefoneMotor() {
@@ -45,9 +47,11 @@ export default function TelefoneMotor() {
   const equipe = useNomesPorRamal();
   const fichaAuto = useFichaAutomatica();
   const chamadas = usePhone((s) => s.snapshot.chamadas);
+  useReceberTransferencias(!!token && !!userId);
+  const transferidas = useTransferencias((s) => s.itens);
   const externa = useMemo(
-    () => [...chamadas].filter((c) => c.estado !== "encerrada" && identificarChamador(c.numero, c.nome, equipe).externo).sort((a, b) => b.id - a.id)[0] ?? null,
-    [chamadas, equipe],
+    () => chamadas.map((c) => chamadaReal(c, transferidas)).filter((c) => c.estado !== "encerrada" && identificarChamador(c.numero, c.nome, equipe).externo).sort((a, b) => b.id - a.id)[0] ?? null,
+    [chamadas, equipe, transferidas],
   );
   const fichaDaChamada = useRef<string | null>(null);
   useEffect(() => {

@@ -7,6 +7,7 @@ import { useDiretorio, useNomesPorRamal } from "../services/ramais";
 import { useSituacoes } from "../services/situacao";
 import { definirFichaAutomatica, fichaDisponivel, useFichaAutomatica } from "../services/fichaAuto";
 import { iniciais, identificarChamador, nivelParaAnel } from "../services/chamador";
+import { avisarTransferencia, useChamadaReal } from "../services/transferencia";
 import { duracaoCurta, foiPerdida, rotuloDaChamada, type ChamadaRecente } from "../services/chamadasRecentes";
 import { useSession } from "../stores/workspace";
 import { useArrastar } from "./useArrastar";
@@ -133,7 +134,8 @@ function EquipeRamais({ podeLigar, aoLigar }: { podeLigar: boolean; aoLigar: (ra
 }
 
 /** Controles de uma ligação em andamento. A sessão SIP fica no processo principal: trocar de tela não derruba a chamada. */
-function EmChamada({ chamada, equipe }: { chamada: Chamada; equipe: Map<string, string> }) {
+function EmChamada({ chamada: bruta, equipe }: { chamada: Chamada; equipe: Map<string, string> }) {
+  const chamada = useChamadaReal(bruta);
   const fichaAuto = useFichaAutomatica();
   const [teclado, setTeclado] = useState(false);
   const [transferir, setTransferir] = useState(false);
@@ -179,10 +181,10 @@ function EmChamada({ chamada, equipe }: { chamada: Chamada; equipe: Map<string, 
         <>
         <div className="telefone-filas" role="group" aria-label="Transferir para a fila">
           {FILAS.map(([nome, ramal]) => (
-            <button type="button" key={ramal} onClick={async () => { if (await executar(d?.phoneTransfer?.(chamada.id, ramal))) { setDestino(""); setTransferir(false); } }}>{nome}</button>
+            <button type="button" key={ramal} onClick={async () => { if (await executar(d?.phoneTransfer?.(chamada.id, ramal))) { if (quem.externo) avisarTransferencia(chamada.numero, ramal); setDestino(""); setTransferir(false); } }}>{nome}</button>
           ))}
         </div>
-        <form className="telefone-transferir" onSubmit={async (e) => { e.preventDefault(); if (destino.trim() && (await executar(d?.phoneTransfer?.(chamada.id, destino.trim())))) { setDestino(""); setTransferir(false); } }}>
+        <form className="telefone-transferir" onSubmit={async (e) => { e.preventDefault(); if (destino.trim() && (await executar(d?.phoneTransfer?.(chamada.id, destino.trim())))) { if (quem.externo) avisarTransferencia(chamada.numero, destino.trim()); setDestino(""); setTransferir(false); } }}>
           <input type="tel" inputMode="tel" autoComplete="off" autoFocus aria-label="Ramal de destino" placeholder="Ramal de destino" value={destino} onChange={(e) => setDestino(e.target.value.replace(/[^0-9+*#]/g, ""))} />
           <button type="submit" disabled={!destino.trim()}>Transferir</button>
         </form>
