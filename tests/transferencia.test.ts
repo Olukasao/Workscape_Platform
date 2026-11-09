@@ -27,3 +27,10 @@ describe("chamada transferida", () => {
     expect(chamadaReal(saida, t(1000), 5000)).toBe(saida);
   });
 });
+
+describe("transferência com 'asterisk' como número", () => {
+  it("chamada com número 'asterisk' assume a transferida, inclusive um ramal de colega", () => {
+    const c = { id: 1, direcao: "in", estado: "tocando", numero: "asterisk", nome: "asterisk" } as unknown as PhoneCall;
+    expect(chamadaReal(c, [{ numero: "7781010", de: "Ana", em: 1000 }], 5000).numero).toBe("7781010");
+  });
+});

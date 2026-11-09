@@ -80,3 +80,12 @@ describe("nome genérico da central", () => {
     expect(identificarChamador("11990211587", "Maria Silva", new Map()).titulo).toBe("Maria Silva");
   });
 });
+
+describe("\"asterisk\" no lugar do número", () => {
+  it("usuário SIP genérico não é número de cliente", () => {
+    const r = identificarChamador("asterisk", "asterisk", new Map());
+    expect(r.externo).toBe(false);
+    expect(r.titulo).toBe("Número desconhecido");
+    expect(identificarChamador("asterisk", "Ana", new Map()).titulo).toBe("Ana");
+  });
+});

@@ -3,6 +3,7 @@ import { create } from "zustand";
 import { clients } from "./api";
 import { socket } from "./socket";
 import type { PhoneCall as Chamada } from "../../electron/phone";
+import { numeroUtil } from "./chamador";
 import { chamadaReal, VALIDADE_MS, type Transferida } from "./transferenciaChamada";
 
 // Transferência de cliente entre ramais. A central só manda "asterisk" para quem recebe a chamada transferida, então
@@ -15,6 +16,8 @@ export const useTransferencias = create<Estado>((set) => ({
 
 /** Quem transfere: avisa o ramal de destino qual cliente está indo. Falhar aqui nunca atrapalha a transferência. */
 export function avisarTransferencia(numeroDoCliente: string, destino: string) {
+  // Cliente (telefone) ou colega (ramal): quem recebe mostra o nome certo nos dois casos. Sem número, não há o que avisar.
+  if (!numeroUtil(numeroDoCliente)) return;
   void clients.chat.post("/phone/transferencia", { numero: numeroDoCliente, destino }).catch(() => undefined);
 }
 

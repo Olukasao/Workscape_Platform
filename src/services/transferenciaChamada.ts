@@ -1,4 +1,4 @@
-import { nomeGenerico } from "./chamador";
+import { nomeGenerico, numeroUtil } from "./chamador";
 import type { PhoneCall as Chamada } from "../../electron/phone";
 
 // Parte pura (sem rede nem estado) da transferência de cliente entre ramais; testável sozinha.
@@ -11,7 +11,7 @@ export interface Transferida { numero: string; de: string; em: number }
  */
 export function chamadaReal(c: Chamada, itens: Transferida[], agora = Date.now()): Chamada {
   if (c.direcao !== "in" || c.estado === "encerrada") return c;
-  if (c.numero.trim() && !nomeGenerico(c.nome)) return c;
+  if (numeroUtil(c.numero) && !nomeGenerico(c.nome)) return c;
   const t = [...itens].reverse().find((i) => agora - i.em < VALIDADE_MS);
   return t ? { ...c, numero: t.numero, nome: "" } : c;
 }

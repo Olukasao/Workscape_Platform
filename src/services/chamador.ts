@@ -27,12 +27,15 @@ export function formatarTelefone(bruto: string): string {
 const NOME_GENERICO = /^(asterisk|unknown|unavailable|outbound call|wp_\w+|<unknown>)$/i;
 export const nomeGenerico = (nome: string) => NOME_GENERICO.test(nome.trim().replace(/^"|"$/g, ""));
 
+/** Número de verdade: a central às vezes põe "asterisk" no lugar do número (usuário SIP genérico). Sem dígito não é número. */
+export const numeroUtil = (numero: string) => { const n = numero.trim(); return !n || nomeGenerico(n) || !/\d/.test(n) ? "" : n; };
+
 /**
  * Descobre quem está ligando. O nome da equipe (diretório de ramais) vale mais que o nome que vem no cabeçalho SIP,
  * porque a central às vezes manda só o número ou um nome genérico.
  */
 export function identificarChamador(numero: string, nomeSip: string, equipe: Map<string, string>): Chamador {
-  const n = numero.trim();
+  const n = numeroUtil(numero);
   const nomeLimpo = nomeGenerico(nomeSip) ? "" : nomeSip.trim();
   if (!n) return { titulo: nomeLimpo || "Número desconhecido", sub: "", ramal: "", externo: false };
   const semPrefixo = RAMAL_COM_PREFIXO.exec(n)?.[1] ?? "";

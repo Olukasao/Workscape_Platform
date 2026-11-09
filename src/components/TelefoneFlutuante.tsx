@@ -181,10 +181,10 @@ function EmChamada({ chamada: bruta, equipe }: { chamada: Chamada; equipe: Map<s
         <>
         <div className="telefone-filas" role="group" aria-label="Transferir para a fila">
           {FILAS.map(([nome, ramal]) => (
-            <button type="button" key={ramal} onClick={async () => { if (await executar(d?.phoneTransfer?.(chamada.id, ramal))) { if (quem.externo) avisarTransferencia(chamada.numero, ramal); setDestino(""); setTransferir(false); } }}>{nome}</button>
+            <button type="button" key={ramal} onClick={async () => { if (await executar(d?.phoneTransfer?.(chamada.id, ramal))) { avisarTransferencia(chamada.numero, ramal); setDestino(""); setTransferir(false); } }}>{nome}</button>
           ))}
         </div>
-        <form className="telefone-transferir" onSubmit={async (e) => { e.preventDefault(); if (destino.trim() && (await executar(d?.phoneTransfer?.(chamada.id, destino.trim())))) { if (quem.externo) avisarTransferencia(chamada.numero, destino.trim()); setDestino(""); setTransferir(false); } }}>
+        <form className="telefone-transferir" onSubmit={async (e) => { e.preventDefault(); if (destino.trim() && (await executar(d?.phoneTransfer?.(chamada.id, destino.trim())))) { avisarTransferencia(chamada.numero, destino.trim()); setDestino(""); setTransferir(false); } }}>
           <input type="tel" inputMode="tel" autoComplete="off" autoFocus aria-label="Ramal de destino" placeholder="Ramal de destino" value={destino} onChange={(e) => setDestino(e.target.value.replace(/[^0-9+*#]/g, ""))} />
           <button type="submit" disabled={!destino.trim()}>Transferir</button>
         </form>
