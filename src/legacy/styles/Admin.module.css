@@ -2639,8 +2639,7 @@
 .cabecalho p { margin: 3px 0 0; font-size: var(--fs-md); color: var(--ink-3); }
 .cabecalhoAcoes { display: flex; gap: 8px; flex: none; }
 
-.abas { display: flex; gap: 2px; margin-bottom: 20px; border-bottom: 1px solid var(--line); overflow-x: auto; scrollbar-width: none; }
-.abas::-webkit-scrollbar { display: none; }
+.abas { display: flex; flex-wrap: wrap; gap: 2px; margin-bottom: 20px; border-bottom: 1px solid var(--line); }
 .aba { display: inline-flex; align-items: center; gap: 8px; flex: none; padding: 11px 16px; border: 0; border-bottom: 2px solid transparent; margin-bottom: -1px; background: none; color: var(--ink-3); font: inherit; font-size: var(--fs-md); font-weight: 700; cursor: pointer; transition: color var(--dur-1), border-color var(--dur-1), background-color var(--dur-1); }
 .aba:hover { color: var(--ink); background: var(--surface-3); border-radius: var(--r-sm) var(--r-sm) 0 0; }
 .abaAtiva, .abaAtiva:hover { color: var(--ink); border-bottom-color: var(--primary); background: none; }

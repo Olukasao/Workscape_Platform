@@ -11,6 +11,7 @@ export const changelog: ChangelogEntry[] = [
     versao: "0.6.21",
     data: "2026-11-09",
     itens: [
+      "Corrigido na Administração: as abas passam para a linha de baixo quando não cabem. Antes as últimas, como Telefone, ficavam escondidas fora da tela, sem barra de rolagem.",
       "Corrigido: ligar para outro ramal da equipe não abre mais a ficha do cliente com \"este número não parece ser de cliente\". O ramal discado com o prefixo da central agora é reconhecido como ramal.",
       "Corrigido: na chamada transferida, o nome \"asterisk\" (que a central manda quando não sabe quem é) não aparece mais; mostra o nome da equipe ou o número.",
       "Transferência de cliente: quando você transfere uma ligação para um colega, a ficha do cliente abre no computador dele, com os dados do cliente de verdade (antes aparecia só \"asterisk\"). Vale para transferência para ramal de pessoa; para fila não há ficha.",
