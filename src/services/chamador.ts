@@ -23,13 +23,17 @@ export function formatarTelefone(bruto: string): string {
   return bruto;
 }
 
+/** Nomes que a própria central coloca quando não sabe quem é ("asterisk" numa transferência, "unknown"…): não servem de nome. */
+const NOME_GENERICO = /^(asterisk|unknown|unavailable|outbound call|wp_\w+|<unknown>)$/i;
+export const nomeGenerico = (nome: string) => NOME_GENERICO.test(nome.trim().replace(/^"|"$/g, ""));
+
 /**
  * Descobre quem está ligando. O nome da equipe (diretório de ramais) vale mais que o nome que vem no cabeçalho SIP,
  * porque a central às vezes manda só o número ou um nome genérico.
  */
 export function identificarChamador(numero: string, nomeSip: string, equipe: Map<string, string>): Chamador {
   const n = numero.trim();
-  const nomeLimpo = nomeSip.trim();
+  const nomeLimpo = nomeGenerico(nomeSip) ? "" : nomeSip.trim();
   if (!n) return { titulo: nomeLimpo || "Número desconhecido", sub: "", ramal: "", externo: false };
   const semPrefixo = RAMAL_COM_PREFIXO.exec(n)?.[1] ?? "";
   const daEquipe = equipe.get(n) ?? (semPrefixo ? equipe.get(semPrefixo) : undefined);

@@ -12,6 +12,7 @@ export const changelog: ChangelogEntry[] = [
     data: "2026-11-09",
     itens: [
       "Corrigido: ligar para outro ramal da equipe não abre mais a ficha do cliente com \"este número não parece ser de cliente\". O ramal discado com o prefixo da central agora é reconhecido como ramal.",
+      "Corrigido: na chamada transferida, o nome \"asterisk\" (que a central manda quando não sabe quem é) não aparece mais; mostra o nome da equipe ou o número.",
     ],
   },
   {

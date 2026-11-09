@@ -64,3 +64,19 @@ describe("ramal discado com o prefixo da central", () => {
     expect(identificarChamador("11990211587", "", new Map()).externo).toBe(true);
   });
 });
+
+describe("nome genérico da central", () => {
+  it("\"asterisk\" (chamada transferida) não vira o nome: usa a equipe pelo ramal", () => {
+    const eq = new Map([["1003", "Ana Souza"]]);
+    expect(identificarChamador("1003", "asterisk", eq).titulo).toBe("Ana Souza");
+    expect(identificarChamador("7781003", "Asterisk", eq).titulo).toBe("Ana Souza");
+  });
+  it("sem equipe, mostra o ramal/número em vez de \"asterisk\"", () => {
+    expect(identificarChamador("204", "asterisk", new Map()).titulo).toBe("Ramal 204");
+    expect(identificarChamador("11990211587", "unknown", new Map()).titulo).toBe("(11) 99021-1587");
+    expect(identificarChamador("", "asterisk", new Map()).titulo).toBe("Número desconhecido");
+  });
+  it("nome de verdade continua valendo", () => {
+    expect(identificarChamador("11990211587", "Maria Silva", new Map()).titulo).toBe("Maria Silva");
+  });
+});
