@@ -68,6 +68,18 @@ export default function TelefoneMotor() {
       void window.desktop?.fichaFim?.().catch(() => undefined);
     }
   }, [externa, fichaAuto, token, userId]);
+  // Ponte entre ramais: quando um colega transfere um cliente para mim, a ficha abre na hora com os dados dele, sem esperar a
+  // chamada tocar (a central só manda "asterisk"). Se nenhuma ligação assumir a ficha em 90 s, ela se fecha sozinha.
+  const ultimaTransferencia = transferidas[transferidas.length - 1];
+  useEffect(() => {
+    if (!ultimaTransferencia || !token || !userId || !fichaAuto || !fichaDisponivel()) return;
+    if (Date.now() - ultimaTransferencia.em > 5000) return;
+    if (!identificarChamador(ultimaTransferencia.numero, "", equipe).externo) return;
+    void window.desktop?.fichaAbrir?.({ numero: ultimaTransferencia.numero, nome: "", direcao: "in", estado: "tocando", atendidaMs: null }).catch(() => undefined);
+    const t = window.setTimeout(() => { if (fichaDaChamada.current === null) void window.desktop?.fichaFim?.().catch(() => undefined); }, 90_000);
+    return () => window.clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ultimaTransferencia?.em]);
   // Avisa o servidor de que este ramal está registrado, para o administrador ver quem está online.
   const registro = usePhone((s) => s.snapshot.registro);
   const naoPerturbe = usePhone((s) => s.snapshot.naoPerturbe);

@@ -8,10 +8,11 @@ export interface ChangelogEntry {
 
 export const changelog: ChangelogEntry[] = [
   {
-    versao: "0.6.22",
+    versao: "0.6.23",
     data: "2026-11-09",
     itens: [
       "Corrigido: ao receber uma ligação transferida de outro ramal, não aparece mais \"asterisk\" no lugar de quem ligou. Aparece o nome do colega (ou do cliente, com a ficha). A central às vezes manda \"asterisk\" no lugar do número, e agora isso é reconhecido.",
+      "Transferência de cliente: a ficha abre no computador de quem recebe assim que você transfere, já com os dados do cliente, sem esperar a chamada tocar.",
     ],
   },
   {
