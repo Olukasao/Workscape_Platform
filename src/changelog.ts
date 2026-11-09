@@ -8,6 +8,13 @@ export interface ChangelogEntry {
 
 export const changelog: ChangelogEntry[] = [
   {
+    versao: "0.6.18",
+    data: "2026-11-09",
+    itens: [
+      "A notificação de avaliação do atendimento não mostra mais \"enviada por\" e o nome de quem mandou.",
+    ],
+  },
+  {
     versao: "0.6.17",
     data: "2026-11-09",
     itens: [

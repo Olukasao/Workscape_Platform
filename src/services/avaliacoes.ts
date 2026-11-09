@@ -42,14 +42,14 @@ export function useAvaliacoesFeed() {
   // Avaliação que um administrador mandou para a equipe: chega para todo mundo, tenha ou não a área Chamados.
   useEffect(() => {
     if (!user) return;
-    const compartilhada = ({ item, por }: { item?: AvaliacaoItem; por?: string } = {}) => {
+    const compartilhada = ({ item }: { item?: AvaliacaoItem } = {}) => {
       if (!item) return;
       const estrelas = "★".repeat(item.nota) + "☆".repeat(5 - item.nota);
       const title = `Avaliação do atendimento: ${estrelas}`;
-      const body = [item.comentario ? `“${item.comentario}”` : "Cliente avaliou o atendimento", item.tecnico ? `Técnico: ${item.tecnico}` : "", por ? `Enviada por ${por}` : ""].filter(Boolean).join(" — ");
+      const body = [item.comentario ? `“${item.comentario}”` : "Cliente avaliou o atendimento", item.tecnico ? `Técnico: ${item.tecnico}` : ""].filter(Boolean).join(" — ");
       const target = pode("chamados") ? "/chamados?aba=avaliacoes" : "/";
       useNotices.getState().add({ id: `avaliacao-enviada:${item.protocolo}:${Date.now()}`, title, body, target, time: new Date().toISOString() });
-      void window.desktop?.notify({ title, body, target, sender: por || undefined, context: "Avaliação do atendimento", kind: "system", tone: item.nota <= 2 ? "crit" : item.nota === 3 ? "warn" : "info" });
+      void window.desktop?.notify({ title, body, target, context: "Avaliação do atendimento", kind: "system", tone: item.nota <= 2 ? "crit" : item.nota === 3 ? "warn" : "info" });
     };
     socket.on("avaliacoes:notificada", compartilhada);
     return () => { socket.off("avaliacoes:notificada", compartilhada); };
