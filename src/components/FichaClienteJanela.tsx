@@ -3,7 +3,6 @@ import { isAxiosError } from "axios";
 import { Link2, PhoneCall, PhoneIncoming, PhoneOff, X } from "lucide-react";
 import { useServers, useSession, usePreferences } from "../stores/workspace";
 import { formatarTelefone } from "../services/chamador";
-import { useApplicationZoom } from "../services/useApplicationZoom";
 import { useAparencia } from "../services/aparencia";
 import { dataCurta, useClienteLigacao, useVincularCliente, type ChamadoResumo, type ClienteLigacao } from "../services/clienteLigacao";
 import { errorMessage } from "../services/api";
@@ -137,7 +136,6 @@ export default function FichaClienteJanela() {
   const [pronto, setPronto] = useState<"carregando" | "ok" | "erro">("carregando");
   const [e, setE] = useState<Estado>(lerHash);
   const [agora, setAgora] = useState(Date.now());
-  useApplicationZoom();
   useAparencia();
   const theme = usePreferences((s) => s.theme);
   useEffect(() => {

@@ -8,6 +8,13 @@ export interface ChangelogEntry {
 
 export const changelog: ChangelogEntry[] = [
   {
+    versao: "0.6.19",
+    data: "2026-11-09",
+    itens: [
+      "Corrigido: quando a janela da ficha do cliente aparece na ligação, a tela principal do Workspace não diminui mais.",
+    ],
+  },
+  {
     versao: "0.6.18",
     data: "2026-11-09",
     itens: [
