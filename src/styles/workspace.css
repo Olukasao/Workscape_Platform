@@ -4373,7 +4373,7 @@ small {
 .tg-cell[data-absence="ferias"] { background: color-mix(in srgb, #16a34a 13%, transparent); }
 .tg-cell[data-absence]:not([data-absence="folga"]):not([data-absence="ferias"]) { background: color-mix(in srgb, var(--warn) 7%, transparent); }
 .tg-cell.is-lunch {
-  background-image: repeating-linear-gradient(-45deg, color-mix(in srgb, var(--surface-3) 70%, transparent) 0 5px, transparent 5px 10px);
+  background-image: repeating-linear-gradient(-45deg, color-mix(in srgb, #f5b50a 24%, transparent) 0 5px, transparent 5px 10px);
 }
 .tg-cell.is-drop-target {
   background: var(--primary-soft);
@@ -5527,6 +5527,8 @@ button.lunch.is-done {
   opacity: 0.55;
   text-decoration: line-through;
 }
+/* Almoço em amarelo (os outros tipos de bloqueio têm cor própria abaixo). */
+button.lunch[data-tipo="almoco"] { background: color-mix(in srgb, #f5b50a 30%, transparent); box-shadow: inset 3px 0 0 #f5b50a; color: var(--ink); }
 button.lunch[data-tipo="reuniao"] { background: color-mix(in srgb, #8b5cf6 22%, transparent); }
 button.lunch[data-tipo="treinamento"] { background: color-mix(in srgb, #17b26a 22%, transparent); }
 button.lunch[data-tipo="compromisso"] { background: color-mix(in srgb, #2f6bff 22%, transparent); }

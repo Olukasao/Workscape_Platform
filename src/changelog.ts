@@ -8,6 +8,13 @@ export interface ChangelogEntry {
 
 export const changelog: ChangelogEntry[] = [
   {
+    versao: "0.6.25",
+    data: "2026-11-09",
+    itens: [
+      "Na Agenda dos técnicos, o horário de almoço agora aparece em amarelo (antes ficava cinza listrado), tanto o bloco quanto a faixa do horário.",
+    ],
+  },
+  {
     versao: "0.6.24",
     data: "2026-11-09",
     itens: [
