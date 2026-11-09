@@ -8,6 +8,16 @@ export interface ChangelogEntry {
 
 export const changelog: ChangelogEntry[] = [
   {
+    versao: "0.6.20",
+    data: "2026-11-09",
+    itens: [
+      "Ficha do cliente bem mais completa: conexão e sinal da ONU, financeiro (valor em aberto, faturas e vencimento), endereço com botão de copiar e abrir no mapa, visita agendada, contatos e observações do cadastro.",
+      "Na ficha também aparecem a média das avaliações, quantos chamados o cliente abriu nos últimos 30 dias, o tempo médio de resolução e o assunto que mais se repete.",
+      "No topo da ficha, avisos coloridos mostram o que pede atenção antes de falar com o cliente: sem conexão, valor em aberto, visita marcada, contrato suspenso.",
+      "Os dados do cliente na ficha atualizam a cada ligação, em vez de esperar alguns minutos.",
+    ],
+  },
+  {
     versao: "0.6.19",
     data: "2026-11-09",
     itens: [

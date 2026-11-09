@@ -33,7 +33,7 @@ async function abrir(dados: FichaDados, opts: { base: string; preload: string; i
   }
   const area = screen.getPrimaryDisplay().workArea;
   // A janela é transparente: o cartão de vidro fica dentro dela, com uma margem para a sombra.
-  const largura = Math.min(444, area.width), altura = Math.min(644, area.height);
+  const largura = Math.min(468, area.width), altura = Math.min(760, area.height);
   const pos = ultimaPosicao ? { ...ultimaPosicao, width: largura, height: altura } : { x: area.x + area.width - largura - 16, y: area.y + area.height - altura - 16, width: largura, height: altura };
   const w = new BrowserWindow({
     ...pos, width: largura, height: altura, title: "Ficha do cliente", icon: opts.icon, backgroundColor: "#00000000",

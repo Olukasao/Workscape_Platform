@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { isAxiosError } from "axios";
-import { Link2, PhoneCall, PhoneIncoming, PhoneOff, X } from "lucide-react";
+import { AlertTriangle, CalendarClock, Check, ChevronDown, Contact, Copy, ExternalLink, Link2, ListChecks, Mail, MapPin, Phone, PhoneCall, PhoneIncoming, PhoneOff, Repeat, Star, StickyNote, Wallet, Wifi, WifiOff, X, type LucideIcon } from "lucide-react";
 import { useServers, useSession, usePreferences } from "../stores/workspace";
 import { formatarTelefone } from "../services/chamador";
 import { useAparencia } from "../services/aparencia";
@@ -35,41 +35,164 @@ function Sinal({ nota }: { nota: number | null }) {
   );
 }
 
+const moeda = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+const mesAno = (iso: string) => { const m = /^(\d{4})-(\d{2})/.exec(iso); return m ? `${["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"][+m[2] - 1]}/${m[1]}` : ""; };
+const diaSemana = (iso: string) => { const d = new Date(`${iso}T12:00:00`); return Number.isNaN(+d) ? "" : d.toLocaleDateString("pt-BR", { weekday: "long" }); };
+const quando = (t: string | null) => { const m = t ? /^(\d{4})-(\d{2})-(\d{2})(?:[ T](\d{2}):(\d{2}))?/.exec(t) : null; return m ? `${m[3]}/${m[2]}${m[4] ? ` às ${m[4]}:${m[5]}` : ""}` : ""; };
+/** GPON: acima de -25 dBm está folgado; até -28 já pede atenção; abaixo disso a ONU costuma cair. */
+const qualidadeSinal = (dbm: number) => (dbm >= -25 ? "boa" : dbm >= -28 ? "media" : "ruim");
+const tempoMedio = (d: number) => (d < 1 ? "menos de 1 dia" : `${String(d).replace(".", ",")} ${d === 1 ? "dia" : "dias"}`);
+
+function Copiar({ texto, rotulo }: { texto: string; rotulo: string }) {
+  const [ok, setOk] = useState(false);
+  return (
+    <button type="button" className="fc-copiar" aria-label={`Copiar ${rotulo}`} title={ok ? "Copiado" : `Copiar ${rotulo}`}
+      onClick={() => { void navigator.clipboard?.writeText(texto).then(() => { setOk(true); window.setTimeout(() => setOk(false), 1400); }).catch(() => {}); }}>
+      {ok ? <Check size={13} aria-hidden="true" /> : <Copy size={13} aria-hidden="true" />}
+    </button>
+  );
+}
+
+/** Um bloco da ficha que abre e fecha; o resumo fica visível mesmo fechado. */
+function Painel({ titulo, Icone, resumo, tom, aberto = true, children }: { titulo: string; Icone: LucideIcon; resumo?: string; tom?: "ok" | "alerta" | "ruim"; aberto?: boolean; children: ReactNode }) {
+  return (
+    <details className={`fc-painel${tom ? ` ${tom}` : ""}`} open={aberto}>
+      <summary>
+        <span className="fc-painel-icone" aria-hidden="true"><Icone size={15} /></span>
+        <h3>{titulo}</h3>
+        {resumo ? <span className="fc-painel-resumo">{resumo}</span> : null}
+        <ChevronDown size={15} className="fc-seta" aria-hidden="true" />
+      </summary>
+      <div className="fc-painel-corpo">{children}</div>
+    </details>
+  );
+}
+
+const Linha = ({ rotulo, children }: { rotulo: string; children: ReactNode }) => <div className="fc-linha"><dt>{rotulo}</dt><dd>{children}</dd></div>;
+
+type Aviso = { tom: "ok" | "alerta" | "ruim" | "info"; Icone: LucideIcon; texto: string };
+function avisosDo(c: ClienteLigacao): Aviso[] {
+  const a: Aviso[] = [];
+  if (c.conexao && !c.conexao.online) a.push({ tom: "ruim", Icone: WifiOff, texto: `Sem conexão (${c.conexao.status || "offline"})` });
+  if (c.financeiro && c.financeiro.emAberto > 0) a.push({ tom: "ruim", Icone: Wallet, texto: `${moeda(c.financeiro.emAberto)} em aberto` });
+  if (c.historico?.visitaAgendada) a.push({ tom: "info", Icone: CalendarClock, texto: `Visita ${dataCurta(c.historico.visitaAgendada.data).slice(0, 5)}` });
+  if (/suspen|bloque/i.test(c.situacao)) a.push({ tom: "alerta", Icone: AlertTriangle, texto: c.situacao });
+  if ((c.historico?.ultimos30Dias ?? 0) >= 3) a.push({ tom: "alerta", Icone: Repeat, texto: `${c.historico!.ultimos30Dias} chamados em 30 dias` });
+  return a;
+}
+
 function CartaoCliente({ c, outros }: { c: ClienteLigacao; outros?: string[] }) {
-  const abertos = (c.chamados ?? []).filter((x) => !encerrado(x.status)).length;
+  const h = c.historico;
+  const abertos = h ? h.abertos : (c.chamados ?? []).filter((x) => !encerrado(x.status)).length;
   const sit = /ativo/i.test(c.situacao) && !/inativ/i.test(c.situacao) ? "ok" : /suspen|bloque/i.test(c.situacao) ? "alerta" : c.situacao ? "ruim" : "";
+  const avisos = avisosDo(c);
+  const e = c.endereco, f = c.financeiro, cx = c.conexao;
+  const enderecoTexto = e ? [e.linha, e.complemento, e.bairro, [e.cidade, e.uf].filter(Boolean).join("/"), e.cep && `CEP ${e.cep}`].filter(Boolean).join(" · ") : "";
+  const mapa = e?.coordenadas ? `https://www.google.com/maps?q=${e.coordenadas.lat},${e.coordenadas.lng}` : enderecoTexto ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(enderecoTexto)}` : "";
+  const nota = c.ultimaAvaliacao;
   return (
     <div className="fc-cliente">
       <section className="fc-quem" aria-label="Cliente">
-        <h2>{nomeBonito(c.nome) || `Contrato ${c.contrato}`}</h2>
-        <div className="fc-chips">
-          {c.situacao ? <span className={`fc-chip ${sit}`}>{c.situacao}</span> : null}
-          <span className="fc-chip" title={c.contratos && c.contratos.length > 1 ? `Contratos: ${c.contratos.join(", ")}` : undefined}>Contrato {c.contrato}{c.contratos && c.contratos.length > 1 ? ` +${c.contratos.length - 1}` : ""}</span>
-          {c.plano ? <span className="fc-chip">{c.plano}</span> : null}
-          {abertos ? <span className="fc-chip alerta">{abertos} {abertos === 1 ? "chamado aberto" : "chamados abertos"}</span> : null}
-        </div>
-        {outros ? <p className="fc-atencao">Este número está em {outros.length} contratos de clientes diferentes. Confirme com quem está falando.</p> : null}
-      </section>
-
-      {c.ultimaAvaliacao !== undefined ? (
-        <section className="fc-nota" aria-label="Última avaliação">
-          <Sinal nota={c.ultimaAvaliacao ? c.ultimaAvaliacao.nota : null} />
-          <div>
-            {c.ultimaAvaliacao ? (
-              <>
-                <strong className={banda(c.ultimaAvaliacao.nota)}>{c.ultimaAvaliacao.nota}<span>/5</span></strong>
-                <small>Última avaliação, {dataCurta(c.ultimaAvaliacao.respondidoEm)}</small>
-              </>
-            ) : <small>Ainda não avaliou o atendimento.</small>}
+        <span className="fc-monograma" aria-hidden="true">{(nomeBonito(c.nome).match(/\p{L}/u)?.[0] ?? "#").toUpperCase()}</span>
+        <div>
+          <h2>{nomeBonito(c.nome) || `Contrato ${c.contrato}`}</h2>
+          <div className="fc-chips">
+            {c.situacao ? <span className={`fc-chip ${sit}`}>{c.situacao}</span> : null}
+            <span className="fc-chip" title={c.contratos && c.contratos.length > 1 ? `Contratos: ${c.contratos.join(", ")}` : undefined}>Contrato {c.contrato}{c.contratos && c.contratos.length > 1 ? ` +${c.contratos.length - 1}` : ""}</span>
+            {c.clienteDesde ? <span className="fc-chip">Cliente desde {mesAno(c.clienteDesde)}</span> : null}
+            {c.plano ? <span className="fc-chip">{c.plano}</span> : null}
+            {c.planoTv ? <span className="fc-chip">{c.planoTv}</span> : null}
+            {c.pop ? <span className="fc-chip">{c.pop}</span> : null}
+            {c.documento ? <span className="fc-chip" title="Documento (parcial)">{c.documento}</span> : null}
           </div>
-          {c.ultimaAvaliacao?.comentario ? <blockquote>{c.ultimaAvaliacao.comentario}</blockquote> : null}
-        </section>
+        </div>
+      </section>
+      {outros ? <p className="fc-atencao">Este número está em {outros.length} contratos de clientes diferentes. Confirme com quem está falando.</p> : null}
+
+      {avisos.length ? (
+        <ul className="fc-avisos" aria-label="Pontos de atenção">
+          {avisos.map((a) => <li key={a.texto} className={a.tom}><a.Icone size={14} aria-hidden="true" />{a.texto}</li>)}
+        </ul>
+      ) : null}
+      {c.motivoStatus ? <p className="fc-atencao">Motivo do status: {c.motivoStatus}</p> : null}
+
+      {cx ? (
+        <Painel titulo="Conexão" Icone={cx.online ? Wifi : WifiOff} resumo={cx.online ? "Online" : cx.status || "Offline"} tom={cx.online ? "ok" : "ruim"}>
+          <div className="fc-conexao">
+            {cx.sinalOnuDbm !== null ? (
+              <div className={`fc-dbm ${qualidadeSinal(cx.sinalOnuDbm)}`}>
+                <strong>{String(cx.sinalOnuDbm).replace(".", ",")}<span> dBm</span></strong>
+                <small>Sinal na ONU · {{ boa: "bom", media: "no limite", ruim: "fraco" }[qualidadeSinal(cx.sinalOnuDbm)]}</small>
+              </div>
+            ) : null}
+            <dl>
+              {cx.sinalOltDbm !== null ? <Linha rotulo="Sinal na OLT">{String(cx.sinalOltDbm).replace(".", ",")} dBm</Linha> : null}
+              {cx.online && cx.onlineDesde ? <Linha rotulo="Online desde">{quando(cx.onlineDesde)}</Linha> : null}
+              {cx.ultimaQueda ? <Linha rotulo="Última queda">{quando(cx.ultimaQueda)}</Linha> : null}
+              {cx.modelo ? <Linha rotulo="Equipamento">{cx.modelo}</Linha> : null}
+              {cx.olt ? <Linha rotulo="OLT / porta">{cx.olt}{cx.porta ? ` · ${cx.porta}` : ""}</Linha> : null}
+            </dl>
+          </div>
+        </Painel>
       ) : null}
 
-      <section className="fc-chamados" aria-label="Chamados recentes">
-        <header><h3>Chamados recentes</h3>{c.totalChamados ? <span>{c.totalChamados} no total</span> : null}</header>
+      {f ? (
+        <Painel titulo="Financeiro" Icone={Wallet} resumo={f.emAberto > 0 ? `${moeda(f.emAberto)} em aberto` : "Em dia"} tom={f.emAberto > 0 ? "ruim" : "ok"}>
+          <dl>
+            <Linha rotulo="Em aberto"><b className={f.emAberto > 0 ? "ruim" : "ok"}>{moeda(f.emAberto)}</b></Linha>
+            <Linha rotulo="Faturas a receber">{f.titulosAReceber}</Linha>
+            {f.vencimentoDia ? <Linha rotulo="Vencimento">todo dia {f.vencimentoDia}</Linha> : null}
+            {f.promessasMes ? <Linha rotulo="Promessas de pagamento no mês">{f.promessasMes}</Linha> : null}
+            {f.isento ? <Linha rotulo="Cobrança">Isento</Linha> : null}
+          </dl>
+        </Painel>
+      ) : null}
+
+      {e && enderecoTexto ? (
+        <Painel titulo="Endereço" Icone={MapPin} resumo={[e.bairro, e.cidade].filter(Boolean).join(", ")}>
+          <p className="fc-endereco">{e.linha}{e.complemento ? `, ${e.complemento}` : ""}<br />{[e.bairro, [e.cidade, e.uf].filter(Boolean).join("/")].filter(Boolean).join(" · ")}{e.cep ? <><br />CEP {e.cep}</> : null}</p>
+          {e.referencia ? <p className="fc-ref">Referência: {e.referencia}</p> : null}
+          <div className="fc-acoes">
+            <Copiar texto={enderecoTexto} rotulo="endereço" />
+            {mapa ? <a href={mapa} target="_blank" rel="noreferrer"><ExternalLink size={13} aria-hidden="true" /> Abrir no mapa</a> : null}
+          </div>
+        </Painel>
+      ) : null}
+
+      {h?.visitaAgendada ? (
+        <Painel titulo="Visita agendada" Icone={CalendarClock} resumo={dataCurta(h.visitaAgendada.data)} tom="ok">
+          <p className="fc-visita"><b>{dataCurta(h.visitaAgendada.data)}</b> · {diaSemana(h.visitaAgendada.data)}<small>{h.visitaAgendada.tipo || "Chamado"} · protocolo {h.visitaAgendada.protocolo}</small></p>
+        </Painel>
+      ) : null}
+
+      {c.ultimaAvaliacao !== undefined ? (
+        <Painel titulo="Avaliações" Icone={Star} resumo={c.mediaAvaliacoes ? `média ${String(c.mediaAvaliacoes.media).replace(".", ",")}` : nota ? `${nota.nota}/5` : "sem avaliação"}>
+          <div className="fc-nota">
+            <Sinal nota={nota ? nota.nota : null} />
+            <div>
+              {nota ? (
+                <>
+                  <strong className={banda(nota.nota)}>{nota.nota}<span>/5</span></strong>
+                  <small>Última avaliação, {dataCurta(nota.respondidoEm)}{nota.tecnico ? ` · técnico ${nota.tecnico}` : ""}</small>
+                </>
+              ) : <small>Ainda não avaliou o atendimento.</small>}
+              {c.mediaAvaliacoes && c.mediaAvaliacoes.total > 1 ? <small>Média de {String(c.mediaAvaliacoes.media).replace(".", ",")} em {c.mediaAvaliacoes.total} avaliações</small> : null}
+            </div>
+            {nota?.comentario ? <blockquote>{nota.comentario}</blockquote> : null}
+          </div>
+        </Painel>
+      ) : null}
+
+      <Painel titulo="Chamados" Icone={ListChecks} resumo={c.totalChamados ? `${c.totalChamados} no total${abertos ? ` · ${abertos} ${abertos === 1 ? "aberto" : "abertos"}` : ""}` : undefined} tom={abertos ? "alerta" : undefined}>
+        {h ? (
+          <ul className="fc-numeros">
+            <li><b>{h.ultimos30Dias}</b><span>nos últimos 30 dias</span></li>
+            {h.tempoMedioDias !== null ? <li><b>{tempoMedio(h.tempoMedioDias)}</b><span>para resolver, em média</span></li> : null}
+            {h.assuntoMaisComum ? <li><b>{h.assuntoMaisComum.tipo}</b><span>se repete ({h.assuntoMaisComum.vezes}×)</span></li> : null}
+          </ul>
+        ) : null}
         {c.chamados === null ? <p className="fc-vazio">Os chamados estão indisponíveis agora.</p> : c.chamados.length === 0 ? <p className="fc-vazio">Nenhum chamado registrado para este cliente.</p> : (
-          <ol>
+          <ol className="fc-linha-tempo">
             {c.chamados.map((x: ChamadoResumo) => (
               <li key={x.protocolo || x.abertoEm + x.tipo} className={encerrado(x.status) ? "fechado" : "aberto"}>
                 <span className="fc-ponto" aria-hidden="true" />
@@ -82,7 +205,28 @@ function CartaoCliente({ c, outros }: { c: ClienteLigacao; outros?: string[] }) 
             ))}
           </ol>
         )}
-      </section>
+      </Painel>
+
+      {c.contatos?.length ? (
+        <Painel titulo="Contatos" Icone={Contact} resumo={`${c.contatos.length}`}>
+          <ul className="fc-contatos">
+            {c.contatos.map((t) => (
+              <li key={t.tipo + t.valor}>
+                {t.tipo === "email" ? <Mail size={13} aria-hidden="true" /> : <Phone size={13} aria-hidden="true" />}
+                <span>{t.tipo === "telefone" ? formatarTelefone(t.valor) : t.valor}</span>
+                <Copiar texto={t.valor} rotulo={t.tipo === "email" ? "e-mail" : "telefone"} />
+              </li>
+            ))}
+          </ul>
+        </Painel>
+      ) : null}
+
+      {c.anotacoes?.length || c.etiquetas?.length ? (
+        <Painel titulo="Observações do cadastro" Icone={StickyNote} resumo={`${(c.anotacoes?.length ?? 0) + (c.etiquetas?.length ?? 0)}`}>
+          {c.etiquetas?.length ? <div className="fc-chips">{c.etiquetas.map((t) => <span key={t} className="fc-chip">{t}</span>)}</div> : null}
+          {c.anotacoes?.length ? <ul className="fc-notas">{c.anotacoes.map((t, i) => <li key={i}>{t}</li>)}</ul> : null}
+        </Painel>
+      ) : null}
     </div>
   );
 }

@@ -2,8 +2,16 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "./api";
 
 export interface ChamadoResumo { protocolo: string; tipo: string; metodo: string; status: string; abertoEm: string; encerradoEm: string; assunto: string }
+export interface Endereco { linha: string; complemento: string; bairro: string; cidade: string; uf: string; cep: string; referencia: string; coordenadas: { lat: number; lng: number } | null }
+export interface Financeiro { emAberto: number; titulosAReceber: number; vencimentoDia: number | null; promessasMes: number; isento: boolean }
+export interface HistoricoChamados { ultimos30Dias: number; abertos: number; tempoMedioDias: number | null; assuntoMaisComum: { tipo: string; vezes: number } | null; visitaAgendada: { data: string; protocolo: string; tipo: string } | null }
+export interface Conexao { status: string; online: boolean; ultimaQueda: string | null; onlineDesde: string | null; sinalOnuDbm: number | null; sinalOltDbm: number | null; modelo: string; olt: string; porta: string; leituraEm: string | null }
 export interface ClienteLigacao {
   contrato: string; contratos?: string[]; nome: string; plano: string; cidade: string; situacao: string;
+  /** Dados extras da ficha (podem faltar quando o SGP/OLT não responderam). */
+  endereco?: Endereco; financeiro?: Financeiro; clienteDesde?: string; motivoStatus?: string; pop?: string; planoTv?: string; documento?: string;
+  contatos?: { tipo: "telefone" | "email"; valor: string }[]; etiquetas?: string[]; anotacoes?: string[];
+  historico?: HistoricoChamados | null; mediaAvaliacoes?: { media: number; total: number } | null; conexao?: Conexao | null;
   chamados: ChamadoResumo[] | null; totalChamados: number | null;
   /** undefined = não deu para consultar; null = o cliente nunca avaliou. */
   ultimaAvaliacao?: { nota: number; comentario: string; respondidoEm: string; tecnico: string } | null;
