@@ -46,6 +46,8 @@ import HistoricoAcoes from "./agenda/HistoricoAcoes";
 import GerenciarAgenda, { type Tecnico } from "./agenda/GerenciarAgenda";
 import AgendaInterativa, { INICIO_AGENDA, TIPOS_BLOQUEIO, inicioPeloClique, type Popup } from "./agenda/AgendaInterativa";
 
+const PREFERENCIA_VERSAO = "workspace.agenda.versao";
+const preferirVersaoWeb = () => { try { return localStorage.getItem(PREFERENCIA_VERSAO) !== "minimalista"; } catch { return true; } };
 type Aba = "instalacao" | "tecnica" | "rota" | "mapa" | "historico";
 const ABAS: Aba[] = ["tecnica", "instalacao", "rota", "mapa", "historico"];
 interface Absence {
@@ -108,13 +110,19 @@ export default function Agenda({
   const location = useLocation();
   const pageActive = location.pathname === "/agenda";
   const [aba, setAbaState] = useState<Aba>("tecnica");
-  // A agenda do próprio Workspace é o padrão seguro. A versão web usa uma
-  // WebContentsView nativa e fica disponível somente por escolha explícita;
-  // assim uma falha dessa camada nunca deixa o restante do app inacessível.
-  const [versaoWeb, setVersaoWebState] = useState(false);
-  const setVersaoWeb = (web: boolean) => setVersaoWebState(web);
+  // A versão web (a agenda original, igual ao navegador) é a padrão no aplicativo: é o visual que a equipe prefere.
+  // A versão minimalista do próprio Workspace continua a um clique ("Versão minimalista") e a escolha fica lembrada neste computador.
+  // A versão web usa uma WebContentsView nativa; a minimalista fica como alternativa caso essa camada falhe.
+  const [versaoWeb, setVersaoWebState] = useState(() => !!window.desktop && pageActive && preferirVersaoWeb());
+  const setVersaoWeb = (web: boolean) => {
+    setVersaoWebState(web);
+    try { localStorage.setItem(PREFERENCIA_VERSAO, web ? "web" : "minimalista"); } catch { /* sem armazenamento: vale só nesta abertura */ }
+  };
+  // A página nativa da versão web nunca fica montada com a agenda escondida (ela esconderia a do Navegador): sai ao deixar a tela
+  // e volta, pela preferência, ao entrar de novo.
   useEffect(() => {
     if (!pageActive) setVersaoWebState(false);
+    else if (window.desktop && preferirVersaoWeb()) setVersaoWebState(true);
   }, [pageActive]);
   const [visitadas, setVisitadas] = useState<Set<Aba>>(() => new Set(["tecnica"]));
   const setAba = (a: Aba) => {

@@ -8,6 +8,13 @@ export interface ChangelogEntry {
 
 export const changelog: ChangelogEntry[] = [
   {
+    versao: "0.6.26",
+    data: "2026-11-09",
+    itens: [
+      "A Agenda de técnicos agora abre na versão web, com o mesmo visual do navegador, que é a que a equipe prefere. Para voltar à versão minimalista, use o botão \"Versão minimalista\" no topo; o app lembra a sua escolha neste computador.",
+    ],
+  },
+  {
     versao: "0.6.25",
     data: "2026-11-09",
     itens: [
