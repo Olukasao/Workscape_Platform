@@ -1,7 +1,10 @@
-import { useMemo, useState, type FormEvent } from "react";
-import { ArrowRight, Clock, Globe2, History, LayoutDashboard, Search, Waypoints } from "lucide-react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { ArrowRight, Clock, Globe2, History, LayoutDashboard, Search, Sparkles, Waypoints } from "lucide-react";
 import { clsx } from "clsx";
 import { Button } from "../components/ui/button";
+import { useSession } from "../stores/workspace";
+import { jaViu, marcarVisto, useTour } from "../tour/tour";
+import { passosTourBgp, TOUR_BGP } from "../tour/passosBgp";
 import { EmptyState, Skeleton } from "../components/ui/primitives";
 import { errorMessage } from "../services/api";
 import {
@@ -63,7 +66,7 @@ function Busca() {
     setQ(texto.trim());
   };
   return (
-    <section className="bgp-card bgp-search" aria-label="Buscar IP, prefixo ou ASN">
+    <section className="bgp-card bgp-search" data-tour="bgp-busca" aria-label="Buscar IP, prefixo ou ASN">
       <form onSubmit={enviar} className="bgp-search-form">
         <Search size={16} aria-hidden="true" />
         <input value={texto} onChange={(e) => setTexto(e.target.value)} placeholder="Buscar IP, prefixo ou ASN — ex.: 8.8.8.8, 187.52.38.0/24, AS15169" aria-label="IP, prefixo ou ASN" />
@@ -108,7 +111,7 @@ function VisaoGeral() {
         </header>
         {peers.isPending ? <Skeleton className="h-24" /> : null}
         {peers.data?.items?.length ? (
-          <ul className="bgp-peers">
+          <ul className="bgp-peers" data-tour="bgp-peers">
             {peers.data.items.map((p) => (
               <li key={p.peer_hash_id} className={clsx("bgp-peer", p.peer_state !== "up" && "is-down")}>
                 <span className="bgp-dot" aria-hidden="true" />
@@ -129,7 +132,7 @@ function VisaoGeral() {
         </header>
         {mudancas.isPending ? <Skeleton className="h-24" /> : null}
         {mudancas.data?.items?.length ? (
-          <ul className="bgp-feed">{mudancas.data.items.slice(0, 20).map((m) => <LinhaMudanca key={m.id} m={m} />)}</ul>
+          <ul className="bgp-feed" data-tour="bgp-feed">{mudancas.data.items.slice(0, 20).map((m) => <LinhaMudanca key={m.id} m={m} />)}</ul>
         ) : mudancas.data && !mudancas.isPending ? <p className="bgp-muted">Nenhuma mudança recente.</p> : null}
       </section>
     </div>
@@ -161,7 +164,7 @@ function MaquinaDoTempo() {
   }
 
   return (
-    <section className="bgp-card" aria-labelledby="bgp-tempo-t">
+    <section className="bgp-card" data-tour="bgp-tempo" aria-labelledby="bgp-tempo-t">
       <header className="bgp-card-head">
         <h2 id="bgp-tempo-t"><Clock size={16} aria-hidden="true" /> Como estava em…</h2>
         <span className="bgp-muted">O caminho de um prefixo numa data e hora passadas</span>
@@ -251,7 +254,7 @@ function Historico() {
   return (
     <div className="bgp-grid">
       <MaquinaDoTempo />
-      <section className="bgp-card bgp-filters" aria-label="Filtros do histórico">
+      <section className="bgp-card bgp-filters" data-tour="bgp-filtros" aria-label="Filtros do histórico">
         <form onSubmit={aplicar} className="bgp-filters-form">
           <label className="bgp-search-form">
             <Search size={16} aria-hidden="true" />
@@ -274,7 +277,7 @@ function Historico() {
         {erroFiltro ? <div className="inline-error" role="alert">{erroFiltro}</div> : null}
       </section>
 
-      <section className="bgp-card" aria-label="Resultados do histórico" aria-busy={q.isFetching}>
+      <section className="bgp-card" data-tour="bgp-linha" aria-label="Resultados do histórico" aria-busy={q.isFetching}>
         {q.isPending ? <Skeleton className="h-40" /> : null}
         {q.isError ? <div className="inline-error" role="alert">{errorMessage(q.error)}</div> : null}
         {indisponivel ? <EmptyState title="Coletor de rotas indisponível">Não consegui falar com a VM do OpenBMP agora.</EmptyState> : null}
@@ -313,13 +316,37 @@ function Historico() {
 export default function RotasBgp() {
   const resumo = useResumoBgp();
   const [aba, setAba] = useState<"geral" | "historico">("geral");
+  const usuario = useSession((st) => st.user);
+  const iniciarTour = useTour((st) => st.iniciar);
+  const passoAtual = useTour((st) => (st.ativo?.id === TOUR_BGP ? st.ativo.passos[st.passo]?.id : undefined));
+  // Durante o tour, a aba acompanha o passo (os passos "hist-*" são da aba Histórico).
+  useEffect(() => {
+    if (passoAtual) setAba(passoAtual.startsWith("hist-") ? "historico" : "geral");
+  }, [passoAtual]);
+  // Primeira vez nesta tela: oferece o tour (pode pular), uma única vez.
+  const [convite, setConvite] = useState(false);
+  useEffect(() => {
+    if (!usuario || jaViu(TOUR_BGP, usuario.id) || jaViu(TOUR_BGP, usuario.id, "convite")) return;
+    const t = window.setTimeout(() => setConvite(true), 1200);
+    return () => window.clearTimeout(t);
+  }, [usuario]);
+  const comecarTour = () => {
+    if (usuario) marcarVisto(TOUR_BGP, usuario.id, "convite");
+    setConvite(false);
+    setAba("geral");
+    iniciarTour(TOUR_BGP, passosTourBgp);
+  };
+  const dispensarConvite = () => {
+    if (usuario) marcarVisto(TOUR_BGP, usuario.id, "convite");
+    setConvite(false);
+  };
   const t = resumo.data?.totals;
   const fora = resumo.data && resumo.data.disponivel === false;
   const saudavel = !!t && t.peers_up === t.peers && t.routers_up === t.routers;
 
   return (
     <div className="page bgp-page">
-      <header className={clsx("bgp-hero", t && !saudavel && "is-alert", fora && "is-off")}>
+      <header data-tour="bgp-hero" className={clsx("bgp-hero", t && !saudavel && "is-alert", fora && "is-off")}>
         <div className="bgp-hero-main">
           <span className="bgp-hero-icon" aria-hidden="true"><Globe2 size={22} strokeWidth={1.7} /></span>
           <div>
@@ -330,8 +357,11 @@ export default function RotasBgp() {
             </p>
           </div>
         </div>
+        <button type="button" className="bgp-tour-btn" onClick={comecarTour} title="Veja o passo a passo desta tela">
+          <Sparkles size={14} aria-hidden="true" /> Ver o tour
+        </button>
         {t ? (
-          <dl className="bgp-stats">
+          <dl className="bgp-stats" data-tour="bgp-stats">
             <div><dt>Roteadores</dt><dd>{t.routers_up}/{t.routers}</dd></div>
             <div><dt>Sessões BGP</dt><dd>{t.peers_up}/{t.peers}</dd></div>
             <div><dt>Prefixos</dt><dd>{milhar(t.prefixes)}</dd></div>
@@ -340,9 +370,18 @@ export default function RotasBgp() {
         ) : resumo.isPending ? <Skeleton className="h-16" /> : null}
       </header>
 
+      {convite ? (
+        <aside className="bgp-convite" role="complementary" aria-label="Convite para o tour de Rotas BGP">
+          <Sparkles size={18} aria-hidden="true" />
+          <p><strong>Primeira vez por aqui?</strong> Faça o tour de 1 minuto e veja como ler esta tela.</p>
+          <Button onClick={comecarTour}>Fazer o tour</Button>
+          <Button variant="ghost" onClick={dispensarConvite}>Agora não</Button>
+        </aside>
+      ) : null}
+
       {resumo.isError ? <div className="inline-error" role="alert">{errorMessage(resumo.error)}</div> : null}
 
-      <nav className="bgp-tabs" role="tablist" aria-label="Seções de Rotas BGP">
+      <nav className="bgp-tabs" data-tour="bgp-tabs" role="tablist" aria-label="Seções de Rotas BGP">
         <button role="tab" aria-selected={aba === "geral"} onClick={() => setAba("geral")}><LayoutDashboard size={15} aria-hidden="true" /> Visão geral</button>
         <button role="tab" aria-selected={aba === "historico"} onClick={() => setAba("historico")}><History size={15} aria-hidden="true" /> Histórico</button>
       </nav>

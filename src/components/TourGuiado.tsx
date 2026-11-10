@@ -4,7 +4,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { ArrowLeft, ArrowRight, Check, X } from "lucide-react";
 import { clsx } from "clsx";
 import { useSession } from "../stores/workspace";
-import { fatorZoomCss, jaViu, marcarVisto, paraPixelsCss, posicionarBalao, useTour, vizinho, type PosicaoBalao, type Retangulo } from "../tour/tour";
+import { TOURS_PULAVEIS, fatorZoomCss, jaViu, marcarVisto, paraPixelsCss, posicionarBalao, useTour, vizinho, type PosicaoBalao, type Retangulo } from "../tour/tour";
 
 const FOLGA_DESTAQUE = 8;
 const ESPERA_ELEMENTO_MS = 2500;
@@ -34,7 +34,7 @@ export default function TourGuiado() {
   const atual = passos[passo];
   const ultimo = passo >= passos.length - 1;
   // Na primeira vez o tour é obrigatório: sem Pular nem Esc, só some ao concluir. Depois de visto, quem refaz pode pular.
-  const obrigatorio = !!ativo && !!usuario && !jaViu(ativo.id, usuario.id);
+  const obrigatorio = !!ativo && !!usuario && !TOURS_PULAVEIS.has(ativo.id) && !jaViu(ativo.id, usuario.id);
 
   const fechar = useCallback(() => {
     if (ativo && usuario) marcarVisto(ativo.id, usuario.id);
