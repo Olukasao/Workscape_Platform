@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { isAxiosError } from "axios";
 import { clients } from "./api";
 import { useSession } from "../stores/workspace";
@@ -55,5 +55,68 @@ export function useBuscaBgp(q: string) {
     staleTime: 30000,
     retry: false,
     queryFn: async () => (await clients.chat.get<BuscaBgp>("/integrations/bmp/busca", { params: { q } })).data,
+  });
+}
+
+export interface FiltroHistorico {
+  prefix: string;
+  asn: string;
+  start: string;
+  end: string;
+}
+export interface PaginaHistorico {
+  disponivel: boolean;
+  items?: MudancaBgp[];
+  next_cursor?: string | null;
+  error?: string;
+}
+
+/** Histórico de anúncios e retiradas, com "carregar mais" por cursor. */
+export function useHistoricoBgp(filtro: FiltroHistorico, ativo: boolean) {
+  return useInfiniteQuery({
+    queryKey: ["bgp", "historico", filtro],
+    enabled: ativo,
+    staleTime: 30000,
+    retry: false,
+    initialPageParam: "",
+    getNextPageParam: (ultima: PaginaHistorico) => ultima.next_cursor || undefined,
+    queryFn: async ({ pageParam }) => {
+      const params: Record<string, string> = {};
+      if (filtro.prefix) params.prefix = filtro.prefix;
+      if (filtro.asn) params.asn = filtro.asn;
+      if (filtro.start) params.start = filtro.start;
+      if (filtro.end) params.end = filtro.end;
+      if (pageParam) params.before = pageParam;
+      return (await clients.chat.get<PaginaHistorico>("/integrations/bmp/historico", { params })).data;
+    },
+  });
+}
+
+export interface EstadoPeer {
+  peer_hash_id: string;
+  peer_name: string;
+  peer_as: number;
+  timestamp: string | null;
+  iswithdrawn: boolean;
+  attrs_unknown?: boolean;
+  as_path: string[] | null;
+  next_hop: string | null;
+}
+export interface EstadoPrefixo {
+  disponivel: boolean;
+  prefix?: string;
+  timestamp?: string;
+  peers?: EstadoPeer[];
+  error?: string;
+}
+
+/** Como um prefixo estava numa data e hora (máquina do tempo). */
+export function useEstadoBgp(prefix: string, ts: string) {
+  return useQuery({
+    queryKey: ["bgp", "estado", prefix, ts],
+    enabled: !!prefix && !!ts,
+    staleTime: 60000,
+    retry: false,
+    queryFn: async () => (await clients.chat.get<EstadoPrefixo>("/integrations/bmp/estado", { params: { prefix, ts } })).data,
   });
 }

@@ -8,6 +8,14 @@ export interface ChangelogEntry {
 
 export const changelog: ChangelogEntry[] = [
   {
+    versao: "0.6.30",
+    data: "2026-11-10",
+    itens: [
+      "A tela Rotas (BGP) ganhou visual novo: um painel no topo mostra de cara se todas as sessões estão no ar, e as sessões aparecem como cartões fáceis de ler.",
+      "Nova aba Histórico: dá para ver tudo o que mudou na rede por período (1 hora a 30 dias), filtrar por prefixo ou AS, separar anunciadas e retiradas, e consultar como um prefixo estava em uma data e hora do passado.",
+    ],
+  },
+  {
     versao: "0.6.29",
     data: "2026-11-10",
     itens: [
