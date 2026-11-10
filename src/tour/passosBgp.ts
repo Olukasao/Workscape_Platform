@@ -64,7 +64,7 @@ export const passosTourBgp: PassoTour[] = [
     rota: "/rotas",
     alvo: "bgp-tempo",
     titulo: "Como estava em…",
-    texto: "Informe um prefixo e uma data e hora do passado. Você vê o caminho que ele fazia naquele momento, por cada sessão. Ótimo para comparar antes e depois de um problema.",
+    texto: "Informe um prefixo e uma data e hora do passado. Você vê o caminho que ele fazia naquele momento e, logo abaixo, tudo o que mudou nele daquela data até hoje. Ótimo para entender o que aconteceu depois de um problema.",
     lado: "baixo",
   },
   {

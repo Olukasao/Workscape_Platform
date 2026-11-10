@@ -153,6 +153,9 @@ function MaquinaDoTempo() {
   const [alvo, setAlvo] = useState({ prefixo: "", ts: "" });
   const [erro, setErro] = useState("");
   const q = useEstadoBgp(alvo.prefixo, alvo.ts);
+  // Tudo o que mudou nesse prefixo, da data escolhida até hoje.
+  const desde = useHistoricoBgp({ prefix: alvo.prefixo, asn: "", start: alvo.ts, end: "" }, !!alvo.prefixo && !!alvo.ts);
+  const eventosDesde = (desde.data?.pages ?? []).flatMap((p) => p.items ?? []);
 
   function consultar(e: FormEvent) {
     e.preventDefault();
@@ -167,7 +170,7 @@ function MaquinaDoTempo() {
     <section className="bgp-card" data-tour="bgp-tempo" aria-labelledby="bgp-tempo-t">
       <header className="bgp-card-head">
         <h2 id="bgp-tempo-t"><Clock size={16} aria-hidden="true" /> Como estava em…</h2>
-        <span className="bgp-muted">O caminho de um prefixo numa data e hora passadas</span>
+        <span className="bgp-muted">O caminho de um prefixo numa data passada e tudo o que mudou dali até hoje</span>
       </header>
       <form onSubmit={consultar} className="bgp-filters-row">
         <label className="bgp-search-form" style={{ flex: 1, minWidth: 220 }}>
@@ -197,6 +200,25 @@ function MaquinaDoTempo() {
             ))}
           </ul>
         )
+      ) : null}
+      {alvo.prefixo ? (
+        <div className="bgp-desde">
+          <h3>
+            Mudanças de {alvo.prefixo} desde {dataHora(alvo.ts)} até hoje
+            {desde.data ? <span className="bgp-muted"> · {milhar(eventosDesde.length)}{desde.hasNextPage ? "+" : ""} eventos</span> : null}
+          </h3>
+          {desde.isPending ? <Skeleton className="h-16" /> : null}
+          {desde.isError ? <div className="inline-error" role="alert">{errorMessage(desde.error)}</div> : null}
+          {desde.data && !eventosDesde.length ? <p className="bgp-muted">Nenhuma mudança neste prefixo depois dessa data: o estado acima continua o mesmo até hoje.</p> : null}
+          {eventosDesde.length ? <ul className="bgp-feed">{eventosDesde.map((m) => <LinhaMudanca key={m.id} m={m} comData />)}</ul> : null}
+          {desde.hasNextPage ? (
+            <div className="bgp-more">
+              <Button variant="outline" onClick={() => void desde.fetchNextPage()} disabled={desde.isFetchingNextPage}>
+                {desde.isFetchingNextPage ? "Carregando…" : "Carregar mais eventos"}
+              </Button>
+            </div>
+          ) : null}
+        </div>
       ) : null}
     </section>
   );

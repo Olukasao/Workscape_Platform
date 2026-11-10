@@ -8,6 +8,13 @@ export interface ChangelogEntry {
 
 export const changelog: ChangelogEntry[] = [
   {
+    versao: "0.6.31",
+    data: "2026-11-10",
+    itens: [
+      "Em Rotas (BGP), no Histórico, o \"Como estava em…\" agora mostra também tudo o que mudou no prefixo desde a data escolhida até hoje, não só o estado daquele momento.",
+    ],
+  },
+  {
     versao: "0.6.30",
     data: "2026-11-10",
     itens: [
