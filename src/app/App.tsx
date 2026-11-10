@@ -17,6 +17,7 @@ import {
   Wrench,
   Globe,
   RadioTower,
+  Network,
   Bell,
   UserRound,
   Settings2,
@@ -107,6 +108,7 @@ const Dashboard = lazy(() => import("../modules/Dashboard"));
 const Chat = lazy(() => import("../modules/Chat"));
 const Navegador = lazy(() => import("../modules/Navegador"));
 const RedeOlt = lazy(() => import("../modules/RedeOlt"));
+const RotasBgp = lazy(() => import("../modules/RotasBgp"));
 import InternalNoticeManager from "../legacy/components/InternalNoticeManager";
 const TerminalSsh = lazy(() => import("../modules/Terminal"));
 const Workspaces = lazy(() => import("../modules/Workspaces"));
@@ -289,6 +291,7 @@ function Shell() {
         ...(rede.data && !rede.data.negado
           ? [{ path: "/rede", label: "Rede (OLT)", icon: RadioTower, badge: redeVisiveis.length }]
           : []),
+        ...(rede.data && !rede.data.negado ? [{ path: "/rotas", label: "Rotas (BGP)", icon: Network }] : []),
         ...(pode("tools") ? [{ path: "/tools", label: "Ferramentas", icon: Wrench }] : []),
         ...(pode("terminal") && window.desktop ? [{ path: "/terminal", label: "Terminal", icon: SquareTerminal }] : []),
         ...(pode("navegador") ? [{ path: "/navegador", label: "Navegador", icon: Globe }] : []),
@@ -427,6 +430,7 @@ function Shell() {
                     <Route path="/workspaces" element={<Workspaces />} />
                     <Route path="/assistente" element={<Assistente />} />
                     <Route path="/terminal" element={terminalDestacado ? <JanelaEmOutraTela kind="terminal" /> : <TerminalSsh active />} />
+                    <Route path="/rotas" element={<RotasBgp />} />
                     <Route path="/rede" element={redeDestacada ? <JanelaEmOutraTela kind="rede" /> : <RedeOlt />} />
                     <Route path="/dashboard" element={dashboardDestacado ? <JanelaEmOutraTela kind="dashboard" /> : <Dashboard />} />
                     <Route

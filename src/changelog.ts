@@ -8,6 +8,13 @@ export interface ChangelogEntry {
 
 export const changelog: ChangelogEntry[] = [
   {
+    versao: "0.6.29",
+    data: "2026-11-10",
+    itens: [
+      "Nova tela \"Rotas (BGP)\" no menu Operação: mostra se as sessões com as operadoras e o IX estão no ar, quantos prefixos o roteador está vendo e as últimas mudanças de rota. Dá para buscar um IP, prefixo ou AS para ver por onde o caminho passa.",
+    ],
+  },
+  {
     versao: "0.6.28",
     data: "2026-11-10",
     itens: [
