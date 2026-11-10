@@ -7876,3 +7876,7 @@ button.tool-card {
 @media (prefers-reduced-motion: reduce) {
   .agenda-versao-web { animation: none; box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 22%, transparent), 0 0 14px 0 color-mix(in srgb, var(--primary) 45%, transparent); }
 }
+
+.telefone-busca { width: 100%; box-sizing: border-box; padding: 9px 12px; border-radius: var(--r-pill); border: 1px solid rgba(255, 255, 255, 0.18); background: rgba(255, 255, 255, 0.1); color: inherit; font: inherit; font-size: 13px; outline: none; }
+.telefone-busca::placeholder { color: rgba(242, 246, 255, 0.55); }
+.telefone-busca:focus-visible { border-color: var(--cyan-400); }

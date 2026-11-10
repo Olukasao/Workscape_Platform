@@ -12,6 +12,7 @@ export const changelog: ChangelogEntry[] = [
     data: "2026-11-10",
     itens: [
       "O telefone agora pode ser redimensionado por qualquer lado ou canto, não só pelo canto de baixo. Ele também nunca fica maior que a tela, para não perder as alças em notebook.",
+      "No telefone, na aba Equipe e na hora de transferir uma chamada, agora dá para buscar a pessoa pelo nome (ou ramal). Se sobrar só uma, o Enter já liga ou transfere.",
     ],
   },
   {

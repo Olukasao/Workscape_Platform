@@ -116,13 +116,40 @@ function AvatarChamada({ titulo, ativo }: { titulo: string; ativo: boolean }) {
 const FILAS: [string, string][] = [["Suporte", "100001"], ["Financeiro", "10002"], ["Comercial", "10003"]];
 
 /** Ramais da equipe com o que cada um está fazendo (disponível, em ligação, almoço…). Clique para ligar. */
+/** Texto sem acento e em minúsculas, para a busca achar "joao" em "João". */
+const semAcento = (t: string) => t.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+/** Filtra a lista da equipe pelo nome (ou ramal) digitado. */
+const filtrarPessoas = <T extends { nome: string; ramal: string }>(lista: T[], busca: string) => {
+  const termos = semAcento(busca).split(/\s+/).filter(Boolean);
+  return termos.length ? lista.filter((r) => termos.every((t) => semAcento(`${r.nome} ${r.ramal}`).includes(t))) : lista;
+};
+function CampoBusca({ valor, aoMudar, aoEnter }: { valor: string; aoMudar: (v: string) => void; aoEnter?: () => void }) {
+  return (
+    <input
+      type="search"
+      className="telefone-busca"
+      placeholder="Buscar pessoa pelo nome"
+      aria-label="Buscar pessoa pelo nome"
+      autoComplete="off"
+      value={valor}
+      onChange={(e) => aoMudar(e.target.value)}
+      onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); aoEnter?.(); } }}
+    />
+  );
+}
+
 function EquipeRamais({ podeLigar, aoLigar }: { podeLigar: boolean; aoLigar: (ramal: string) => void }) {
   const diretorio = useDiretorio();
   const { rotuloDe, mapa } = useSituacoes();
   const eu = useSession((s) => s.user?.id);
-  const lista = [...diretorio].filter((r) => r.usuarioId !== eu).sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
-  if (!lista.length) return <p className="telefone-vazio">Nenhum ramal cadastrado ainda.</p>;
+  const [busca, setBusca] = useState("");
+  const todos = [...diretorio].filter((r) => r.usuarioId !== eu).sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
+  const lista = filtrarPessoas(todos, busca);
+  if (!todos.length) return <p className="telefone-vazio">Nenhum ramal cadastrado ainda.</p>;
   return (
+    <>
+    <CampoBusca valor={busca} aoMudar={setBusca} aoEnter={() => { if (lista.length === 1 && podeLigar) aoLigar(lista[0].ramal); }} />
+    {!lista.length ? <p className="telefone-vazio">Ninguém encontrado para "{busca}".</p> : null}
     <ul className="telefone-equipe" aria-label="Ramais da equipe">
       {lista.map((r) => {
         const s = mapa.get(r.usuarioId)?.situacao ?? null;
@@ -135,6 +162,7 @@ function EquipeRamais({ podeLigar, aoLigar }: { podeLigar: boolean; aoLigar: (ra
         );
       })}
     </ul>
+    </>
   );
 }
 
@@ -144,9 +172,14 @@ function PessoasParaTransferir({ aoEscolher }: { aoEscolher: (ramal: string) => 
   const diretorio = useDiretorio();
   const { rotuloDe, mapa } = useSituacoes();
   const eu = useSession((s) => s.user?.id);
-  const lista = [...diretorio].filter((r) => r.usuarioId !== eu).sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
-  if (!lista.length) return null;
+  const [busca, setBusca] = useState("");
+  const todos = [...diretorio].filter((r) => r.usuarioId !== eu).sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
+  const lista = filtrarPessoas(todos, busca);
+  if (!todos.length) return null;
   return (
+    <>
+    <CampoBusca valor={busca} aoMudar={setBusca} aoEnter={() => { if (lista.length === 1) aoEscolher(lista[0].ramal); }} />
+    {!lista.length ? <p className="telefone-vazio">Ninguém encontrado para "{busca}".</p> : null}
     <ul className="telefone-equipe telefone-equipe-transferir" aria-label="Transferir para uma pessoa">
       {lista.map((r) => {
         const s = mapa.get(r.usuarioId)?.situacao ?? null;
@@ -159,6 +192,7 @@ function PessoasParaTransferir({ aoEscolher }: { aoEscolher: (ramal: string) => 
         );
       })}
     </ul>
+    </>
   );
 }
 
