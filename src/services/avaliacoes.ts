@@ -13,6 +13,8 @@ export interface AvaliacaoItem {
   respondidoEm: string;
   assunto: string;
   tecnico: string;
+  /** Nome do cliente que avaliou (vazio se o site não conhece). */
+  cliente?: string;
   destaque?: boolean;
 }
 
@@ -46,7 +48,7 @@ export function useAvaliacoesFeed() {
       if (!item) return;
       const estrelas = "★".repeat(item.nota) + "☆".repeat(5 - item.nota);
       const title = `Avaliação do atendimento: ${estrelas}`;
-      const body = [item.comentario ? `“${item.comentario}”` : "Cliente avaliou o atendimento", item.tecnico ? `Técnico: ${item.tecnico}` : ""].filter(Boolean).join(" — ");
+      const body = [item.cliente ? `Cliente: ${item.cliente}` : "", item.comentario ? `“${item.comentario}”` : "Cliente avaliou o atendimento", item.tecnico ? `Técnico: ${item.tecnico}` : ""].filter(Boolean).join(" — ");
       const target = pode("chamados") ? "/chamados?aba=avaliacoes" : "/";
       useNotices.getState().add({ id: `avaliacao-enviada:${item.protocolo}:${Date.now()}`, title, body, target, time: new Date().toISOString() });
       void window.desktop?.notify({ title, body, target, context: "Avaliação do atendimento", kind: "system", tone: item.nota <= 2 ? "crit" : item.nota === 3 ? "warn" : "info" });
@@ -63,8 +65,8 @@ export function useAvaliacoesFeed() {
       const estrelas = "★".repeat(a.nota) + "☆".repeat(5 - a.nota);
       const title = total > 1 ? `${total} novas avaliações do atendimento` : `Nova avaliação do atendimento: ${estrelas}`;
       const body = total > 1
-        ? `Mais recente: ${a.nota} de 5${a.comentario ? ` — “${a.comentario}”` : ""}`
-        : [a.comentario ? `“${a.comentario}”` : "Sem comentário", a.tecnico ? `Técnico: ${a.tecnico}` : ""].filter(Boolean).join(" — ");
+        ? `Mais recente${a.cliente ? ` (${a.cliente})` : ""}: ${a.nota} de 5${a.comentario ? ` — “${a.comentario}”` : ""}`
+        : [a.cliente ? `Cliente: ${a.cliente}` : "", a.comentario ? `“${a.comentario}”` : "Sem comentário", a.tecnico ? `Técnico: ${a.tecnico}` : ""].filter(Boolean).join(" — ");
       useNotices.getState().add({
         id: `avaliacao:${itens.map((i) => i.protocolo).join(",")}`,
         title,

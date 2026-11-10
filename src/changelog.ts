@@ -8,6 +8,14 @@ export interface ChangelogEntry {
 
 export const changelog: ChangelogEntry[] = [
   {
+    versao: "0.6.32",
+    data: "2026-11-10",
+    itens: [
+      "Nas Avaliações do atendimento, o painel e a notificação agora mostram o nome do cliente que avaliou (inclusive nas avaliações antigas).",
+      "Corrigido o erro ao editar um equipamento no Terminal (aparecia \"Unrecognized key temSenha\" ao salvar).",
+    ],
+  },
+  {
     versao: "0.6.31",
     data: "2026-11-10",
     itens: [

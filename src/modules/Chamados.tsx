@@ -201,7 +201,7 @@ interface RelatorioAvaliacoes {
   periodo: string;
   resumo: { total: number; media: number | null; comComentario: number; distribuicao: Record<string, number> };
   tecnicos: { tecnico: string; avaliacoes: number; media: number }[];
-  itens: { protocolo: string; nota: number; comentario: string; respondidoEm: string; assunto: string; tecnico: string; destaque?: boolean }[];
+  itens: { protocolo: string; nota: number; comentario: string; respondidoEm: string; assunto: string; tecnico: string; cliente?: string; destaque?: boolean }[];
   podeDestacar?: boolean;
 }
 const PERIODOS = [["7d", "7 dias"], ["30d", "30 dias"], ["90d", "90 dias"]] as const;
@@ -327,6 +327,7 @@ function Avaliacoes() {
                   {i.comentario ? <p className="aval-comentario">“{i.comentario}”</p> : <p className="aval-sem-comentario">Sem comentário</p>}
                   <div className="aval-meta">
                     <span>{i.assunto || "Chamado"}</span>
+                    <span>Cliente: <b>{i.cliente || "não identificado"}</b></span>
                     <span>Técnico: <b>{i.tecnico || "não informado"}</b></span>
                     <span>Protocolo {i.protocolo || "—"}</span>
                   </div>

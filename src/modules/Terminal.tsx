@@ -66,7 +66,9 @@ export default function Terminal({ active }: { active: boolean }) {
     if (!edicao) return;
     try {
       setErro("");
-      await window.desktop!.terminalSalvar({ dono, equipamento: { ...edicao, senha: edicao.senha || undefined } });
+      // temSenha é só de leitura (vem do servidor); o esquema estrito do salvar recusa chaves desconhecidas.
+      const { temSenha: _temSenha, ...dados } = edicao as EquipamentoForm & { temSenha?: boolean };
+      await window.desktop!.terminalSalvar({ dono, equipamento: { ...dados, senha: edicao.senha || undefined } });
       setEdicao(null);
       await carregar();
     } catch (e) { setErro(errorMessage(e)); }
