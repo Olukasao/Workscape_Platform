@@ -135,6 +135,29 @@ function EquipeRamais({ podeLigar, aoLigar }: { podeLigar: boolean; aoLigar: (ra
 }
 
 /** Controles de uma ligação em andamento. A sessão SIP fica no processo principal: trocar de tela não derruba a chamada. */
+/** Pessoas do chat interno que têm ramal: um clique transfere a chamada para elas. */
+function PessoasParaTransferir({ aoEscolher }: { aoEscolher: (ramal: string) => void }) {
+  const diretorio = useDiretorio();
+  const { rotuloDe, mapa } = useSituacoes();
+  const eu = useSession((s) => s.user?.id);
+  const lista = [...diretorio].filter((r) => r.usuarioId !== eu).sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
+  if (!lista.length) return null;
+  return (
+    <ul className="telefone-equipe telefone-equipe-transferir" aria-label="Transferir para uma pessoa">
+      {lista.map((r) => {
+        const s = mapa.get(r.usuarioId)?.situacao ?? null;
+        return (
+          <li key={r.ramal}>
+            <span className={`equipe-ponto ${s === "ligacao" ? "ligacao" : s ? "ocupado" : "livre"}`} aria-hidden="true" />
+            <div><strong>{r.nome}</strong><small>Ramal {r.ramal} · {rotuloDe(r.usuarioId) || "Disponível"}</small></div>
+            <button type="button" onClick={() => aoEscolher(r.ramal)} aria-label={`Transferir para ${r.nome}`} title={`Transferir para ${r.nome}`}><PhoneForwarded size={15} aria-hidden="true" /></button>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
 function EmChamada({ chamada: bruta, equipe }: { chamada: Chamada; equipe: Map<string, string> }) {
   const chamada = useChamadaReal(bruta);
   const fichaAuto = useFichaAutomatica();
@@ -180,6 +203,8 @@ function EmChamada({ chamada: bruta, equipe }: { chamada: Chamada; equipe: Map<s
       ) : null}
       {transferir ? (
         <>
+        <p className="telefone-transferir-titulo">Transferir para</p>
+        <PessoasParaTransferir aoEscolher={async (ramal) => { if (await executar(d?.phoneTransfer?.(chamada.id, ramal))) { avisarTransferencia(chamada.numero, ramal); setDestino(""); setTransferir(false); } }} />
         <div className="telefone-filas" role="group" aria-label="Transferir para a fila">
           {FILAS.map(([nome, ramal]) => (
             <button type="button" key={ramal} onClick={async () => { if (await executar(d?.phoneTransfer?.(chamada.id, ramal))) { avisarTransferencia(chamada.numero, ramal); setDestino(""); setTransferir(false); } }}>{nome}</button>

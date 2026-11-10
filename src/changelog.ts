@@ -8,6 +8,13 @@ export interface ChangelogEntry {
 
 export const changelog: ChangelogEntry[] = [
   {
+    versao: "0.6.27",
+    data: "2026-11-10",
+    itens: [
+      "No telefone, em uma ligação, o botão Transferir agora mostra todas as pessoas da equipe que têm ramal. É só clicar no nome e a chamada é transferida.",
+    ],
+  },
+  {
     versao: "0.6.26",
     data: "2026-11-09",
     itens: [

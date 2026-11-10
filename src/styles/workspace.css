@@ -7104,6 +7104,9 @@ button.tool-card {
 .telefone-chamada-acoes button[aria-pressed="true"] { background: rgba(58, 214, 255, 0.28); color: #fff; }
 .telefone-chamada-acoes button:disabled { opacity: 0.4; }
 .telefone-teclas-compacto button { height: 40px; }
+.telefone-transferir-titulo { margin: 0 0 4px; font-size: 12px; font-weight: 700; opacity: 0.7; }
+.telefone-equipe-transferir { max-height: 150px; margin-bottom: 8px; }
+.telefone-equipe-transferir button { background: rgba(47, 107, 255, 0.35); color: #fff; }
 .telefone-filas { display: flex; gap: 6px; margin-bottom: 8px; }
 .telefone-filas button { flex: 1; padding: 9px 6px; border-radius: 12px; font-weight: 700; font-size: 13px; color: #fff; background: rgba(47, 107, 255, 0.85); }
 .telefone-filas button:focus-visible { outline: 2px solid var(--cyan-400); outline-offset: 2px; }
