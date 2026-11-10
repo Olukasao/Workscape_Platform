@@ -3,7 +3,7 @@ import { ArrowRight, Clock, Globe2, History, LayoutDashboard, Search, Sparkles, 
 import { clsx } from "clsx";
 import { Button } from "../components/ui/button";
 import { useSession } from "../stores/workspace";
-import { jaViu, marcarVisto, useTour } from "../tour/tour";
+import { marcarVisto, useTour } from "../tour/tour";
 import { passosTourBgp, TOUR_BGP } from "../tour/passosBgp";
 import { EmptyState, Skeleton } from "../components/ui/primitives";
 import { errorMessage } from "../services/api";
@@ -323,22 +323,10 @@ export default function RotasBgp() {
   useEffect(() => {
     if (passoAtual) setAba(passoAtual.startsWith("hist-") ? "historico" : "geral");
   }, [passoAtual]);
-  // Primeira vez nesta tela: oferece o tour (pode pular), uma única vez.
-  const [convite, setConvite] = useState(false);
-  useEffect(() => {
-    if (!usuario || jaViu(TOUR_BGP, usuario.id) || jaViu(TOUR_BGP, usuario.id, "convite")) return;
-    const t = window.setTimeout(() => setConvite(true), 1200);
-    return () => window.clearTimeout(t);
-  }, [usuario]);
   const comecarTour = () => {
     if (usuario) marcarVisto(TOUR_BGP, usuario.id, "convite");
-    setConvite(false);
     setAba("geral");
     iniciarTour(TOUR_BGP, passosTourBgp);
-  };
-  const dispensarConvite = () => {
-    if (usuario) marcarVisto(TOUR_BGP, usuario.id, "convite");
-    setConvite(false);
   };
   const t = resumo.data?.totals;
   const fora = resumo.data && resumo.data.disponivel === false;
@@ -369,15 +357,6 @@ export default function RotasBgp() {
           </dl>
         ) : resumo.isPending ? <Skeleton className="h-16" /> : null}
       </header>
-
-      {convite ? (
-        <aside className="bgp-convite" role="complementary" aria-label="Convite para o tour de Rotas BGP">
-          <Sparkles size={18} aria-hidden="true" />
-          <p><strong>Primeira vez por aqui?</strong> Faça o tour de 1 minuto e veja como ler esta tela.</p>
-          <Button onClick={comecarTour}>Fazer o tour</Button>
-          <Button variant="ghost" onClick={dispensarConvite}>Agora não</Button>
-        </aside>
-      ) : null}
 
       {resumo.isError ? <div className="inline-error" role="alert">{errorMessage(resumo.error)}</div> : null}
 

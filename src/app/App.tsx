@@ -77,6 +77,7 @@ import ChamadaRecebida from "../components/ChamadaRecebida";
 import AlarmeLembretes from "../components/AlarmeLembretes";
 import TourGuiado from "../components/TourGuiado";
 import ConviteTourIA from "../components/ConviteTourIA";
+import ConviteTourBgp from "../components/ConviteTourBgp";
 import UpdateBanner from "../components/UpdateBanner";
 import CelebracaoVenda from "../components/CelebracaoVenda";
 import EfeitosSonorosRemotos from "../components/EfeitosSonorosRemotos";
@@ -348,6 +349,7 @@ function Shell() {
       <TelefoneFlutuante />
       <AlarmeLembretes />
       <ConviteTourIA />
+      <ConviteTourBgp ativo={!!rede.data && !rede.data.negado} />
       <AvisosInternos />
       <TourGuiado />
       <div

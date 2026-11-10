@@ -7943,5 +7943,3 @@ button.tool-card {
 .bgp-datetime { padding: 8px 10px; border: 1px solid var(--line); border-radius: var(--r-md); background: var(--surface); color: var(--ink); font: inherit; }
 .bgp-tour-btn { display: inline-flex; align-items: center; gap: 6px; align-self: flex-start; padding: 6px 12px; border: 1px solid rgba(255, 255, 255, .28); border-radius: var(--r-pill); background: rgba(255, 255, 255, .1); color: #fff; font: inherit; font-size: var(--fs-xs); font-weight: 600; cursor: pointer; }
 .bgp-tour-btn:hover { background: rgba(255, 255, 255, .2); }
-.bgp-convite { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-3); padding: var(--sp-3) var(--sp-4); border: 1px solid var(--blue-500); border-radius: var(--r-lg); background: color-mix(in srgb, var(--blue-500) 10%, var(--surface)); color: var(--ink); }
-.bgp-convite p { flex: 1; min-width: 200px; margin: 0; }

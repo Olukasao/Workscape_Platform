@@ -12,7 +12,7 @@ export const changelog: ChangelogEntry[] = [
     data: "2026-11-10",
     itens: [
       "A tela Rotas (BGP) ganhou visual novo: um painel no topo mostra de cara se todas as sessões estão no ar, e as sessões aparecem como cartões fáceis de ler.",
-      "A tela Rotas (BGP) agora tem um tour guiado, igual ao da inteligência artificial: ele escurece a tela, destaca cada parte e explica o que ela mostra. Aparece um convite na primeira visita (dá para pular) e o botão Ver o tour fica no topo.",
+      "A tela Rotas (BGP) agora tem um tour guiado, igual ao da inteligência artificial: ele escurece a tela, destaca cada parte e explica o que ela mostra. Logo depois de atualizar, aparece um aviso convidando para o tour (dá para pular) e o botão Ver o tour fica no topo da tela.",
       "Nova aba Histórico: dá para ver tudo o que mudou na rede por período (1 hora a 30 dias), filtrar por prefixo ou AS, separar anunciadas e retiradas, e consultar como um prefixo estava em uma data e hora do passado.",
     ],
   },
