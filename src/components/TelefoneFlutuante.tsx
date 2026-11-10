@@ -24,10 +24,14 @@ const TECLAS = [
 const LARGURA = 320;
 const ALTURA = 520;
 // O tamanho do telefone é uma escala: o cartão inteiro (teclas, textos, botões) cresce ou encolhe junto.
-const ESCALA_MIN = 0.8;
+const ESCALA_MIN = 0.6;
 const ESCALA_MAX = 1.7;
 const CHAVE_ESCALA = "workspace:telefone:escala";
-const limitarEscala = (v: number) => Math.round(Math.min(ESCALA_MAX, Math.max(ESCALA_MIN, v)) * 100) / 100;
+// Nunca maior que a janela: em notebook o telefone não pode passar da tela (e perder as alças).
+const escalaMaximaDaJanela = () => Math.max(ESCALA_MIN, Math.min(ESCALA_MAX, (window.innerWidth - 24) / LARGURA, (window.innerHeight - 24) / ALTURA));
+const limitarEscala = (v: number) => Math.round(Math.min(escalaMaximaDaJanela(), Math.max(ESCALA_MIN, v)) * 100) / 100;
+const ALCAS = ["n", "s", "e", "w", "ne", "nw", "se", "sw"] as const;
+type Alca = (typeof ALCAS)[number];
 const escalaSalva = () => {
   try { const v = Number(localStorage.getItem(CHAVE_ESCALA)); return v >= ESCALA_MIN && v <= ESCALA_MAX ? v : 1; } catch { return 1; }
 };
@@ -245,12 +249,12 @@ export default function TelefoneFlutuante() {
   const [aviso, setAviso] = useState("");
   const [ligando, setLigando] = useState(false);
   const [aba, setAba] = useState<"teclado" | "recentes" | "equipe">("teclado");
-  const [escala, setEscala] = useState(escalaSalva);
+  const [escala, setEscala] = useState(() => limitarEscala(escalaSalva()));
   const fichaAuto = useFichaAutomatica();
   const perdidasNovas = usePerdidasNovas();
   const nomes = useNomesPorRamal();
   const campo = useRef<HTMLInputElement>(null);
-  const alca = useRef<{ x: number; y: number; escala: number } | null>(null);
+  const alca = useRef<{ dir: Alca; x: number; y: number; escala: number; pos: { x: number; y: number } } | null>(null);
   const card = useArrastar({
     chave: "workspace:telefone:posicao",
     tamanho: { w: LARGURA * escala, h: ALTURA * escala },
@@ -311,16 +315,31 @@ export default function TelefoneFlutuante() {
     const r = await window.desktop.phoneCall(n.replace(/[^0-9+*#]/g, ""));
     if (!r.ok) setAviso(r.erro || "Não foi possível ligar.");
   };
-  const alcaDown = (e: PointerEvent<HTMLButtonElement>) => {
+  const alcaDown = (dir: Alca) => (e: PointerEvent<HTMLElement>) => {
     if (e.button !== 0) return;
-    alca.current = { x: e.clientX, y: e.clientY, escala };
+    e.preventDefault();
+    alca.current = { dir, x: e.clientX, y: e.clientY, escala, pos: card.posicao };
     e.currentTarget.setPointerCapture?.(e.pointerId);
   };
-  const alcaMove = (e: PointerEvent<HTMLButtonElement>) => {
+  const alcaMove = (e: PointerEvent<HTMLElement>) => {
     const a = alca.current;
     if (!a) return;
-    // Arrastar o canto na diagonal: a média do que cresceu na largura e na altura.
-    mudarEscala(a.escala + ((e.clientX - a.x) / LARGURA + (e.clientY - a.y) / ALTURA) / 2);
+    const dx = e.clientX - a.x, dy = e.clientY - a.y;
+    // O telefone cresce por inteiro: cada lado puxa a escala pelo que cresceu naquela direção (cantos: a média).
+    const h = a.dir.includes("e") ? dx / LARGURA : a.dir.includes("w") ? -dx / LARGURA : null;
+    const v = a.dir.includes("s") ? dy / ALTURA : a.dir.includes("n") ? -dy / ALTURA : null;
+    const delta = h !== null && v !== null ? (h + v) / 2 : (h ?? v ?? 0);
+    const nova = limitarEscala(a.escala + delta);
+    mudarEscala(nova);
+    // Puxar pela esquerda ou por cima: o lado oposto fica parado, então a posição acompanha.
+    card.definir({
+      x: a.dir.includes("w") ? a.pos.x + (a.escala - nova) * LARGURA : a.pos.x,
+      y: a.dir.includes("n") ? a.pos.y + (a.escala - nova) * ALTURA : a.pos.y,
+    });
+  };
+  const alcaSolta = () => {
+    if (alca.current) card.salvar(card.posicao);
+    alca.current = null;
   };
   const alcaTecla = (e: TeclaEvento<HTMLButtonElement>) => {
     const passo = e.key === "ArrowRight" || e.key === "ArrowUp" ? 0.05 : e.key === "ArrowLeft" || e.key === "ArrowDown" ? -0.05 : 0;
@@ -433,18 +452,22 @@ export default function TelefoneFlutuante() {
         </>
       )}
       </div>
-      {embutido ? null : <button
-        type="button"
-        className="telefone-alca"
-        title="Arraste para mudar o tamanho (setas do teclado ajustam; duplo clique volta ao normal)"
-        aria-label={`Tamanho do telefone: ${Math.round(escala * 100)}%. Use as setas para mudar.`}
-        onPointerDown={alcaDown}
-        onPointerMove={alcaMove}
-        onPointerUp={() => { alca.current = null; }}
-        onPointerCancel={() => { alca.current = null; }}
-        onKeyDown={alcaTecla}
-        onDoubleClick={() => mudarEscala(1)}
-      />}
+      {embutido ? null : ALCAS.map((dir) => (
+        <button
+          type="button"
+          key={dir}
+          className={`telefone-alca telefone-alca-${dir}`}
+          title="Arraste para mudar o tamanho (setas do teclado ajustam; duplo clique volta ao normal)"
+          aria-label={`Tamanho do telefone: ${Math.round(escala * 100)}%. Use as setas para mudar.`}
+          tabIndex={dir === "se" ? 0 : -1}
+          onPointerDown={alcaDown(dir)}
+          onPointerMove={alcaMove}
+          onPointerUp={alcaSolta}
+          onPointerCancel={alcaSolta}
+          onKeyDown={alcaTecla}
+          onDoubleClick={() => mudarEscala(1)}
+        />
+      ))}
     </div>
   );
 }

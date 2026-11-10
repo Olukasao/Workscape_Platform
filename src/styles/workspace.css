@@ -7471,6 +7471,17 @@ button.tool-card {
   opacity: 0.55; transition: opacity var(--dur-1);
 }
 .telefone-alca:hover, .telefone-alca:focus-visible { opacity: 1; }
+/* Alças invisíveis em todas as bordas e cantos; só o canto de baixo à direita mostra o desenho. */
+.telefone-alca:not(.telefone-alca-se) { background: none !important; opacity: 1; border-radius: 0; padding: 0; border: 0; z-index: 2; }
+.telefone-alca-n, .telefone-alca-s { left: 22px; right: 22px; width: auto; height: 10px; cursor: ns-resize; }
+.telefone-alca-e, .telefone-alca-w { top: 22px; bottom: 22px; height: auto; width: 10px; cursor: ew-resize; }
+.telefone-alca-n { top: 0; bottom: auto; } .telefone-alca-s { bottom: 0; top: auto; }
+.telefone-alca-e { right: 0; left: auto; } .telefone-alca-w { left: 0; right: auto; }
+.telefone-alca-ne, .telefone-alca-nw, .telefone-alca-sw { width: 22px; height: 22px; }
+.telefone-alca-ne { top: 0; right: 0; bottom: auto; left: auto; cursor: nesw-resize; }
+.telefone-alca-nw { top: 0; left: 0; bottom: auto; right: auto; cursor: nwse-resize; }
+.telefone-alca-sw { bottom: 0; left: 0; top: auto; right: auto; cursor: nesw-resize; }
+.telefone-alca-se { z-index: 3; }
 .telefone-alca:focus-visible { outline: 2px solid var(--cyan-400); outline-offset: 2px; }
 
 .telefone-abas { display: flex; gap: 4px; padding: 4px; border-radius: var(--r-pill); background: rgba(255, 255, 255, 0.1); }

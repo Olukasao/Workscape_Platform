@@ -8,6 +8,13 @@ export interface ChangelogEntry {
 
 export const changelog: ChangelogEntry[] = [
   {
+    versao: "0.6.28",
+    data: "2026-11-10",
+    itens: [
+      "O telefone agora pode ser redimensionado por qualquer lado ou canto, não só pelo canto de baixo. Ele também nunca fica maior que a tela, para não perder as alças em notebook.",
+    ],
+  },
+  {
     versao: "0.6.27",
     data: "2026-11-10",
     itens: [
