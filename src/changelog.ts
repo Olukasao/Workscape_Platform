@@ -8,6 +8,13 @@ export interface ChangelogEntry {
 
 export const changelog: ChangelogEntry[] = [
   {
+    versao: "0.6.49",
+    data: "2026-11-11",
+    itens: [
+      "Suporte T.I.: computadores em que o suporte remoto não conseguiu iniciar agora aparecem na lista, com o motivo escrito (antes a pessoa simplesmente não aparecia). O Workspace também tenta consertar sozinho esse caso.",
+    ],
+  },
+  {
     versao: "0.6.48",
     data: "2026-11-11",
     itens: [
