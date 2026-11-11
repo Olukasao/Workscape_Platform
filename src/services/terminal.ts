@@ -21,6 +21,8 @@ export interface EquipamentoTerminal {
   antiIdleModo: ModoAntiIdle;
   /** Anotação da própria pessoa (nome, lembrete); só ela vê. */
   observacao?: string;
+  /** Salvo só neste computador (formato antigo): continua utilizável até ser enviado para a lista de todos. */
+  local?: boolean;
 }
 export interface EquipamentoForm {
   id?: string;
@@ -62,3 +64,9 @@ export function lerEnderecoRapido(texto: string, protocoloPadrao: ProtocoloTermi
   if (!/^[A-Za-z0-9._-]{1,253}$/.test(t) || porta < 1 || porta > 65535) return null;
   return { protocolo, host: t, porta, usuario };
 }
+
+/** Tira o prefixo técnico do Electron ("Error invoking remote method ...") e deixa só a mensagem. */
+export const mensagemLimpa = (erro: unknown): string => {
+  const texto = erro instanceof Error ? erro.message : typeof erro === "string" ? erro : "";
+  return texto.replace(/^Error invoking remote method '[^']+': (Error: )?/, "").trim() || "Erro inesperado.";
+};

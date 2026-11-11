@@ -2,7 +2,7 @@ import { useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Download, Pencil, Plus, SquareTerminal, Trash2 } from "lucide-react";
 import { api, errorMessage } from "../services/api";
-import { portaPadrao, type ProtocoloTerminal } from "../services/terminal";
+import { mensagemLimpa, portaPadrao, type ProtocoloTerminal } from "../services/terminal";
 import { useSession } from "../stores/workspace";
 
 // Administração do Terminal: a lista de equipamentos é única para todos. Senhas são enviadas só ao salvar; o servidor as
@@ -14,6 +14,7 @@ const VAZIO: Form = { nome: "", grupo: "", protocolo: "ssh", host: "", porta: 22
 export default function ControleTerminal() {
   const cliente = useQueryClient();
   const dono = String(useSession((s) => s.user?.id ?? ""));
+  const token = useSession((s) => s.token);
   const [form, setForm] = useState<Form | null>(null);
   const [erro, setErro] = useState("");
   const [aviso, setAviso] = useState("");
@@ -35,9 +36,9 @@ export default function ControleTerminal() {
     onError: (e) => setAviso(errorMessage(e)),
   });
   const importar = useMutation({
-    mutationFn: async () => window.desktop!.terminalImportarLocais(dono),
-    onSuccess: (r) => { setAviso(r.total ? `Importado deste computador: ${r.novos} novo(s), ${r.atualizados} atualizado(s), ${r.ignorados} ignorado(s).` : "Este computador não tem equipamentos salvos no Terminal."); atualizar(); },
-    onError: (e) => setAviso(errorMessage(e)),
+    mutationFn: async () => window.desktop!.terminalImportarLocais({ dono, token: token || undefined }),
+    onSuccess: (r) => { setAviso(r.total ? `Importado deste computador: ${r.novos} novo(s), ${r.atualizados} atualizado(s), ${r.ignorados} ignorado(s) (de ${r.total} encontrados).` : "Nenhum equipamento salvo neste computador foi encontrado."); atualizar(); },
+    onError: (e) => setAviso(`Não foi possível importar: ${mensagemLimpa(e)}`),
   });
   const enviar = (e: FormEvent) => { e.preventDefault(); if (form) salvar.mutate(form); };
   const lista = dados.data ?? [];

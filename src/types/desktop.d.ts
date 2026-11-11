@@ -86,11 +86,11 @@ declare global {
       onDetachedState(callback: (value: { kind: DetachedKind; open: boolean }) => void): () => void;
       onDetachedDeeplink(callback: (search: string) => void): () => void;
       terminalListar(dono: string): Promise<import("../services/terminal").EquipamentoTerminal[]>;
-      terminalImportarLocais(dono: string): Promise<{ novos: number; atualizados: number; ignorados: number; total: number }>;
+      terminalImportarLocais(value: { dono: string; token?: string }): Promise<{ novos: number; atualizados: number; ignorados: number; total: number }>;
       terminalSalvar(value: { dono: string; equipamento: import("../services/terminal").EquipamentoForm }): Promise<import("../services/terminal").EquipamentoTerminal>;
       terminalExcluir(value: { dono: string; id: string }): Promise<void>;
       terminalEsquecerChave(value: { host: string; porta: number }): Promise<void>;
-      terminalConectar(value: { dono: string; conexao: import("../services/terminal").PedidoConexao }): Promise<void>;
+      terminalConectar(value: { dono: string; conexao: import("../services/terminal").PedidoConexao; token?: string }): Promise<void>;
       terminalEntrada(value: { sessao: string; dados: string }): Promise<void>;
       terminalTamanho(value: { sessao: string; cols: number; rows: number }): Promise<void>;
       terminalAntiIdle(value: { sessao: string; config: import("../services/terminal").AntiIdle }): Promise<void>;

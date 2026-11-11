@@ -55,6 +55,7 @@ import { updateOrigin } from "./updateDeployment";
 import { ambienteTeste, nomeDoApp } from "./ambiente";
 import { abrirAssinaturas, tokenValido } from "./assinaturasJanela";
 import { abrirFicha, fecharFicha, fichaContents, fimDaLigacao } from "./fichaClienteJanela";
+import log from "electron-log/main";
 import { criarAtendimento } from "./atendimento";
 import { atendimentoApiOrigin, atendimentoRedirectUri } from "./atendimentoDeployment";
 import { abrirPostit, fecharPostits, postitContents, postitDe } from "./postit";
@@ -422,6 +423,13 @@ async function bootstrap() {
   app.on("before-quit", () => { void phone.parar(); });
   // Terminal SSH/Telnet: a conexão fica aqui; a interface só recebe os bytes e nunca vê senhas salvas.
   const donosTerminal = new Map<string, Electron.WebContents>();
+  // Token do login atual, informado pela interface nas ações do Terminal (nada de ler arquivo no meio da ação).
+  let tokenTerminalAtual = "";
+  const tokenDaSessaoGuardada = async (): Promise<string> => {
+    if (!encryptionAvailable()) throw new Error("Armazenamento seguro indisponível neste sistema.");
+    try { return JSON.parse(safeStorage.decryptString(await readFile(tokenPath()))).token as string; }
+    catch { throw new Error("Sessão não encontrada. Saia e entre de novo no Workspace."); }
+  };
   const terminal = new ServicoTerminal(
     (dono) => path.join(app.getPath("userData"), `terminal-equipamentos-${dono.replace(/[^A-Za-z0-9_-]/g, "_")}.json`),
     path.join(app.getPath("userData"), "terminal-chaves.json"),
@@ -436,11 +444,10 @@ async function bootstrap() {
       const alvo = dono && !dono.isDestroyed() ? dono : win.isDestroyed() ? null : win.webContents;
       alvo?.send(canal, payload);
     },
-    // Lista central do servidor: usa a sessão guardada aqui no processo principal; a interface nunca recebe a senha.
+    // Lista central do servidor: o token do login vem da interface a cada conexão (e, na falta dele, da sessão guardada).
     async (id) => {
-      if (!encryptionAvailable()) throw new Error("Armazenamento seguro indisponível neste sistema.");
-      const sessao = JSON.parse(safeStorage.decryptString(await readFile(tokenPath())));
-      const r = await fetch(new URL(`/api/terminal/equipamentos/${encodeURIComponent(id)}/credencial`, config.chat), { headers: { Authorization: `Bearer ${sessao.token}`, Accept: "application/json" }, redirect: "error", signal: AbortSignal.timeout(15000) });
+      const token = tokenTerminalAtual || (await tokenDaSessaoGuardada());
+      const r = await fetch(new URL(`/api/terminal/equipamentos/${encodeURIComponent(id)}/credencial`, config.chat), { headers: { Authorization: `Bearer ${token}`, Accept: "application/json" }, redirect: "error", signal: AbortSignal.timeout(15000) });
       const corpo = (await r.json().catch(() => ({}))) as Record<string, unknown>;
       if (!r.ok) throw new Error(typeof corpo.error === "string" ? corpo.error : "Não foi possível obter o acesso do equipamento.");
       return z.object({ protocolo: z.enum(["ssh", "telnet"]), host: z.string(), porta: z.number().int(), usuario: z.string(), senha: z.string().optional() }).parse(corpo);
@@ -451,18 +458,24 @@ async function bootstrap() {
   handle("terminal:salvar", (p) => { const v = z.object({ dono: donoTerminal, equipamento: z.unknown() }).strict().parse(p); return terminal.salvar(v.dono, v.equipamento); });
   handle("terminal:excluir", (p) => { const v = z.object({ dono: donoTerminal, id: z.string().max(64) }).strict().parse(p); return terminal.excluir(v.dono, v.id); });
   handle("terminal:importar-locais", async (p) => {
-    const dono = donoTerminal.parse(p);
-    const lista = await terminal.exportarLocais(dono);
+    const v = z.object({ dono: donoTerminal, token: z.string().min(1).max(16384).optional() }).strict().parse(p);
+    if (v.token) tokenTerminalAtual = v.token;
+    const lista = await terminal.exportarLocais(v.dono);
+    log.info(`Terminal: importação dos equipamentos locais (${lista.length} encontrados)`);
     if (!lista.length) return { novos: 0, atualizados: 0, ignorados: 0, total: 0 };
-    const sessao = JSON.parse(safeStorage.decryptString(await readFile(tokenPath())));
-    const r = await fetch(new URL("/api/admin/terminal/importar", config.chat), { method: "POST", headers: { Authorization: `Bearer ${sessao.token}`, "Content-Type": "application/json", Accept: "application/json" }, body: JSON.stringify({ equipamentos: lista }), redirect: "error", signal: AbortSignal.timeout(60000) });
+    const token = tokenTerminalAtual || (await tokenDaSessaoGuardada());
+    const r = await fetch(new URL("/api/admin/terminal/importar", config.chat), { method: "POST", headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json", Accept: "application/json" }, body: JSON.stringify({ equipamentos: lista }), redirect: "error", signal: AbortSignal.timeout(60000) });
     const corpo = (await r.json().catch(() => ({}))) as Record<string, unknown>;
-    if (!r.ok) throw new Error(typeof corpo.error === "string" ? corpo.error : "Não foi possível importar.");
+    if (!r.ok) {
+      log.warn(`Terminal: o servidor recusou a importação (HTTP ${r.status}): ${typeof corpo.error === "string" ? corpo.error : "sem detalhe"}`);
+      throw new Error(r.status === 403 ? "Só administradores podem enviar equipamentos para a lista de todos." : typeof corpo.error === "string" ? corpo.error : `O servidor recusou a importação (HTTP ${r.status}).`);
+    }
     return { ...corpo, total: lista.length };
   });
   handle("terminal:esquecer-chave", (p) => { const v = z.object({ host: z.string().max(253), porta: z.number().int().min(1).max(65535) }).strict().parse(p); return terminal.esquecerChave(v.host, v.porta); });
   handle("terminal:conectar", (p, e) => {
-    const v = z.object({ dono: donoTerminal, conexao: z.unknown() }).strict().parse(p);
+    const v = z.object({ dono: donoTerminal, conexao: z.unknown(), token: z.string().min(1).max(16384).optional() }).strict().parse(p);
+    if (v.token) tokenTerminalAtual = v.token;
     const sessao = (v.conexao as { sessao?: unknown } | null)?.sessao;
     if (typeof sessao === "string") donosTerminal.set(sessao, e.sender);
     return terminal.conectar(v.dono, v.conexao);

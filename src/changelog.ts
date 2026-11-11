@@ -8,6 +8,14 @@ export interface ChangelogEntry {
 
 export const changelog: ChangelogEntry[] = [
   {
+    versao: "0.6.40",
+    data: "2026-11-11",
+    itens: [
+      "Terminal: os equipamentos salvos só neste computador voltam a aparecer e a conectar (eles tinham sumido da tela, mas continuavam guardados). Quem é administrador vê um aviso com o botão \"Enviar para todos\".",
+      "O envio da lista para todos ficou mais confiável e, se algo falhar, mostra o motivo em português.",
+    ],
+  },
+  {
     versao: "0.6.39",
     data: "2026-11-11",
     itens: [

@@ -124,3 +124,22 @@ describe("anti-idle", () => {
     rmSync(dir, { recursive: true, force: true });
   });
 });
+
+describe("lista local do terminal (importação para a lista de todos)", () => {
+  it("exporta os equipamentos locais com a senha já decifrada, só para o processo principal, e não apaga nada", async () => {
+    const dir = mkdtempSync(path.join(tmpdir(), "term-local-"));
+    try {
+      const svc = new ServicoTerminal((d) => path.join(dir, `eq-${d}.json`), path.join(dir, "chaves.json"), cifra, () => undefined);
+      await svc.salvar("7", { nome: "OLT Centro", grupo: "OLTs", protocolo: "ssh", host: "10.0.0.1", porta: 22, usuario: "admin", senha: "segredo", guardarSenha: true });
+      await svc.salvar("7", { nome: "Switch", grupo: "", protocolo: "telnet", host: "10.0.0.2", porta: 23, usuario: "", guardarSenha: false });
+      const lista = await svc.exportarLocais("7");
+      expect(lista.map((e) => e.nome).sort()).toEqual(["OLT Centro", "Switch"]);
+      expect(lista.find((e) => e.nome === "OLT Centro")).toMatchObject({ host: "10.0.0.1", usuario: "admin", senha: "segredo", guardarSenha: true });
+      expect(lista.find((e) => e.nome === "Switch")).toMatchObject({ senha: undefined, guardarSenha: false });
+      // Exportar não mexe na lista local: continua inteira depois.
+      expect((await svc.listar("7")).length).toBe(2);
+      // Outra pessoa neste computador não vê a lista.
+      expect(await svc.exportarLocais("8")).toEqual([]);
+    } finally { rmSync(dir, { recursive: true, force: true }); }
+  });
+});

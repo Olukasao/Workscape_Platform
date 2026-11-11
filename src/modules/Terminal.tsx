@@ -6,7 +6,7 @@ import { TEMAS_TERMINAL, temaPorId, FONTE_MIN, FONTE_MAX } from "../services/ter
 import { Button } from "../components/ui/button";
 import BotaoDestacar from "../components/BotaoDestacar";
 import { api, errorMessage } from "../services/api";
-import { lerEnderecoRapido, portaPadrao, ANTI_IDLE_PADRAO, MODOS_ANTI_IDLE, type AntiIdle, type EquipamentoForm, type EquipamentoTerminal, type ProtocoloTerminal } from "../services/terminal";
+import { mensagemLimpa, lerEnderecoRapido, portaPadrao, ANTI_IDLE_PADRAO, MODOS_ANTI_IDLE, type AntiIdle, type EquipamentoForm, type EquipamentoTerminal, type ProtocoloTerminal } from "../services/terminal";
 import { abrirSessao, aplicarAparencia, ativarSessao, definirAntiIdle, fecharSessao, useSessoesTerminal, type Sessao } from "../services/terminalSessoes";
 
 const vazio = (): EquipamentoForm => ({ nome: "", grupo: "", protocolo: "ssh", host: "", porta: 22, usuario: "", senha: "", guardarSenha: false, antiIdle: true, antiIdleSegundos: 60, antiIdleModo: "nulo" });
@@ -19,7 +19,11 @@ export default function Terminal({ active }: { active: boolean }) {
   const admin = usuario?.perfil === "admin";
   const [obs, setObs] = useState<{ eq: EquipamentoTerminal; texto: string } | null>(null);
   const { sessoes, ativa } = useSessoesTerminal();
-  const [equipamentos, setEquipamentos] = useState<EquipamentoTerminal[]>([]);
+  const [central, setCentral] = useState<EquipamentoTerminal[]>([]);
+  const [locais, setLocais] = useState<EquipamentoTerminal[]>([]);
+  const [aviso, setAviso] = useState("");
+  const [enviando, setEnviando] = useState(false);
+  const token = useSession((s) => s.token);
   const [busca, setBusca] = useState("");
   const [rapido, setRapido] = useState("");
   const [erro, setErro] = useState("");
@@ -30,7 +34,25 @@ export default function Terminal({ active }: { active: boolean }) {
   const [pedirSenha, setPedirSenha] = useState<{ titulo: string; confirmar: (senha?: string) => void } | null>(null);
 
   const carregar = async () => {
-    try { setEquipamentos((await api.get<{ equipamentos: EquipamentoTerminal[] }>("/terminal/equipamentos")).data.equipamentos); } catch (e) { setErro(errorMessage(e)); }
+    try { setCentral((await api.get<{ equipamentos: EquipamentoTerminal[] }>("/terminal/equipamentos")).data.equipamentos); } catch (e) { setErro(errorMessage(e)); }
+    // Equipamentos salvos só neste computador (como era antes da lista central): continuam aparecendo e conectando.
+    try { setLocais(await window.desktop!.terminalListar(dono)); } catch { setLocais([]); }
+  };
+  // Os locais que já existem na lista central (mesmo nome, endereço e porta) somem da lista: já foram enviados.
+  const equipamentos = useMemo(() => {
+    const chave = (e: EquipamentoTerminal) => `${e.nome}|${e.host}|${e.porta}`.toLowerCase();
+    const jaNaCentral = new Set(central.map(chave));
+    return [...central, ...locais.filter((e) => !jaNaCentral.has(chave(e))).map((e) => ({ ...e, local: true }))];
+  }, [central, locais]);
+  const soLocais = equipamentos.filter((e) => e.local);
+  const enviarLocais = async () => {
+    setEnviando(true); setAviso("");
+    try {
+      const r = await window.desktop!.terminalImportarLocais({ dono, token: token || undefined });
+      setAviso(`Enviado para a lista de todos: ${r.novos} novo(s), ${r.atualizados} atualizado(s), ${r.ignorados} ignorado(s) (de ${r.total} encontrados).`);
+      await carregar();
+    } catch (e) { setAviso(`Não foi possível enviar: ${mensagemLimpa(e)}`); }
+    finally { setEnviando(false); }
   };
   useEffect(() => { if (dono && window.desktop) void carregar(); }, [dono]);
 
@@ -80,7 +102,11 @@ export default function Terminal({ active }: { active: boolean }) {
   };
   const excluir = async (e: EquipamentoTerminal) => {
     if (!window.confirm(`Excluir "${e.nome}" da lista? A senha salva também será apagada.`)) return;
-    try { await api.delete(`/admin/terminal/${encodeURIComponent(e.id)}`); await carregar(); } catch (x) { setErro(errorMessage(x)); }
+    try {
+      if (e.local) await window.desktop!.terminalExcluir({ dono, id: e.id });
+      else await api.delete(`/admin/terminal/${encodeURIComponent(e.id)}`);
+      await carregar();
+    } catch (x) { setErro(errorMessage(x)); }
   };
   const salvarObs = async () => {
     if (!obs) return;
@@ -101,6 +127,13 @@ export default function Terminal({ active }: { active: boolean }) {
           <label className="term-busca"><Search size={15} /><input value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Buscar equipamento" aria-label="Buscar equipamento" /></label>
           {admin ? <Button size="sm" onClick={() => setEdicao(vazio())} title="Adicionar equipamento"><Plus size={15} />Novo</Button> : null}
         </div>
+        {soLocais.length ? (
+          <div className="term-aviso-local" role="status">
+            <b>{soLocais.length} equipamento(s) salvos só neste computador.</b>
+            {admin ? <><span> Eles continuam funcionando aqui. Envie para a lista de todos:</span> <Button size="sm" disabled={enviando} onClick={() => void enviarLocais()}>{enviando ? "Enviando…" : "Enviar para todos"}</Button></> : <span> Eles continuam funcionando aqui; peça a um administrador para incluí-los na lista de todos.</span>}
+          </div>
+        ) : null}
+        {aviso ? <p className="muted term-dica" role="status">{aviso}</p> : null}
         <div className="term-lista-corpo">
           {!equipamentos.length ? <p className="muted term-dica">{admin ? "Nenhum equipamento na lista. Use “Novo”, importe em Administração > Terminal ou use a conexão rápida." : "Nenhum equipamento na lista. Fale com o administrador ou use a conexão rápida."}</p> : null}
           {grupos.map(([grupo, itens]) => (
@@ -109,10 +142,10 @@ export default function Terminal({ active }: { active: boolean }) {
               {itens.map((e) => (
                 <div key={e.id} className="term-equip">
                   <button type="button" className="term-equip-abrir" onDoubleClick={() => conectar(e)} onClick={() => conectar(e)} title={`Conectar em ${e.host}:${e.porta}`}>
-                    <Plug size={14} /><span><b>{e.nome}</b><small>{e.protocolo.toUpperCase()} · {e.host}</small>{e.observacao ? <small className="term-obs">{e.observacao}</small> : null}</span>
+                    <Plug size={14} /><span><b>{e.nome}</b><small>{e.protocolo.toUpperCase()} · {e.host}{e.local ? " · só neste PC" : ""}</small>{e.observacao ? <small className="term-obs">{e.observacao}</small> : null}</span>
                   </button>
-                  <button type="button" aria-label={`Observação de ${e.nome}`} title={e.observacao ? "Editar observação" : "Adicionar observação"} onClick={() => setObs({ eq: e, texto: e.observacao ?? "" })}><StickyNote size={13} /></button>
-                  {admin ? <button type="button" aria-label={`Editar ${e.nome}`} title="Editar" onClick={() => setEdicao({ ...e, senha: "", guardarSenha: e.temSenha })}><Pencil size={13} /></button> : null}
+                  {!e.local ? <button type="button" aria-label={`Observação de ${e.nome}`} title={e.observacao ? "Editar observação" : "Adicionar observação"} onClick={() => setObs({ eq: e, texto: e.observacao ?? "" })}><StickyNote size={13} /></button> : null}
+                  {admin && !e.local ? <button type="button" aria-label={`Editar ${e.nome}`} title="Editar" onClick={() => setEdicao({ ...e, senha: "", guardarSenha: e.temSenha })}><Pencil size={13} /></button> : null}
                   {admin ? <button type="button" aria-label={`Excluir ${e.nome}`} title="Excluir" onClick={() => void excluir(e)}><Trash2 size={13} /></button> : null}
                 </div>
               ))}

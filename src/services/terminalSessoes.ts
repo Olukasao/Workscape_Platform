@@ -4,7 +4,7 @@ import { FitAddon } from "@xterm/addon-fit";
 import "@xterm/xterm/css/xterm.css";
 import type { AntiIdle, PedidoConexao, ProtocoloTerminal } from "./terminal";
 import { ANTI_IDLE_PADRAO } from "./terminal";
-import { usePreferences } from "../stores/workspace";
+import { usePreferences, useSession } from "../stores/workspace";
 import { temaPorId } from "./terminalTemas";
 
 /**
@@ -104,7 +104,7 @@ export async function abrirSessao(dono: string, titulo: string, detalhe: string,
   notificar();
   const pedido: PedidoConexao = { sessao: id, ...origem, ...(senha ? { senha } : {}), antiIdle, cols: s.term.cols || 100, rows: s.term.rows || 30 };
   try {
-    await window.desktop!.terminalConectar({ dono, conexao: pedido });
+    await window.desktop!.terminalConectar({ dono, conexao: pedido, token: useSession.getState().token || undefined });
   } catch (erro) {
     s.estado = "erro";
     s.mensagem = erro instanceof Error ? erro.message : "Não foi possível conectar.";

@@ -131,7 +131,7 @@ contextBridge.exposeInMainWorld("desktop", {
     return () => ipcRenderer.removeListener("phone:event", listener);
   },
   terminalListar: (dono: string) => ipcRenderer.invoke("terminal:listar", dono),
-  terminalImportarLocais: (dono: string) => ipcRenderer.invoke("terminal:importar-locais", dono),
+  terminalImportarLocais: (value: { dono: string; token?: string }) => ipcRenderer.invoke("terminal:importar-locais", value),
   terminalSalvar: (value: unknown) => ipcRenderer.invoke("terminal:salvar", value),
   terminalExcluir: (value: unknown) => ipcRenderer.invoke("terminal:excluir", value),
   terminalEsquecerChave: (value: unknown) => ipcRenderer.invoke("terminal:esquecer-chave", value),
