@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Zap, CheckCheck, CheckCircle2, CornerDownLeft, Edit3, Inbox, MessageSquareText, PhoneCall, Search, UserCheck, UserRound } from "lucide-react";
+import { PanelLeftClose, PanelLeftOpen, ChevronsLeft, ChevronsRight, Zap, CheckCheck, CheckCircle2, CornerDownLeft, Edit3, Inbox, MessageSquareText, PhoneCall, Search, UserCheck, UserRound } from "lucide-react";
 import { usePreferences } from "../../stores/workspace";
 import { MacroAdminDialog } from "./console/components/macros/MacroAdminDialog";
 import { MacroExecutionModal } from "./console/components/macros/MacroExecutionModal";
@@ -33,6 +33,8 @@ const RAIL: { id: FiltroMesa; rotulo: string; Icone: typeof Inbox }[] = [
   { id: "archived", rotulo: "Arquivados", Icone: CornerDownLeft },
 ];
 const STATUS_ROTULO: Record<ConversationStatus, string> = { new: "novo", open: "em atendimento", waiting_customer: "aguardando cliente", waiting_agent: "aguardando atendente", closed: "encerrado" };
+const lerPref = (chave: string, padrao: boolean) => { try { const v = window.localStorage.getItem(`workspace:atendimento:${chave}`); return v === null ? padrao : v === "1"; } catch { return padrao; } };
+const gravarPref = (chave: string, valor: boolean) => { try { window.localStorage.setItem(`workspace:atendimento:${chave}`, valor ? "1" : "0"); } catch { /* sem armazenamento */ } };
 const iniciais = (nome: string) => { const p = nome.trim().split(/\s+/).filter(Boolean); return `${p[0]?.[0] ?? "C"}${p.length > 1 ? p[p.length - 1]![0] : p[0]?.[1] ?? ""}`.toUpperCase(); };
 const horaCurta = (iso?: string) => { if (!iso) return ""; const d = new Date(iso); return d.toDateString() === new Date().toDateString() ? d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) : d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }); };
 const itensDe = (r: unknown): unknown[] => { const o = r as { items?: unknown[]; notes?: unknown[] } | unknown[] | null; return Array.isArray(o) ? o : o?.items ?? o?.notes ?? []; };
@@ -68,7 +70,13 @@ export default function Mesa({ agente, cargo, statusAtd, cfgOps, visivel, abrir,
   const [naoLidas, setNaoLidas] = useState<Record<string, number>>({});
   const [digitando, setDigitando] = useState("");
   const [agora, setAgora] = useState(Date.now());
-  const [fichaAberta, setFichaAberta] = useState(true);
+  // Barras laterais: a ficha, a lista de tickets (recolhe até sobrar só o trilho) e o trilho (ícones ou ícones com nomes).
+  const [fichaAberta, setFichaAbertaEstado] = useState(() => lerPref("ficha", true));
+  const [listaRecolhida, setListaRecolhidaEstado] = useState(() => lerPref("lista-recolhida", false));
+  const [railAberto, setRailAbertoEstado] = useState(() => lerPref("rail-aberto", false));
+  const setFichaAberta = (v: boolean | ((a: boolean) => boolean)) => setFichaAbertaEstado((a) => { const n = typeof v === "function" ? v(a) : v; gravarPref("ficha", n); return n; });
+  const alternarLista = () => setListaRecolhidaEstado((a) => { gravarPref("lista-recolhida", !a); return !a; });
+  const alternarRail = () => setRailAbertoEstado((a) => { gravarPref("rail-aberto", !a); return !a; });
   const [atualizandoStatus, setAtualizandoStatus] = useState(false);
   const [atualizandoTags, setAtualizandoTags] = useState(false);
   const [salvandoNota, setSalvandoNota] = useState(false);
@@ -222,16 +230,26 @@ export default function Mesa({ agente, cargo, statusAtd, cfgOps, visivel, abrir,
 
   return (
     <div className="atd-sc atd-mesa-raiz" data-tema={tema}>
-      <section className={`attendance-desk-body atd-mesa${detalhe && fichaAberta ? " com-ficha" : ""}`}>
+      <section className={`attendance-desk-body atd-mesa${detalhe && fichaAberta ? " com-ficha" : ""}${railAberto ? " rail-aberto" : ""}${listaRecolhida ? " lista-recolhida" : ""}`}>
         <aside className="attendance-desk-ticket-shell" aria-label="Tickets">
-          <nav className="attendance-desk-rail" aria-label="Filtros de atendimento">
+          <nav className={`attendance-desk-rail${railAberto ? " expandida" : ""}`} aria-label="Filtros de atendimento">
+            <button type="button" className="atd-rail-controle" aria-label={listaRecolhida ? "Mostrar a lista de tickets" : "Recolher a lista de tickets"} title={listaRecolhida ? "Mostrar a lista de tickets" : "Recolher a lista de tickets"} aria-pressed={!listaRecolhida} onClick={alternarLista}>
+              {listaRecolhida ? <PanelLeftOpen size={17} aria-hidden /> : <PanelLeftClose size={17} aria-hidden />}
+              {railAberto ? <i className="atd-rail-rotulo">{listaRecolhida ? "Mostrar lista" : "Recolher lista"}</i> : null}
+            </button>
+            <button type="button" className="atd-rail-controle" aria-label={railAberto ? "Mostrar só os ícones" : "Mostrar os nomes dos filtros"} title={railAberto ? "Mostrar só os ícones" : "Mostrar os nomes dos filtros"} aria-expanded={railAberto} onClick={alternarRail}>
+              {railAberto ? <ChevronsLeft size={17} aria-hidden /> : <ChevronsRight size={17} aria-hidden />}
+              {railAberto ? <i className="atd-rail-rotulo">Só ícones</i> : null}
+            </button>
+            <span className="atd-rail-divisor" aria-hidden="true" />
             {RAIL.map(({ id, rotulo, Icone }) => (
-              <button key={id} type="button" className={filtro === id ? "active" : ""} aria-label={rotulo} title={rotulo} onClick={() => setFiltro(id)}>
+              <button key={id} type="button" className={filtro === id ? "active" : ""} aria-label={rotulo} title={rotulo} onClick={() => { setFiltro(id); if (listaRecolhida) { setListaRecolhidaEstado(false); gravarPref("lista-recolhida", false); } }}>
                 <Icone size={17} aria-hidden />
+                {railAberto ? <i className="atd-rail-rotulo">{rotulo}</i> : null}
               </button>
             ))}
           </nav>
-          <div className="attendance-desk-list">
+          <div className="attendance-desk-list" hidden={listaRecolhida}>
             <header className="attendance-desk-list-header">
               <label className="attendance-desk-search">
                 <span className="sr-only">Buscar</span>

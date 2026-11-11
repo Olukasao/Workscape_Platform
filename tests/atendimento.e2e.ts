@@ -84,6 +84,22 @@ test("Atendimento: fila com SLA, Ficha 360, chamados abertos, supervisão, relat
   await expect(page.getByText(/Sinal da ONU -26.4 dBm/)).toBeVisible();
   await expect(page.getByRole("button", { name: /Ligar/ })).toBeDisabled(); // telefone desconectado neste teste
   await page.screenshot({ path: "test-results/atendimento/1-conversa.png" });
+  // Barras laterais: o trilho expande (mostra os nomes) e a lista recolhe; a escolha fica guardada.
+  await page.getByRole("button", { name: "Mostrar os nomes dos filtros" }).click();
+  await expect(page.getByText("Meus atendimentos", { exact: true })).toBeVisible();
+  await expect(page.getByText("Em atendimento", { exact: true }).first()).toBeVisible();
+  // O nome precisa ter tamanho de texto de verdade (não uma barrinha de 2 px).
+  const caixa = await page.locator(".atd-rail-rotulo", { hasText: "Meus atendimentos" }).boundingBox();
+  expect(caixa!.width).toBeGreaterThan(60);
+  expect(caixa!.height).toBeGreaterThan(10);
+  await page.screenshot({ path: "test-results/atendimento/1b-trilho-expandido.png" });
+  await page.getByRole("button", { name: "Recolher a lista de tickets" }).click();
+  await expect(page.locator(".attendance-desk-list")).toBeHidden();
+  await page.screenshot({ path: "test-results/atendimento/1c-lista-recolhida.png" });
+  expect(await page.evaluate(() => [localStorage.getItem("workspace:atendimento:rail-aberto"), localStorage.getItem("workspace:atendimento:lista-recolhida")])).toEqual(["1", "1"]);
+  await page.getByRole("button", { name: "Mostrar a lista de tickets" }).click();
+  await expect(page.locator(".attendance-desk-list")).toBeVisible();
+  await page.getByRole("button", { name: "Mostrar só os ícones" }).click();
   // Chamados abertos
   await page.getByRole("tab", { name: "Chamados abertos" }).click();
   await expect(page.getByRole("button", { name: "Abrir atendimento" })).toBeVisible();

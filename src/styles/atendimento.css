@@ -112,8 +112,11 @@
 .atd-corpo { flex: 1; min-height: 0; display: flex; }
 .atd-corpo[hidden] { display: none; }
 .atd-mesa-raiz { flex: 1; min-width: 0; min-height: 0; display: flex; flex-direction: column; background: var(--bg-shell); color: var(--text-primary); }
-.atd-sc .atd-mesa { flex: 1; min-height: 0; grid-template-columns: 330px minmax(0, 1fr); }
-.atd-sc .atd-mesa.com-ficha { grid-template-columns: 330px minmax(0, 1fr) 320px; }
+.atd-sc .atd-mesa { --atd-col1: 330px; --atd-ficha: 320px; flex: 1; min-height: 0; grid-template-columns: var(--atd-col1) minmax(0, 1fr); transition: grid-template-columns 160ms ease; }
+.atd-sc .atd-mesa.com-ficha { grid-template-columns: var(--atd-col1) minmax(0, 1fr) var(--atd-ficha); }
+.atd-sc .atd-mesa.rail-aberto { --atd-col1: 494px; }
+.atd-sc .atd-mesa.lista-recolhida { --atd-col1: 46px; }
+.atd-sc .atd-mesa.lista-recolhida.rail-aberto { --atd-col1: 214px; }
 .atd-sc .atd-mesa-principal { grid-template-rows: auto minmax(0, 1fr); display: grid; min-height: 0; }
 .atd-sc .atd-mesa-principal > .chat-column, .atd-sc .atd-mesa-principal > .empty-chat { min-height: 0; }
 .atd-sc .atd-mesa-barra { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 8px 12px; border-bottom: 1px solid var(--line); background: var(--surface); }
@@ -127,7 +130,7 @@
 .atd-sc .atd-sla.ok { background: var(--success-soft); color: var(--success); }
 .atd-sc .atd-sla.warning { background: var(--warning-soft); color: var(--warning); }
 .atd-sc .atd-sla.breached { background: var(--danger); color: #fff; }
-@media (max-width: 1180px) { .atd-sc .atd-mesa.com-ficha { grid-template-columns: 280px minmax(0, 1fr) 260px; } .atd-sc .atd-mesa { grid-template-columns: 280px minmax(0, 1fr); } }
+@media (max-width: 1180px) { .atd-sc .atd-mesa { --atd-col1: 280px; --atd-ficha: 260px; } .atd-sc .atd-mesa.rail-aberto { --atd-col1: 444px; } .atd-sc .atd-mesa.lista-recolhida { --atd-col1: 46px; } .atd-sc .atd-mesa.lista-recolhida.rail-aberto { --atd-col1: 214px; } }
 
 /* Aviso "EM TESTES" para quem não é administrador. */
 .atd-testes-fundo { position: fixed; inset: 0; z-index: 80; display: grid; place-items: center; background: rgba(5, 10, 20, .62); backdrop-filter: blur(3px); padding: 16px; }
@@ -145,3 +148,14 @@
 .atd-sc .app-shell { min-height: 0; }
 .atd-abas { overflow-x: auto; scrollbar-width: thin; }
 .atd-abas button, .atd-abas .atd-selo-testes, .atd-abas .atd-fora { white-space: nowrap; flex: none; }
+
+/* Trilho de filtros recolhível/expansível. */
+.atd-sc .attendance-desk-ticket-shell { grid-template-columns: auto minmax(0, 1fr); }
+.atd-sc .attendance-desk-list[hidden] { display: none; }
+.atd-sc .attendance-desk-rail.expandida { align-items: stretch; width: 210px; padding: 13px 9px; }
+.atd-sc .attendance-desk-rail.expandida button { width: 100%; display: inline-flex; align-items: center; justify-content: flex-start; gap: 10px; padding: 0 8px; min-height: 32px; text-align: left; }
+.atd-sc .attendance-desk-rail .atd-rail-rotulo { font-style: normal; font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.atd-sc .attendance-desk-rail .atd-rail-controle { opacity: .8; }
+.atd-sc .attendance-desk-rail .atd-rail-divisor { display: block; width: 100%; height: 1px; margin: 6px 0; background: var(--line); flex: none; }
+.atd-sc .atd-mesa.lista-recolhida .attendance-desk-ticket-shell { grid-template-columns: auto; }
+@media (prefers-reduced-motion: reduce) { .atd-sc .atd-mesa { transition: none; } }

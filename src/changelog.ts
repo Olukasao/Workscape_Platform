@@ -8,6 +8,13 @@ export interface ChangelogEntry {
 
 export const changelog: ChangelogEntry[] = [
   {
+    versao: "0.6.44",
+    data: "2026-11-11",
+    itens: [
+      "Atendimento: as barras laterais agora recolhem e expandem. O trilho de ícones (novos tickets, meus atendimentos, em atendimento...) abre mostrando os nomes, e a lista de tickets pode ser recolhida até sobrar só o trilho. A ficha do cliente também lembra se estava aberta.",
+    ],
+  },
+  {
     versao: "0.6.43",
     data: "2026-11-11",
     itens: [
