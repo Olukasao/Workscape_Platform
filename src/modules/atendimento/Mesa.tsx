@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { PanelLeftClose, PanelLeftOpen, ChevronsLeft, ChevronsRight, Zap, CheckCheck, CheckCircle2, CornerDownLeft, Edit3, Inbox, MessageSquareText, PhoneCall, Search, UserCheck, UserRound } from "lucide-react";
 import { usePreferences } from "../../stores/workspace";
+import { useAtendimento } from "../../stores/atendimentoSessao";
 import { MacroAdminDialog } from "./console/components/macros/MacroAdminDialog";
 import { MacroExecutionModal } from "./console/components/macros/MacroExecutionModal";
 import { MacroExecutionProgress } from "./console/components/macros/MacroExecutionProgress";
@@ -47,11 +48,12 @@ interface Props {
   visivel: boolean;
   /** Pedido para abrir uma conversa (vindo de "Chamados abertos" ou da Supervisão). O `n` muda a cada pedido. */
   abrir: { id: string; n: number } | null;
-  aoMudarNaoLidas(total: number): void;
+  /** Pedido da tela inicial para trocar a fila mostrada. */
+  filtroPedido?: { filtro: "new" | "mine"; n: number } | null;
 }
 
 /** Mesa de atendimento: o mesmo layout e componentes do painel de atendimento, ligados aos dados e ao telefone do Workspace. */
-export default function Mesa({ agente, cargo, statusAtd, cfgOps, visivel, abrir, aoMudarNaoLidas }: Props) {
+export default function Mesa({ agente, cargo, statusAtd, cfgOps, visivel, abrir, filtroPedido }: Props) {
   const tema = usePreferences((s) => s.theme) === "light" ? "claro" : "escuro";
   const [filtro, setFiltro] = useState<FiltroMesa>("new");
   const [busca, setBusca] = useState("");
@@ -67,7 +69,10 @@ export default function Mesa({ agente, cargo, statusAtd, cfgOps, visivel, abrir,
   const [carregandoConversa, setCarregandoConversa] = useState(false);
   const [erroConversa, setErroConversa] = useState("");
   const [respostas, setRespostas] = useState<QuickReply[]>([]);
-  const [naoLidas, setNaoLidas] = useState<Record<string, number>>({});
+  // Não lidas ficam num store global: o alerta e o contador do menu funcionam mesmo com a tela fechada.
+  const naoLidas = useAtendimento((s) => s.naoLidas);
+  const setNaoLidas = useAtendimento((s) => s.setNaoLidas);
+  const setConversaAberta = useAtendimento((s) => s.setConversaAberta);
   const [digitando, setDigitando] = useState("");
   const [agora, setAgora] = useState(Date.now());
   // Barras laterais: a ficha, a lista de tickets (recolhe até sobrar só o trilho) e o trilho (ícones ou ícones com nomes).
@@ -90,7 +95,7 @@ export default function Mesa({ agente, cargo, statusAtd, cfgOps, visivel, abrir,
   selRef.current = selecionada; filtroRef.current = filtro; buscaRef.current = busca;
 
   useEffect(() => { const t = window.setInterval(() => setAgora(Date.now()), 30_000); return () => window.clearInterval(t); }, []);
-  useEffect(() => { aoMudarNaoLidas(Object.values(naoLidas).reduce((a, b) => a + b, 0)); }, [naoLidas, aoMudarNaoLidas]);
+  useEffect(() => { setConversaAberta(visivel ? selecionada : null); return () => setConversaAberta(null); }, [visivel, selecionada, setConversaAberta]);
 
   const nomeDoAutor = useCallback((m: Message, d: ConversationDetail | null): Message => {
     if (m.authorType === "system") return { ...m, authorName: "Sistema" };
@@ -136,6 +141,7 @@ export default function Mesa({ agente, cargo, statusAtd, cfgOps, visivel, abrir,
     } catch (e) { setErroConversa(msgErro(e)); } finally { setCarregandoConversa(false); }
   }, [nomeDoAutor]);
 
+  useEffect(() => { if (filtroPedido) { setFiltro(filtroPedido.filtro); setBusca(""); } }, [filtroPedido]);
   // Pedido externo para abrir uma conversa (Chamados abertos / Supervisão).
   useEffect(() => { if (abrir) { setFiltro("mine"); setSetorFiltro("todos"); void abrirConversa(abrir.id); } }, [abrir, abrirConversa]);
 
@@ -147,7 +153,7 @@ export default function Mesa({ agente, cargo, statusAtd, cfgOps, visivel, abrir,
       if (bruta.conversationId === sel) {
         setMsgs((atual) => { const m = nomeDoAutor(bruta, detalheRef.current); const sem = atual.filter((x) => x.id !== m.id && !(m.clientMessageId && x.clientMessageId === m.clientMessageId)); return [...sem, { ...m, status: m.authorType === "agent" ? "sent" : m.status }]; });
         if (bruta.authorType === "customer") void chamar("POST", `/api/agent/conversations/${sel}/read`).catch(() => undefined);
-      } else if (bruta.authorType === "customer") setNaoLidas((u) => ({ ...u, [bruta.conversationId]: (u[bruta.conversationId] ?? 0) + 1 }));
+      }
       void carregarLista();
     } else if (tipo === "typing") {
       if (String(dados.conversationId) === sel && dados.userType === "customer") setDigitando(dados.isTyping ? "Cliente digitando…" : "");

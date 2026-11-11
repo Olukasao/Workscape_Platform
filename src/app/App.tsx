@@ -68,6 +68,8 @@ const Chamados = lazy(() => import("../modules/Chamados"));
 import ContratacoesFlutuante from "../components/ContratacoesFlutuante";
 import AssistenteFlutuante from "../components/AssistenteFlutuante";
 import AvisoChamadosAtrasados from "../components/AvisoChamadosAtrasados";
+import AtendimentoAlertas from "../components/AtendimentoAlertas";
+import { totalNaoLidas, useAtendimento } from "../stores/atendimentoSessao";
 import RemotoMotor from "../components/RemotoMotor";
 import AtalhosTeclado from "../components/AtalhosTeclado";
 import TelefoneFlutuante, { TelefoneJanela } from "../components/TelefoneFlutuante";
@@ -151,6 +153,7 @@ function Shell() {
   useContratacoesFeed();
   useAvaliacoesFeed();
   const contratacoesPendentes = useContratacoes((s) => s.pendentes);
+  const atdNaoLidas = useAtendimento((s) => totalNaoLidas(s.naoLidas));
   const user = useSession((s) => s.user),
     loc = useLocation(),
     navigate = useNavigate(),
@@ -299,7 +302,7 @@ function Shell() {
           : []),
         ...(rede.data && !rede.data.negado ? [{ path: "/rotas", label: "Rotas (BGP)", icon: Network }] : []),
         ...(pode("tools") ? [{ path: "/tools", label: "Ferramentas", icon: Wrench }] : []),
-        ...(pode("atendimento") && window.desktop?.atendimentoEntrar ? [{ path: "/atendimento", label: "Atendimento", icon: Headset }] : []),
+        ...(pode("atendimento") && window.desktop?.atendimentoEntrar ? [{ path: "/atendimento", label: "Atendimento", icon: Headset, badge: atdNaoLidas }] : []),
         ...(pode("terminal") && window.desktop ? [{ path: "/terminal", label: "Terminal", icon: SquareTerminal }] : []),
         ...(pode("navegador") ? [{ path: "/navegador", label: "Navegador", icon: Globe }] : []),
         ...(pode("suporte") && window.desktop ? [{ path: "/suporte", label: "Suporte T.I.", icon: Headset }] : []),
@@ -351,6 +354,7 @@ function Shell() {
       <AtalhosTeclado />
       <RemotoMotor />
       <AvisoChamadosAtrasados ativo={agendaAllowed} />
+      <AtendimentoAlertas permitido={pode("atendimento") && !!window.desktop?.atendimentoEntrar} />
       <ChamadaRecebida />
       <TelefoneFlutuante />
       <AlarmeLembretes />

@@ -6,7 +6,7 @@ import { chamar, msgErro } from "./chamar";
 
 interface Config {
   sectors: { id: number; slug: string; name: string; active: boolean }[];
-  settings: { hours: { timezone: string; days: number[]; start: string; end: string }; sla: { firstResponseSeconds: number; warnAtSeconds: number; replySeconds: number }; afterHoursMessage: string; defaultSectorSlug: string };
+  settings: { hours: { timezone: string; days: number[]; start: string; end: string }; sla: { firstResponseSeconds: number; warnAtSeconds: number; replySeconds: number }; distribution: { enabled: boolean; maxPerAgent: number }; afterHoursMessage: string; defaultSectorSlug: string };
 }
 interface Agente { id: number; name: string; email: string; role: "agent" | "supervisor" | "admin"; status: "active" | "disabled"; sectorIds: number[]; inQueue: boolean }
 interface AgentesResp { agents: Agente[] }
@@ -23,7 +23,7 @@ export default function Configuracoes() {
   const [aviso, setAviso] = useState("");
   const [adicionando, setAdicionando] = useState(false);
   const [mostrarRemovidos, setMostrarRemovidos] = useState(false);
-  useEffect(() => { if (cfg.data && !f) setF(cfg.data.settings); }, [cfg.data, f]);
+  useEffect(() => { if (cfg.data && !f) setF({ ...cfg.data.settings, distribution: cfg.data.settings.distribution ?? { enabled: true, maxPerAgent: 5 } }); }, [cfg.data, f]);
   if (cfg.isError) return <div className="atd-painel"><p className="term-erro" role="alert">{msgErro(cfg.error)}</p></div>;
   if (!cfg.data || !f) return <div className="atd-painel"><p className="muted">Carregando…</p></div>;
 
@@ -71,6 +71,12 @@ export default function Configuracoes() {
         <label>1ª resposta (min)<input type="number" min={1} value={min(f.sla.firstResponseSeconds)} onChange={(e) => setF({ ...f, sla: { ...f.sla, firstResponseSeconds: Number(e.target.value) * 60 } })} /></label>
         <label>Alerta aos (min)<input type="number" min={1} value={min(f.sla.warnAtSeconds)} onChange={(e) => setF({ ...f, sla: { ...f.sla, warnAtSeconds: Number(e.target.value) * 60 } })} /></label>
         <label>Demais respostas (min)<input type="number" min={1} value={min(f.sla.replySeconds)} onChange={(e) => setF({ ...f, sla: { ...f.sla, replySeconds: Number(e.target.value) * 60 } })} /></label>
+      </div>
+      <h3>Distribuição automática</h3>
+      <label><input type="checkbox" checked={f.distribution.enabled} onChange={(e) => setF({ ...f, distribution: { ...f.distribution, enabled: e.target.checked } })} /> Entregar conversas novas sozinho</label>
+      <p className="muted">A conversa vai para quem está em atendimento (clicou em Iniciar), está na fila, com o Workspace aberto e no setor da conversa. Entre eles, escolhe quem tem menos conversas. Se ninguém puder receber, ela espera na fila de novos tickets.</p>
+      <div className="atd-form-linha">
+        <label>Máximo de conversas por atendente<input type="number" min={1} max={50} value={f.distribution.maxPerAgent} onChange={(e) => setF({ ...f, distribution: { ...f.distribution, maxPerAgent: Number(e.target.value) } })} /></label>
       </div>
       <label>Setor padrão das conversas novas
         <select value={f.defaultSectorSlug} onChange={(e) => setF({ ...f, defaultSectorSlug: e.target.value })}>{cfg.data.sectors.map((s) => <option key={s.id} value={s.slug}>{s.name}</option>)}</select>

@@ -159,3 +159,21 @@
 .atd-sc .attendance-desk-rail .atd-rail-divisor { display: block; width: 100%; height: 1px; margin: 6px 0; background: var(--line); flex: none; }
 .atd-sc .atd-mesa.lista-recolhida .attendance-desk-ticket-shell { grid-template-columns: auto; }
 @media (prefers-reduced-motion: reduce) { .atd-sc .atd-mesa { transition: none; } }
+
+/* Tela inicial: onde a pessoa começa e pausa o atendimento */
+.atd-inicio { flex: 1; min-height: 0; overflow: auto; padding: 24px 16px; display: flex; flex-direction: column; align-items: center; gap: 18px; }
+.atd-inicio-cartao { width: min(520px, 100%); text-align: center; display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 28px 22px; border-radius: 16px; border: 1px solid var(--border, #d9dee7); background: var(--surface, transparent); }
+.atd-inicio-cartao.ativo { border-color: #1fa971; box-shadow: 0 0 0 3px rgba(31, 169, 113, 0.15); }
+.atd-inicio-cartao h2 { margin: 0; font-size: 1.5rem; }
+.atd-inicio-cartao p { margin: 0; }
+.atd-inicio-icone { width: 64px; height: 64px; border-radius: 50%; display: grid; place-items: center; background: rgba(60, 120, 255, 0.12); }
+.atd-inicio-cartao.ativo .atd-inicio-icone { background: rgba(31, 169, 113, 0.18); color: #1fa971; }
+.atd-inicio-tempo { font-size: 2rem; font-variant-numeric: tabular-nums; letter-spacing: 0.04em; }
+.atd-inicio-numeros { width: min(520px, 100%); display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.atd-inicio-numeros button { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 14px 8px; border-radius: 12px; border: 1px solid var(--border, #d9dee7); background: transparent; color: inherit; cursor: pointer; }
+.atd-inicio-numeros button:hover, .atd-inicio-numeros button:focus-visible { border-color: #3c78ff; }
+.atd-inicio-numeros b { font-size: 1.6rem; }
+.atd-inicio-numeros span { font-size: 0.8rem; opacity: 0.75; text-align: center; }
+.atd-inicio-alertas { width: min(520px, 100%); display: flex; flex-direction: column; gap: 8px; }
+.atd-inicio-alertas h3 { margin: 0; }
+.atd-inicio-alertas label { display: flex; align-items: center; gap: 8px; }

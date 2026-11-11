@@ -8,6 +8,16 @@ export interface ChangelogEntry {
 
 export const changelog: ChangelogEntry[] = [
   {
+    versao: "0.6.50",
+    data: "2026-11-11",
+    itens: [
+      "Atendimento: nova tela Início, onde você clica em Iniciar atendimento para começar a receber conversas e em Pausar quando precisar parar. Mostra o tempo em atendimento e quantas conversas estão esperando.",
+      "Avisos de conversa nova e mensagem de cliente, com som e aviso do Windows, em qualquer tela do Workspace. O menu Atendimento mostra quantas mensagens ainda não foram lidas. Dá para ligar e desligar o som e o aviso.",
+      "As conversas novas passam a ser entregues sozinhas a quem está em atendimento, com menos conversas e no setor certo. O limite por pessoa é ajustado em Configurações.",
+      "Automações: agora dá para agir quando o cliente ou o atendente fica um tempo sem responder e quando a meta de resposta está perto de estourar ou estourou.",
+    ],
+  },
+  {
     versao: "0.6.49",
     data: "2026-11-11",
     itens: [

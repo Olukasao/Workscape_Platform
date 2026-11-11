@@ -16,6 +16,7 @@ test("Atendimento: fila com SLA, Ficha 360, chamados abertos, supervisão, relat
     const chamar = async (r: { method: string; path: string; query?: Record<string, string> }) => {
       const p = r.path;
       if (p === "/api/agent/conversations") return { items: [conv(1, "Maria Souza", "new", null), conv(2, "João Lima", "waiting_agent", 3)], nextCursor: null };
+      if (p === "/api/agent/users/me/status") return { ok: true };
       if (p === "/api/agent/auth/me") return { agent: { id: 3, name: "Lucas", role: "admin", attendanceStatus: "AVAILABLE" } };
       if (p === "/api/agent/quick-replies") return { items: [{ id: 1, shortcut: "/boleto", title: "Boleto", body: "Segue a segunda via." }] };
       if (p === "/api/agent/ops/config") return { sectors: [{ id: 1, slug: "suporte", name: "Suporte", active: true, mine: true }, { id: 2, slug: "financeiro", name: "Financeiro", active: true, mine: true }, { id: 3, slug: "comercial", name: "Comercial", active: true, mine: true }], settings: { hours: { timezone: "America/Sao_Paulo", days: [0, 1, 2, 3, 4, 5, 6], start: "07:00", end: "19:00" }, sla: { firstResponseSeconds: 300, warnAtSeconds: 180, replySeconds: 600 }, afterHoursMessage: "Fora do horário.", defaultSectorSlug: "suporte" }, open: true };
@@ -70,6 +71,15 @@ test("Atendimento: fila com SLA, Ficha 360, chamados abertos, supervisão, relat
   // Avisos de novidades podem cobrir a tela (aparecem depois de alguns segundos): fecha os que surgirem.
   for (const nome of ["Entendi", "Agora não"]) await page.getByRole("button", { name: nome, exact: true }).first().click({ timeout: 9000 }).catch(() => undefined);
   await page.getByRole("button", { name: "Atendimento", exact: true }).click();
+
+  // Tela inicial: começar e pausar o atendimento
+  await expect(page.getByRole("heading", { name: "Olá, Lucas!" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Pausar atendimento" })).toBeVisible();
+  await page.getByRole("button", { name: "Pausar atendimento" }).click();
+  await expect(page.getByRole("button", { name: "Iniciar atendimento" })).toBeVisible();
+  await page.getByRole("button", { name: "Iniciar atendimento" }).click();
+  await expect(page.getByLabel("Tempo em atendimento")).toBeVisible();
+  await page.getByRole("tab", { name: "Conversas" }).click();
 
   // Fila com SLA e setor
   await expect(page.getByText("Maria Souza").first()).toBeVisible();

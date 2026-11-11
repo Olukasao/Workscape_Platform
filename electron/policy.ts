@@ -161,6 +161,7 @@ export function conversationTarget(target: string) {
     target === "/chamados?aba=avaliacoes" ||
     target === "/" ||
     target === "/lembretes" ||
+    target === "/atendimento" ||
     target === "/rede" ||
     target === "/settings" ||
     /^\/agenda\?os=\d+&data=\d{4}-\d{2}-\d{2}$/.test(target)

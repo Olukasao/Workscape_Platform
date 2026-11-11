@@ -152,6 +152,7 @@ describe("fronteira Electron", () => {
     expect(isAppSender("http://127.0.0.1:5178", false)).toBe(false);
     expect(isAppSender("http://127.0.0.1:5178", true)).toBe(true);
     expect(conversationTarget("/chat?grupo=7")).toBe(true);
+    expect(conversationTarget("/atendimento")).toBe(true);
     expect(conversationTarget("/chat?conversa=2")).toBe(true);
     expect(conversationTarget("/chamados?aba=avaliacoes")).toBe(true);
     expect(conversationTarget("/chamados?aba=outra")).toBe(false);

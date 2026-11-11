@@ -10,6 +10,8 @@ import Supervisao from "./atendimento/Supervisao";
 import Relatorios from "./atendimento/Relatorios";
 import Configuracoes from "./atendimento/Configuracoes";
 import { chamar, msgErro, type Cargo } from "./atendimento/chamar";
+import Inicio from "./atendimento/Inicio";
+import { garantirSessao, totalNaoLidas, useAtendimento } from "../stores/atendimentoSessao";
 import { AuthContext } from "./atendimento/console/context/authContextValue";
 import type { AgentUser } from "./atendimento/console/types/domain";
 import { canManageCampaigns, canViewAuditLog, canViewAutomations, canViewMonitoring, canViewSalesAudit } from "./atendimento/console/utils/security";
@@ -26,17 +28,19 @@ const DisparosPage = lazy(() => import("./atendimento/console/pages/DisparosPage
 const AutomationsPage = lazy(() => import("./atendimento/console/pages/AutomationsPage").then((m) => ({ default: m.AutomationsPage })));
 
 interface ChamadoAberto { ticketId: string | null; contractId: string | null; protocol: string | null; customerName: string | null; title: string; openedAt: string; status: string; statusLabel: string }
-type Aba = "conversas" | "chamados" | "finalizados" | "vendas" | "supervisao" | "monitoramento" | "relatorios" | "aud-tickets" | "aud-vendas" | "disparos" | "automacoes" | "config";
+type Aba = "inicio" | "conversas" | "chamados" | "finalizados" | "vendas" | "supervisao" | "monitoramento" | "relatorios" | "aud-tickets" | "aud-vendas" | "disparos" | "automacoes" | "config";
 
 /** Atendimento por chat com os clientes da Central do assinante (chat-api). Tokens e tempo real ficam no processo principal. */
 export default function Atendimento({ active }: { active: boolean }) {
   const [fase, setFase] = useState<"entrando" | "ok" | "erro">("entrando");
   const [erroLogin, setErroLogin] = useState("");
   const [agente, setAgente] = useState<AgenteAtd | null>(null);
-  const [statusAtd, setStatusAtd] = useState<"AVAILABLE" | "INVISIBLE" | null>(null);
+  const statusAtd = useAtendimento((s) => s.status);
+  const naFila = useAtendimento((s) => s.naFila);
   const [cfgOps, setCfgOps] = useState<ConfigOps | null>(null);
-  const [aba, setAba] = useState<Aba>("conversas");
-  const [naoLidas, setNaoLidas] = useState(0);
+  const [aba, setAba] = useState<Aba>("inicio");
+  const naoLidas = useAtendimento((s) => totalNaoLidas(s.naoLidas));
+  const [filtroPedido, setFiltroPedido] = useState<{ filtro: "new" | "mine"; n: number } | null>(null);
   const [pedido, setPedido] = useState<{ id: string; n: number } | null>(null);
   const [abrindo, setAbrindo] = useState<string | null>(null);
   const [avisoAbrir, setAvisoAbrir] = useState("");
@@ -45,16 +49,13 @@ export default function Atendimento({ active }: { active: boolean }) {
   const temaPainel = usePreferences((s) => s.theme) === "light" ? "claro" : "escuro";
   const [avisoTestes, setAvisoTestes] = useState(true);
 
-  const entrar = useCallback(async () => {
+  const entrar = useCallback(async (forcar = false) => {
     setFase("entrando"); setErroLogin("");
-    try {
-      const r = await window.desktop!.atendimentoEntrar!();
-      setAgente(r.agente); setFase("ok");
-      void chamar<{ agent: { attendanceStatus?: "AVAILABLE" | "INVISIBLE" } }>("GET", "/api/agent/auth/me").then((m) => setStatusAtd(m.agent.attendanceStatus ?? "AVAILABLE")).catch(() => setStatusAtd("AVAILABLE"));
-    } catch (e) { setErroLogin(msgErro(e)); setFase("erro"); }
+    try { setAgente(await garantirSessao(forcar)); setFase("ok"); } catch (e) { setErroLogin(msgErro(e)); setFase("erro"); }
   }, []);
   useEffect(() => { if (window.desktop?.atendimentoEntrar) void entrar(); }, [entrar]);
   useEffect(() => { if (fase === "ok") void chamar<ConfigOps>("GET", "/api/agent/ops/config").then(setCfgOps).catch(() => undefined); }, [fase]);
+  useEffect(() => { if (fase === "ok" && !naFila && aba === "inicio") setAba("conversas"); }, [fase, naFila, aba]);
   // Sessão do atendimento expirada no meio do uso: volta para a tela de entrada.
   useEffect(() => window.desktop?.onAtendimento?.("atendimento:estado", (e) => { if (e.erro) { setErroLogin(e.erro); setFase("erro"); } }), []);
 
@@ -103,7 +104,7 @@ export default function Atendimento({ active }: { active: boolean }) {
       <div className="atd-vazio" role="status">
         {aviso}
         {fase === "entrando" ? <><RefreshCw size={26} className="atd-gira" /><p>Entrando no atendimento…</p></> : (
-          <><Lock size={28} /><p>{erroLogin || "Não foi possível entrar no atendimento."}</p><Button onClick={() => void entrar()}><RefreshCw size={14} />Tentar de novo</Button></>
+          <><Lock size={28} /><p>{erroLogin || "Não foi possível entrar no atendimento."}</p><Button onClick={() => void entrar(true)}><RefreshCw size={14} />Tentar de novo</Button></>
         )}
       </div>
     );
@@ -115,6 +116,7 @@ export default function Atendimento({ active }: { active: boolean }) {
     <div className={clsx("atd-raiz", !active && "atd-oculto")}>
       {aviso}
       <nav className="atd-abas" role="tablist" aria-label="Atendimento">
+        {naFila ? aba_("inicio", "Início") : null}
         {aba_("conversas", "Conversas", naoLidas ? <i className="atd-badge">{naoLidas}</i> : null)}
         {aba_("chamados", "Chamados abertos")}
         {aba_("finalizados", "Finalizados")}
@@ -131,8 +133,9 @@ export default function Atendimento({ active }: { active: boolean }) {
         {cfgOps && !cfgOps.open ? <span className="atd-fora" title="O relógio do SLA está parado">Fora do expediente</span> : null}
       </nav>
       {avisoAbrir ? <p className="term-erro" role="alert">{avisoAbrir}</p> : null}
+      {aba === "inicio" ? <Inicio nome={agente?.name ?? ""} cfgOps={cfgOps} aoIrParaConversas={(f) => { setAba("conversas"); if (f) setFiltroPedido({ filtro: f, n: Date.now() }); }} /> : null}
       <div className="atd-corpo" hidden={aba !== "conversas"}>
-        <Mesa agente={agente} cargo={cargo} statusAtd={statusAtd} cfgOps={cfgOps} visivel={active && aba === "conversas"} abrir={pedido} aoMudarNaoLidas={setNaoLidas} />
+        <Mesa agente={agente} cargo={cargo} statusAtd={statusAtd} cfgOps={cfgOps} visivel={active && aba === "conversas"} abrir={pedido} filtroPedido={filtroPedido} />
       </div>
       <AuthContext.Provider value={{ user: usuarioPainel, updateUser: () => undefined }}>
         <Suspense fallback={<p className="muted atd-painel">Carregando…</p>}>
