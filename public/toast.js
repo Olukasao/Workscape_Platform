@@ -33,14 +33,16 @@
     foto.src = dados.avatar;
   }
   // Incidente de rede: ícone de alerta no lugar das iniciais, cor própria e permanência maior.
+  const grande = dados.size === "grande";
+  if (grande) $("toast").classList.add("grande");
   const tom = ["crit", "warn", "info"].includes(dados.tone) ? dados.tone : "";
   if (tom) {
     $("toast").classList.add(`tom-${tom}`);
     const NS = "http://www.w3.org/2000/svg";
     const svg = document.createElementNS(NS, "svg");
     svg.setAttribute("viewBox", "0 0 24 24");
-    svg.setAttribute("width", "22");
-    svg.setAttribute("height", "22");
+    svg.setAttribute("width", grande ? "30" : "22");
+    svg.setAttribute("height", grande ? "30" : "22");
     svg.setAttribute("fill", "none");
     svg.setAttribute("stroke", "currentColor");
     svg.setAttribute("stroke-width", "2.2");
@@ -63,7 +65,7 @@
   $("time").textContent = quando.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
   document.title = `${$("title").textContent}: ${$("body").textContent}`;
 
-  const DURACAO = Math.min(Math.max(Number(dados.duration) || (tom === "crit" ? 20000 : tom ? 12000 : 7000), 3000), 20000);
+  const DURACAO = Math.min(Math.max(Number(dados.duration) || (grande ? 20000 : tom === "crit" ? 20000 : tom ? 12000 : 7000), 3000), 20000);
   let restante = DURACAO;
   let inicio = Date.now();
   let timer;

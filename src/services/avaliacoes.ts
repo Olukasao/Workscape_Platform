@@ -51,7 +51,7 @@ export function useAvaliacoesFeed() {
       const body = [item.cliente ? `Cliente: ${item.cliente}` : "", item.comentario ? `“${item.comentario}”` : "Cliente avaliou o atendimento", item.tecnico ? `Técnico: ${item.tecnico}` : ""].filter(Boolean).join(" — ");
       const target = pode("chamados") ? "/chamados?aba=avaliacoes" : "/";
       useNotices.getState().add({ id: `avaliacao-enviada:${item.protocolo}:${Date.now()}`, title, body, target, time: new Date().toISOString() });
-      void window.desktop?.notify({ title, body, target, context: "Avaliação do atendimento", kind: "system", tone: item.nota <= 2 ? "crit" : item.nota === 3 ? "warn" : "info" });
+      void window.desktop?.notify({ title, body, target, context: "Avaliação do atendimento", kind: "system", size: "grande", tone: item.nota <= 2 ? "crit" : item.nota === 3 ? "warn" : "info" });
     };
     socket.on("avaliacoes:notificada", compartilhada);
     return () => { socket.off("avaliacoes:notificada", compartilhada); };
@@ -82,6 +82,7 @@ export function useAvaliacoesFeed() {
           sender: a.assunto || undefined,
           context: "Avaliação do atendimento",
           kind: "system",
+          size: "grande",
           tone: a.nota <= 2 ? "crit" : a.nota === 3 ? "warn" : "info",
         });
     };

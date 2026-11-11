@@ -13,10 +13,15 @@ export type ToastData = {
   /** Destaque do aviso: crítico (vermelho), alerta (âmbar) ou informativo. Usado nos incidentes de rede. */
   tone?: "crit" | "warn" | "info";
   time?: string;
+  /** "grande": janela maior e letras maiores (usado nas avaliações, que precisam ser lidas de longe). */
+  size?: "normal" | "grande";
 };
 
 const WIDTH = 384;
 const HEIGHT = 120;
+const GRANDE = { width: 560, height: 230 };
+const sizes = new WeakMap<BrowserWindow, { width: number; height: number }>();
+const sizeOf = (t: BrowserWindow) => sizes.get(t) ?? { width: WIDTH, height: HEIGHT };
 const GAP = 6;
 const MARGIN = 10;
 const MAX = 3;
@@ -24,14 +29,13 @@ const toasts: BrowserWindow[] = [];
 
 function layout() {
   const area = screen.getPrimaryDisplay().workArea;
-  toasts.forEach((t, i) => {
+  // Empilha de baixo para cima; cada aviso tem a própria altura.
+  let y = area.y + area.height - MARGIN + GAP;
+  toasts.forEach((t) => {
     if (t.isDestroyed()) return;
-    t.setBounds({
-      x: Math.round(area.x + area.width - WIDTH - MARGIN),
-      y: Math.round(area.y + area.height - MARGIN - (HEIGHT + GAP) * (i + 1) + GAP),
-      width: WIDTH,
-      height: HEIGHT,
-    });
+    const { width, height } = sizeOf(t);
+    y -= height + GAP;
+    t.setBounds({ x: Math.round(area.x + area.width - width - MARGIN), y: Math.round(y), width, height });
   });
 }
 
@@ -52,9 +56,10 @@ export function closeAllToasts() {
  */
 export function showToast(base: string, data: ToastData, onOpen: () => void) {
   while (toasts.length >= MAX) close(toasts[toasts.length - 1]);
+  const dims = data.size === "grande" ? GRANDE : { width: WIDTH, height: HEIGHT };
   const t = new BrowserWindow({
-    width: WIDTH,
-    height: HEIGHT,
+    width: dims.width,
+    height: dims.height,
     frame: false,
     transparent: true,
     resizable: false,
@@ -74,6 +79,7 @@ export function showToast(base: string, data: ToastData, onOpen: () => void) {
       webSecurity: true,
     },
   });
+  sizes.set(t, dims);
   t.setAlwaysOnTop(true, "pop-up-menu");
   t.setMenu(null);
   t.webContents.on("will-navigate", (e) => e.preventDefault());

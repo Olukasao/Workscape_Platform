@@ -173,3 +173,18 @@ body { padding: 8px; }
 .toast.tom-warn .progress { background: #ffb020; }
 @keyframes batida { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.08); } }
 @media (prefers-reduced-motion: reduce) { .toast.tom-crit .avatar { animation: none; } }
+
+/* Variante grande (avaliações do atendimento): letras maiores para ler de longe. */
+.toast.grande { gap: 18px; padding: 20px 18px 20px 24px; border-radius: 18px; }
+.toast.grande .bar { width: 5px; }
+.toast.grande .avatar, .toast.grande .pulso { width: 64px; height: 64px; }
+.toast.grande .pulso { left: 24px; top: 20px; }
+.toast.grande .avatar { font-size: 22px; }
+.toast.grande .content { gap: 6px; }
+.toast.grande .tipo { font-size: 13px; }
+.toast.grande .head strong { font-size: 23px; line-height: 1.25; white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.toast.grande .head time { font-size: 15px; }
+.toast.grande .context { font-size: 16px; }
+.toast.grande .body { font-size: 19px; line-height: 1.45; -webkit-line-clamp: 5; color: var(--ink); }
+.toast.grande .close { width: 34px; height: 34px; }
+.toast.grande .progress { height: 4px; }

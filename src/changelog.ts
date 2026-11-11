@@ -8,6 +8,13 @@ export interface ChangelogEntry {
 
 export const changelog: ChangelogEntry[] = [
   {
+    versao: "0.6.39",
+    data: "2026-11-11",
+    itens: [
+      "O aviso de avaliação do atendimento agora é bem maior, com letras grandes e mais tempo na tela (20 segundos), para dar para ler de longe.",
+    ],
+  },
+  {
     versao: "0.6.38",
     data: "2026-11-11",
     itens: [

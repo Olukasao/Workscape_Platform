@@ -41,6 +41,7 @@ declare global {
         kind?: "direct" | "group" | "system";
         avatar?: string;
         tone?: "crit" | "warn" | "info";
+        size?: "normal" | "grande";
       }): Promise<void>;
       atendimentoEntrar?(): Promise<{ agente: { id: number; name: string; email: string; role: string } }>;
       atendimentoEstado?(): Promise<{ agente: { id: number; name: string; email: string; role: string } | null; conectado: boolean }>;
