@@ -146,6 +146,8 @@ export class ServicoTerminal {
     private arquivoChaves: string,
     private cifra: Cifra,
     private enviar: EnviarEvento,
+    /** Equipamentos da lista central ("srv:<id>"): o processo principal busca o acesso (com a senha) no servidor. */
+    private buscarCentral?: (id: string) => Promise<{ protocolo: "ssh" | "telnet"; host: string; porta: number; usuario: string; senha?: string }>,
   ) {}
 
   // ---------- equipamentos salvos (por pessoa) ----------
@@ -184,6 +186,14 @@ export class ServicoTerminal {
     await this.gravar(dono, anterior ? lista.map((i) => (i.id === novo.id ? novo : i)) : [...lista, novo]);
     return dto(novo);
   }
+  /** Lista local com as senhas já decifradas — só para o processo principal enviar ao servidor (importação de administrador). */
+  async exportarLocais(dono: string) {
+    return (await this.ler(dono)).map((e) => {
+      let senha: string | undefined;
+      if (e.senhaCifrada && this.cifra.disponivel()) { try { senha = this.cifra.decifrar(e.senhaCifrada); } catch { /* senha de outro usuário do Windows */ } }
+      return { nome: e.nome, grupo: e.grupo, protocolo: e.protocolo, host: e.host, porta: e.porta, usuario: e.usuario, senha, guardarSenha: Boolean(senha), antiIdle: e.antiIdle ?? true, antiIdleSegundos: e.antiIdleSegundos ?? 60, antiIdleModo: e.antiIdleModo ?? "nulo" };
+    });
+  }
   async excluir(dono: string, id: string) {
     await this.gravar(dono, (await this.ler(dono)).filter((i) => i.id !== id));
   }
@@ -221,7 +231,11 @@ export class ServicoTerminal {
     const c = conectarSchema.parse(entrada);
     if (this.sessoes.has(c.sessao)) throw new Error("Essa sessão já está aberta.");
     let alvo: { protocolo: "ssh" | "telnet"; host: string; porta: number; usuario: string; senha?: string };
-    if (c.equipamentoId) {
+    if (c.equipamentoId?.startsWith("srv:")) {
+      if (!this.buscarCentral) throw new Error("Lista central indisponível.");
+      const e = await this.buscarCentral(c.equipamentoId);
+      alvo = { ...e, senha: c.senha || e.senha };
+    } else if (c.equipamentoId) {
       const e = (await this.ler(dono)).find((i) => i.id === c.equipamentoId);
       if (!e) throw new Error("Equipamento não encontrado.");
       let senha = c.senha;

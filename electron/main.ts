@@ -97,7 +97,7 @@ const DETACHED_CHANNELS: Record<DetachedKind, Set<string>> = {
   rede: new Set([...BASE_CHANNELS, "clipboard:write-text"]),
   dashboard: new Set([...BASE_CHANNELS, "dashboard:refresh", "external:open"]),
   resumo: new Set([...BASE_CHANNELS, "dashboard:refresh", "external:open"]),
-  terminal: new Set([...BASE_CHANNELS, "clipboard:write-text", "terminal:listar", "terminal:salvar", "terminal:excluir", "terminal:esquecer-chave", "terminal:conectar", "terminal:entrada", "terminal:tamanho", "terminal:anti-idle", "terminal:fechar"]),
+  terminal: new Set([...BASE_CHANNELS, "clipboard:write-text", "terminal:listar", "terminal:importar-locais", "terminal:salvar", "terminal:excluir", "terminal:esquecer-chave", "terminal:conectar", "terminal:entrada", "terminal:tamanho", "terminal:anti-idle", "terminal:fechar"]),
   // O telefone destacado só mostra e comanda a sessão que vive no processo principal (nunca a desliga).
   telefone: new Set([...BASE_CHANNELS, "phone:state", "phone:connect", "phone:call", "phone:answer", "phone:reject", "phone:hangup", "phone:mute", "phone:hold", "phone:dtmf", "phone:transfer", "phone:dnd", "phone:devices", "phone:set-devices"]),
 };
@@ -425,11 +425,30 @@ async function bootstrap() {
       const alvo = dono && !dono.isDestroyed() ? dono : win.isDestroyed() ? null : win.webContents;
       alvo?.send(canal, payload);
     },
+    // Lista central do servidor: usa a sessão guardada aqui no processo principal; a interface nunca recebe a senha.
+    async (id) => {
+      if (!encryptionAvailable()) throw new Error("Armazenamento seguro indisponível neste sistema.");
+      const sessao = JSON.parse(safeStorage.decryptString(await readFile(tokenPath())));
+      const r = await fetch(new URL(`/api/terminal/equipamentos/${encodeURIComponent(id)}/credencial`, config.chat), { headers: { Authorization: `Bearer ${sessao.token}`, Accept: "application/json" }, redirect: "error", signal: AbortSignal.timeout(15000) });
+      const corpo = (await r.json().catch(() => ({}))) as Record<string, unknown>;
+      if (!r.ok) throw new Error(typeof corpo.error === "string" ? corpo.error : "Não foi possível obter o acesso do equipamento.");
+      return z.object({ protocolo: z.enum(["ssh", "telnet"]), host: z.string(), porta: z.number().int(), usuario: z.string(), senha: z.string().optional() }).parse(corpo);
+    },
   );
   const donoTerminal = z.string().min(1).max(64);
   handle("terminal:listar", (p) => terminal.listar(donoTerminal.parse(p)));
   handle("terminal:salvar", (p) => { const v = z.object({ dono: donoTerminal, equipamento: z.unknown() }).strict().parse(p); return terminal.salvar(v.dono, v.equipamento); });
   handle("terminal:excluir", (p) => { const v = z.object({ dono: donoTerminal, id: z.string().max(64) }).strict().parse(p); return terminal.excluir(v.dono, v.id); });
+  handle("terminal:importar-locais", async (p) => {
+    const dono = donoTerminal.parse(p);
+    const lista = await terminal.exportarLocais(dono);
+    if (!lista.length) return { novos: 0, atualizados: 0, ignorados: 0, total: 0 };
+    const sessao = JSON.parse(safeStorage.decryptString(await readFile(tokenPath())));
+    const r = await fetch(new URL("/api/admin/terminal/importar", config.chat), { method: "POST", headers: { Authorization: `Bearer ${sessao.token}`, "Content-Type": "application/json", Accept: "application/json" }, body: JSON.stringify({ equipamentos: lista }), redirect: "error", signal: AbortSignal.timeout(60000) });
+    const corpo = (await r.json().catch(() => ({}))) as Record<string, unknown>;
+    if (!r.ok) throw new Error(typeof corpo.error === "string" ? corpo.error : "Não foi possível importar.");
+    return { ...corpo, total: lista.length };
+  });
   handle("terminal:esquecer-chave", (p) => { const v = z.object({ host: z.string().max(253), porta: z.number().int().min(1).max(65535) }).strict().parse(p); return terminal.esquecerChave(v.host, v.porta); });
   handle("terminal:conectar", (p, e) => {
     const v = z.object({ dono: donoTerminal, conexao: z.unknown() }).strict().parse(p);

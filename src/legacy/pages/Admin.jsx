@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Activity, Bot, CheckCircle2, FileText, Globe, Eye, Gift, History, Image as ImageIcon, LayoutDashboard, LayoutTemplate, Megaphone, MessageSquareReply, MonitorSmartphone, Search, ShieldCheck, Trash2, Upload, Users, UsersRound, X, PhoneCall } from "lucide-react";
+import { Activity, Bot, CheckCircle2, FileText, Globe, Eye, Gift, History, Image as ImageIcon, LayoutDashboard, LayoutTemplate, Megaphone, MessageSquareReply, MonitorSmartphone, Search, ShieldCheck, Trash2, Upload, Users, UsersRound, X, PhoneCall, SquareTerminal } from "lucide-react";
 import InternalNoticeModal from "../components/InternalNoticeModal";
 import api from "../services/api";
 import { disconnectSocket } from "../services/socket";
@@ -11,6 +11,7 @@ import UsandoAgora from "../../components/UsandoAgora";
 import VersoesWorkspace from "../../components/VersoesWorkspace";
 import ControleIA from "../../components/ControleIA";
 import ControleTelefone from "../../components/ControleTelefone";
+import ControleTerminal from "../../components/ControleTerminal";
 import ControleFuncoes from "../../components/ControleFuncoes";
 import ControleSaude from "../../components/ControleSaude";
 import ControleRelatorio from "../../components/ControleRelatorio";
@@ -32,6 +33,7 @@ const ABAS = [
   { id: "versoes", rotulo: "Versões", Icone: MonitorSmartphone },
   { id: "ia", rotulo: "IA", Icone: Bot },
   { id: "telefone", rotulo: "Telefone", Icone: PhoneCall },
+  { id: "terminal", rotulo: "Terminal", Icone: SquareTerminal },
 ];
 const ATALHOS = [
   { caminho: "/admin/avisos-internos", titulo: "Avisos internos", descricao: "Comunicados e confirmações", Icone: Megaphone },
@@ -2877,6 +2879,7 @@ export default function Admin() {
           {aba === "versoes" && <VersoesWorkspace />}
           {aba === "ia" && <ControleIA />}
           {aba === "telefone" && <ControleTelefone />}
+          {aba === "terminal" && <ControleTerminal />}
           {aba === "funcoes" && <ControleFuncoes />}
           {aba === "navegador" && <ControleNavegador />}
           {aba === "saude" && <ControleSaude />}

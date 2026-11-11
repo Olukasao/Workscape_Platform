@@ -8,6 +8,15 @@ export interface ChangelogEntry {
 
 export const changelog: ChangelogEntry[] = [
   {
+    versao: "0.6.33",
+    data: "2026-11-11",
+    itens: [
+      "O Terminal agora tem uma lista única de equipamentos para todos, já com usuário e senha. Quem não é administrador só conecta (sem editar nem excluir).",
+      "Cada pessoa pode anotar uma observação só dela em cada equipamento (um nome, um lembrete).",
+      "Novo painel em Administração > Terminal para criar, editar, excluir e importar a lista de quem já configurou o terminal.",
+    ],
+  },
+  {
     versao: "0.6.32",
     data: "2026-11-10",
     itens: [

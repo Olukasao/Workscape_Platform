@@ -19,6 +19,8 @@ export interface EquipamentoTerminal {
   antiIdle: boolean;
   antiIdleSegundos: number;
   antiIdleModo: ModoAntiIdle;
+  /** Anotação da própria pessoa (nome, lembrete); só ela vê. */
+  observacao?: string;
 }
 export interface EquipamentoForm {
   id?: string;

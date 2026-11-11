@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Plus, Minus, Search, SquareTerminal, X, Pencil, Trash2, Plug, KeyRound, RefreshCw, FolderTree, Palette, Timer, Check } from "lucide-react";
+import { Plus, Minus, Search, SquareTerminal, X, Pencil, Trash2, StickyNote, Plug, KeyRound, RefreshCw, FolderTree, Palette, Timer, Check } from "lucide-react";
 import { clsx } from "clsx";
 import { useSession, usePreferences } from "../stores/workspace";
 import { TEMAS_TERMINAL, temaPorId, FONTE_MIN, FONTE_MAX } from "../services/terminalTemas";
 import { Button } from "../components/ui/button";
 import BotaoDestacar from "../components/BotaoDestacar";
-import { errorMessage } from "../services/api";
+import { api, errorMessage } from "../services/api";
 import { lerEnderecoRapido, portaPadrao, ANTI_IDLE_PADRAO, MODOS_ANTI_IDLE, type AntiIdle, type EquipamentoForm, type EquipamentoTerminal, type ProtocoloTerminal } from "../services/terminal";
 import { abrirSessao, aplicarAparencia, ativarSessao, definirAntiIdle, fecharSessao, useSessoesTerminal, type Sessao } from "../services/terminalSessoes";
 
@@ -15,6 +15,9 @@ const vazio = (): EquipamentoForm => ({ nome: "", grupo: "", protocolo: "ssh", h
 export default function Terminal({ active }: { active: boolean }) {
   const usuario = useSession((s) => s.user);
   const dono = String(usuario?.id ?? "");
+  // A lista é central (mantida no Admin > Terminal): todos conectam; só administradores criam, editam e apagam.
+  const admin = usuario?.perfil === "admin";
+  const [obs, setObs] = useState<{ eq: EquipamentoTerminal; texto: string } | null>(null);
   const { sessoes, ativa } = useSessoesTerminal();
   const [equipamentos, setEquipamentos] = useState<EquipamentoTerminal[]>([]);
   const [busca, setBusca] = useState("");
@@ -27,13 +30,13 @@ export default function Terminal({ active }: { active: boolean }) {
   const [pedirSenha, setPedirSenha] = useState<{ titulo: string; confirmar: (senha?: string) => void } | null>(null);
 
   const carregar = async () => {
-    try { setEquipamentos(await window.desktop!.terminalListar(dono)); } catch (e) { setErro(errorMessage(e)); }
+    try { setEquipamentos((await api.get<{ equipamentos: EquipamentoTerminal[] }>("/terminal/equipamentos")).data.equipamentos); } catch (e) { setErro(errorMessage(e)); }
   };
   useEffect(() => { if (dono && window.desktop) void carregar(); }, [dono]);
 
   const grupos = useMemo(() => {
     const q = busca.trim().toLowerCase();
-    const filtrados = equipamentos.filter((e) => !q || `${e.nome} ${e.host} ${e.grupo}`.toLowerCase().includes(q));
+    const filtrados = equipamentos.filter((e) => !q || `${e.nome} ${e.host} ${e.grupo} ${e.observacao ?? ""}`.toLowerCase().includes(q));
     const mapa = new Map<string, EquipamentoTerminal[]>();
     for (const e of filtrados) mapa.set(e.grupo || "Sem pasta", [...(mapa.get(e.grupo || "Sem pasta") ?? []), e]);
     return [...mapa.entries()].sort(([a], [b]) => a.localeCompare(b, "pt-BR"));
@@ -68,15 +71,24 @@ export default function Terminal({ active }: { active: boolean }) {
       setErro("");
       // temSenha é só de leitura (vem do servidor); o esquema estrito do salvar recusa chaves desconhecidas.
       const { temSenha: _temSenha, ...dados } = edicao as EquipamentoForm & { temSenha?: boolean };
-      await window.desktop!.terminalSalvar({ dono, equipamento: { ...dados, senha: edicao.senha || undefined } });
+      const { id, ...corpo } = dados;
+      const envio = { ...corpo, senha: edicao.senha || undefined };
+      if (id) await api.put(`/admin/terminal/${encodeURIComponent(id)}`, envio); else await api.post("/admin/terminal", envio);
       setEdicao(null);
       await carregar();
     } catch (e) { setErro(errorMessage(e)); }
   };
   const excluir = async (e: EquipamentoTerminal) => {
     if (!window.confirm(`Excluir "${e.nome}" da lista? A senha salva também será apagada.`)) return;
-    await window.desktop!.terminalExcluir({ dono, id: e.id });
-    await carregar();
+    try { await api.delete(`/admin/terminal/${encodeURIComponent(e.id)}`); await carregar(); } catch (x) { setErro(errorMessage(x)); }
+  };
+  const salvarObs = async () => {
+    if (!obs) return;
+    try {
+      await api.put(`/terminal/equipamentos/${encodeURIComponent(obs.eq.id)}/observacao`, { texto: obs.texto });
+      setObs(null);
+      await carregar();
+    } catch (x) { setErro(errorMessage(x)); }
   };
 
   if (!window.desktop) return <div className="term-vazio"><SquareTerminal size={28} /><p>O terminal só funciona no aplicativo do Workspace para Windows.</p></div>;
@@ -87,20 +99,21 @@ export default function Terminal({ active }: { active: boolean }) {
       <aside className="term-lista">
         <div className="term-lista-topo">
           <label className="term-busca"><Search size={15} /><input value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Buscar equipamento" aria-label="Buscar equipamento" /></label>
-          <Button size="sm" onClick={() => setEdicao(vazio())} title="Adicionar equipamento"><Plus size={15} />Novo</Button>
+          {admin ? <Button size="sm" onClick={() => setEdicao(vazio())} title="Adicionar equipamento"><Plus size={15} />Novo</Button> : null}
         </div>
         <div className="term-lista-corpo">
-          {!equipamentos.length ? <p className="muted term-dica">Nenhum equipamento salvo ainda. Use “Novo” ou a conexão rápida acima das abas.</p> : null}
+          {!equipamentos.length ? <p className="muted term-dica">{admin ? "Nenhum equipamento na lista. Use “Novo”, importe em Administração > Terminal ou use a conexão rápida." : "Nenhum equipamento na lista. Fale com o administrador ou use a conexão rápida."}</p> : null}
           {grupos.map(([grupo, itens]) => (
             <div key={grupo} className="term-grupo">
               <div className="term-grupo-nome"><FolderTree size={13} />{grupo}</div>
               {itens.map((e) => (
                 <div key={e.id} className="term-equip">
                   <button type="button" className="term-equip-abrir" onDoubleClick={() => conectar(e)} onClick={() => conectar(e)} title={`Conectar em ${e.host}:${e.porta}`}>
-                    <Plug size={14} /><span><b>{e.nome}</b><small>{e.protocolo.toUpperCase()} · {e.host}</small></span>
+                    <Plug size={14} /><span><b>{e.nome}</b><small>{e.protocolo.toUpperCase()} · {e.host}</small>{e.observacao ? <small className="term-obs">{e.observacao}</small> : null}</span>
                   </button>
-                  <button type="button" aria-label={`Editar ${e.nome}`} title="Editar" onClick={() => setEdicao({ ...e, senha: "", guardarSenha: e.temSenha })}><Pencil size={13} /></button>
-                  <button type="button" aria-label={`Excluir ${e.nome}`} title="Excluir" onClick={() => void excluir(e)}><Trash2 size={13} /></button>
+                  <button type="button" aria-label={`Observação de ${e.nome}`} title={e.observacao ? "Editar observação" : "Adicionar observação"} onClick={() => setObs({ eq: e, texto: e.observacao ?? "" })}><StickyNote size={13} /></button>
+                  {admin ? <button type="button" aria-label={`Editar ${e.nome}`} title="Editar" onClick={() => setEdicao({ ...e, senha: "", guardarSenha: e.temSenha })}><Pencil size={13} /></button> : null}
+                  {admin ? <button type="button" aria-label={`Excluir ${e.nome}`} title="Excluir" onClick={() => void excluir(e)}><Trash2 size={13} /></button> : null}
                 </div>
               ))}
             </div>
@@ -219,6 +232,15 @@ export default function Terminal({ active }: { active: boolean }) {
                 <Button type="submit">Salvar</Button>
               </span>
             </div>
+          </form>
+        </div>
+      ) : null}
+      {obs ? (
+        <div className="term-modal" role="dialog" aria-modal="true" aria-label="Observação">
+          <form className="term-form" onSubmit={(e) => { e.preventDefault(); void salvarObs(); }}>
+            <h3><StickyNote size={16} /> Observação · {obs.eq.nome}</h3>
+            <label>Só você vê esta anotação (um nome, um lembrete)<input value={obs.texto} maxLength={300} onChange={(e) => setObs({ ...obs, texto: e.target.value })} placeholder="Ex.: OLT do Centro" autoFocus /></label>
+            <div className="term-form-acoes"><span /><span><Button type="button" variant="outline" onClick={() => setObs(null)}>Cancelar</Button>{" "}<Button type="submit">Salvar</Button></span></div>
           </form>
         </div>
       ) : null}
