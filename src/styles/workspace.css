@@ -7947,3 +7947,10 @@ button.tool-card {
 .bgp-desde h3 { margin: 0; font-size: var(--fs-md); font-family: var(--font-display); }
 .term-equip .term-obs { display: block; color: var(--muted); font-style: italic; white-space: normal; }
 .term-aviso-local { margin: 0 10px 8px; padding: 8px 10px; border-radius: var(--r-md); background: #d2992222; border: 1px solid #d2992266; font-size: var(--fs-sm); display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.term-atalhos { display: flex; flex-wrap: wrap; gap: 6px; padding: 6px 10px; border-bottom: 1px solid var(--line); background: var(--surface-1, var(--surface-2)); }
+.term-atalhos button { border: 1px solid var(--line-strong, var(--line)); background: var(--surface-2); color: var(--ink); border-radius: var(--r-sm, 6px); padding: 4px 10px; font-size: var(--fs-sm); cursor: pointer; }
+.term-atalhos button:hover:not(:disabled) { background: var(--accent, #2563eb); border-color: var(--accent, #2563eb); color: #fff; }
+.term-atalhos button:disabled { opacity: .45; cursor: not-allowed; }
+.term-menu-teclas { width: 340px; max-height: calc(100% - 60px); overflow: auto; }
+.term-menu-teclas label { display: flex; flex-direction: column; gap: 4px; font-size: var(--fs-sm); }
+.term-menu-teclas label.term-check { flex-direction: row; align-items: center; }

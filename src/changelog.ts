@@ -8,6 +8,15 @@ export interface ChangelogEntry {
 
 export const changelog: ChangelogEntry[] = [
   {
+    versao: "0.6.45",
+    data: "2026-11-11",
+    itens: [
+      "Terminal: novo menu Teclas (ícone de teclado). Dá para escolher o que o Backspace envia (DEL ou ^H, que é o que muitos equipamentos de rede esperam, sem precisar de Ctrl+Backspace), o que Ctrl+Backspace faz (apagar a palavra ou a linha), a tecla Delete e o Enter (CR, CR+LF ou LF). Vale na hora, nas abas abertas, e fica guardado.",
+      "Terminal: barra de atalhos na tela (Apagar, Apagar palavra, Apagar linha, Tab, Esc, setas, Ctrl+C, Ctrl+Z, Ctrl+D, Limpar tela e Enter) para quem tem dificuldade com combinações de teclas.",
+      "Terminal: opção de copiar ao selecionar e colar com o botão direito, como no SecureCRT.",
+    ],
+  },
+  {
     versao: "0.6.44",
     data: "2026-11-11",
     itens: [

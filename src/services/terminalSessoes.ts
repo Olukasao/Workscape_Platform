@@ -6,6 +6,7 @@ import type { AntiIdle, PedidoConexao, ProtocoloTerminal } from "./terminal";
 import { ANTI_IDLE_PADRAO } from "./terminal";
 import { usePreferences, useSession } from "../stores/workspace";
 import { temaPorId } from "./terminalTemas";
+import { teclasAtuais, tratarTecla, traduzirEntrada } from "./terminalTeclas";
 
 /**
  * Sessões abertas do terminal. Ficam fora do React para continuarem vivas (com o histórico da tela)
@@ -71,16 +72,28 @@ function criarTerminal(id: string) {
   const el = document.createElement("div");
   el.className = "term-tela";
   term.open(el);
-  term.onData((dados) => void window.desktop?.terminalEntrada({ sessao: id, dados }));
+  term.onData((dados) => void window.desktop?.terminalEntrada({ sessao: id, dados: traduzirEntrada(dados, teclasAtuais()) }));
   term.onResize(({ cols, rows }) => void window.desktop?.terminalTamanho({ sessao: id, cols, rows }));
   // Ctrl+C copia quando há texto selecionado (como no SecureCRT); sem seleção, vai para o equipamento.
   term.attachCustomKeyEventHandler((e) => {
+    // Teclas remapeadas pela pessoa (menu "Teclas"): envia o código escolhido e o terminal não processa a tecla.
+    if (e.type === "keydown") {
+      const trocada = tratarTecla(e, teclasAtuais());
+      if (trocada !== null) { e.preventDefault(); void window.desktop?.terminalEntrada({ sessao: id, dados: trocada }); return false; }
+    }
     if (e.type === "keydown" && e.ctrlKey && !e.shiftKey && e.key.toLowerCase() === "c" && term.hasSelection()) {
       void window.desktop?.copyText(term.getSelection());
       term.clearSelection();
       return false;
     }
     return true;
+  });
+  // Opcional (menu "Teclas"): copia sozinho ao selecionar e cola com o botão direito.
+  term.onSelectionChange(() => { if (teclasAtuais().copiarEColar && term.hasSelection()) void window.desktop?.copyText(term.getSelection()); });
+  el.addEventListener("contextmenu", (e) => {
+    if (!teclasAtuais().copiarEColar) return;
+    e.preventDefault();
+    void navigator.clipboard?.readText().then((texto) => { if (texto) term.paste(texto); }).catch(() => undefined);
   });
   return { term, fit, el };
 }

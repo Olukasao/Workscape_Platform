@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Plus, Minus, Search, SquareTerminal, X, Pencil, Trash2, StickyNote, Plug, KeyRound, RefreshCw, FolderTree, Palette, Timer, Check } from "lucide-react";
+import { Keyboard, Plus, Minus, Search, SquareTerminal, X, Pencil, Trash2, StickyNote, Plug, KeyRound, RefreshCw, FolderTree, Palette, Timer, Check } from "lucide-react";
 import { clsx } from "clsx";
 import { useSession, usePreferences } from "../stores/workspace";
 import { TEMAS_TERMINAL, temaPorId, FONTE_MIN, FONTE_MAX } from "../services/terminalTemas";
@@ -7,6 +7,7 @@ import { Button } from "../components/ui/button";
 import BotaoDestacar from "../components/BotaoDestacar";
 import { api, errorMessage } from "../services/api";
 import { mensagemLimpa, lerEnderecoRapido, portaPadrao, ANTI_IDLE_PADRAO, MODOS_ANTI_IDLE, type AntiIdle, type EquipamentoForm, type EquipamentoTerminal, type ProtocoloTerminal } from "../services/terminal";
+import { ATALHOS_TELA, dadosDoAtalho, restaurarTeclas, salvarTeclas, useTeclasTerminal, type TeclasTerminal } from "../services/terminalTeclas";
 import { abrirSessao, aplicarAparencia, ativarSessao, definirAntiIdle, fecharSessao, useSessoesTerminal, type Sessao } from "../services/terminalSessoes";
 
 const vazio = (): EquipamentoForm => ({ nome: "", grupo: "", protocolo: "ssh", host: "", porta: 22, usuario: "", senha: "", guardarSenha: false, antiIdle: true, antiIdleSegundos: 60, antiIdleModo: "nulo" });
@@ -29,7 +30,8 @@ export default function Terminal({ active }: { active: boolean }) {
   const [erro, setErro] = useState("");
   const [edicao, setEdicao] = useState<EquipamentoForm | null>(null);
   const { terminalTema, terminalFonte, setTerminalTema, setTerminalFonte } = usePreferences();
-  const [menu, setMenu] = useState<null | "tema" | "antiidle">(null);
+  const [menu, setMenu] = useState<null | "tema" | "antiidle" | "teclas">(null);
+  const teclas = useTeclasTerminal();
   useEffect(() => { aplicarAparencia(terminalTema, terminalFonte); }, [terminalTema, terminalFonte]);
   const [pedirSenha, setPedirSenha] = useState<{ titulo: string; confirmar: (senha?: string) => void } | null>(null);
 
@@ -180,6 +182,7 @@ export default function Terminal({ active }: { active: boolean }) {
           <div className="term-ferramentas">
             <BotaoDestacar kind="terminal" />
             <button type="button" className={clsx("term-ico", atual?.antiIdle.ativo && "ligado")} disabled={!atual} aria-label="Anti-idle" title={atual ? (atual.antiIdle.ativo ? `Anti-idle ligado (a cada ${atual.antiIdle.segundos} s)` : "Anti-idle desligado") : "Abra uma sessão para usar o anti-idle"} onClick={() => setMenu(menu === "antiidle" ? null : "antiidle")}><Timer size={16} /></button>
+            <button type="button" className={clsx("term-ico", teclas.barraAtalhos && "ligado")} aria-label="Teclas" title="Teclas e atalhos: muda o que Backspace, Delete e Enter enviam" onClick={() => setMenu(menu === "teclas" ? null : "teclas")}><Keyboard size={16} /></button>
             <button type="button" className="term-ico" aria-label="Temas e letra" title="Temas e tamanho da letra" onClick={() => setMenu(menu === "tema" ? null : "tema")}><Palette size={16} /></button>
           </div>
           <form className="term-rapido" onSubmit={(e) => { e.preventDefault(); conectarRapido(); }}>
@@ -188,6 +191,13 @@ export default function Terminal({ active }: { active: boolean }) {
           </form>
         </div>
         {erro && !edicao ? <p className="term-erro" role="alert">{erro}</p> : null}
+        {teclas.barraAtalhos ? (
+          <div className="term-atalhos" role="toolbar" aria-label="Atalhos de teclado">
+            {ATALHOS_TELA.map((a) => (
+              <button key={a.id} type="button" title={a.dica} disabled={!atual || atual.estado !== "conectado"} onMouseDown={(e) => e.preventDefault()} onClick={() => { if (!atual) return; void window.desktop?.terminalEntrada({ sessao: atual.id, dados: dadosDoAtalho(a.id, teclas) }); atual.term.focus(); }}>{a.rotulo}</button>
+            ))}
+          </div>
+        ) : null}
         <TelaSessoes sessoes={sessoes} ativa={ativa} visivel={active} fundo={temaPorId(terminalTema).tema.background} />
         {!atual ? (
           <div className="term-vazio"><SquareTerminal size={32} /><p>Escolha um equipamento na lista ou digite um endereço na conexão rápida.</p></div>
@@ -216,6 +226,7 @@ export default function Terminal({ active }: { active: boolean }) {
           <small className="muted">Vale para todas as abas e fica guardado neste computador.</small>
         </div>
       ) : null}
+      {menu === "teclas" ? <MenuTeclas teclas={teclas} aoFechar={() => setMenu(null)} /> : null}
       {menu === "antiidle" && atual ? (
         <div className="term-menu" role="dialog" aria-label="Anti-idle">
           <strong>Anti-idle (anti-AFK)</strong>
@@ -327,4 +338,48 @@ function TelaSessoes({ sessoes, ativa, visivel, fundo }: { sessoes: Sessao[]; at
     return () => obs.disconnect();
   }, [sessoes, ativa, visivel]);
   return <div className="term-area" ref={area} hidden={!sessoes.length} style={fundo ? { background: fundo } : undefined} />;
+}
+
+
+const OPCOES_APAGAR = [{ id: "del", nome: "DEL (0x7F) · padrão de servidores Linux" }, { id: "ctrl-h", nome: "^H (0x08) · muitos equipamentos de rede" }] as const;
+const OPCOES_CTRL_BACKSPACE = [
+  { id: "padrao", nome: "Padrão do terminal (^H)" }, { id: "palavra", nome: "Apagar a palavra anterior (Ctrl+W)" }, { id: "linha", nome: "Apagar a linha inteira (Ctrl+U)" },
+  { id: "del", nome: "Enviar DEL (0x7F)" }, { id: "ctrl-h", nome: "Enviar ^H (0x08)" },
+] as const;
+
+/** Menu "Teclas": o que cada tecla envia ao equipamento, para quem não alcança Ctrl+Backspace. Vale já nas abas abertas. */
+function MenuTeclas({ teclas, aoFechar }: { teclas: TeclasTerminal; aoFechar: () => void }) {
+  return (
+    <div className="term-menu term-menu-teclas" role="dialog" aria-label="Teclas">
+      <strong>Teclas</strong>
+      <small className="muted">Cada equipamento espera um código diferente para apagar. Se o Backspace não apaga direito, troque abaixo: vale na hora, sem reconectar.</small>
+      <label>Tecla Backspace envia
+        <select value={teclas.backspace} onChange={(e) => salvarTeclas({ backspace: e.target.value as TeclasTerminal["backspace"] })}>
+          {OPCOES_APAGAR.map((o) => <option key={o.id} value={o.id}>{o.nome}</option>)}
+        </select>
+      </label>
+      <label>Ctrl + Backspace
+        <select value={teclas.ctrlBackspace} onChange={(e) => salvarTeclas({ ctrlBackspace: e.target.value as TeclasTerminal["ctrlBackspace"] })}>
+          {OPCOES_CTRL_BACKSPACE.map((o) => <option key={o.id} value={o.id}>{o.nome}</option>)}
+        </select>
+      </label>
+      <label>Tecla Delete
+        <select value={teclas.delete} onChange={(e) => salvarTeclas({ delete: e.target.value as TeclasTerminal["delete"] })}>
+          <option value="padrao">Padrão (Delete)</option>
+          <option value="apagar">Apagar à esquerda, como o Backspace</option>
+        </select>
+      </label>
+      <label>Tecla Enter envia
+        <select value={teclas.enter} onChange={(e) => salvarTeclas({ enter: e.target.value as TeclasTerminal["enter"] })}>
+          <option value="cr">CR (padrão)</option>
+          <option value="crlf">CR + LF (alguns equipamentos antigos)</option>
+          <option value="lf">Só LF</option>
+        </select>
+      </label>
+      <label className="term-check"><input type="checkbox" checked={teclas.barraAtalhos} onChange={(e) => salvarTeclas({ barraAtalhos: e.target.checked })} />Mostrar barra de atalhos na tela (Apagar, Tab, Ctrl+C, Ctrl+Z…)</label>
+      <label className="term-check"><input type="checkbox" checked={teclas.copiarEColar} onChange={(e) => salvarTeclas({ copiarEColar: e.target.checked })} />Copiar ao selecionar e colar com o botão direito</label>
+      <div className="term-form-acoes"><Button type="button" variant="ghost" size="sm" onClick={restaurarTeclas}>Restaurar padrão</Button><Button type="button" size="sm" onClick={aoFechar}>Fechar</Button></div>
+      <small className="muted">Fica guardado neste computador.</small>
+    </div>
+  );
 }
