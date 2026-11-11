@@ -8,6 +8,15 @@ export interface ChangelogEntry {
 
 export const changelog: ChangelogEntry[] = [
   {
+    versao: "0.6.48",
+    data: "2026-11-11",
+    itens: [
+      "Suporte T.I.: o painel agora mostra a verdade sobre cada computador. Se o suporte remoto de um PC ainda não conectou ao servidor, aparece o aviso e o botão Conectar fica desligado (antes aparecia \"online\" e o RustDesk respondia \"computador remoto offline\").",
+      "O Workspace conserta sozinho o suporte remoto do próprio computador: se o servidor não o enxerga, ele reinicia o programa de acesso remoto (até 3 tentativas, com intervalo).",
+      "No cartão \"Este computador\" da tela Suporte T.I. aparece se o suporte remoto está pronto.",
+    ],
+  },
+  {
     versao: "0.6.47",
     data: "2026-11-11",
     itens: [

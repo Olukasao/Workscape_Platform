@@ -391,6 +391,10 @@ async function bootstrap() {
     try { const r = await remoto.iniciar(); return { ok: true as const, id: r.id, senha: r.senha }; }
     catch (e) { return { ok: false as const, erro: e instanceof Error ? e.message.slice(0, 200) : "Falha no suporte remoto." }; }
   });
+  handle("remoto:reiniciar", async () => {
+    try { const r = await remoto.reiniciar(); return { ok: true as const, id: r.id, senha: r.senha }; }
+    catch (e) { return { ok: false as const, erro: e instanceof Error ? e.message.slice(0, 200) : "Falha ao reiniciar o suporte remoto." }; }
+  });
   handle("remoto:conectar", (payload) => {
     try {
       const { id, senha } = z.object({ id: z.string(), senha: z.string().optional() }).strict().parse(payload);

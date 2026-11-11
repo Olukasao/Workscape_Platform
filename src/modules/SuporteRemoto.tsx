@@ -7,7 +7,7 @@ import { clients, errorMessage } from "../services/api";
 import { useRemotoLocal } from "../stores/remotoLocal";
 import { useSession } from "../stores/workspace";
 
-interface Dispositivo { usuarioId: number; nome: string; online: boolean; visto: string | null }
+interface Dispositivo { usuarioId: number; nome: string; online: boolean; visto: string | null; /** O servidor de suporte já conhece o computador? false = nunca se registrou (a conexão daria "computador remoto offline"). */ registrado?: boolean | null }
 interface Painel {
   dispositivos: Dispositivo[];
   pedidos: { usuarioId: number; nome: string; mensagem: string; em: string }[];
@@ -19,7 +19,7 @@ function copiar(texto: string) { void navigator.clipboard?.writeText(texto).catc
 
 /** Este computador: cada pessoa vê o próprio ID e senha de acesso, para informar ao T.I. quando pedir ajuda. */
 function MeuAcesso() {
-  const { id, senha } = useRemotoLocal();
+  const { id, senha, registrado, consertando } = useRemotoLocal();
   const [mostrar, setMostrar] = useState(false);
   if (!window.desktop?.remotoIniciar) return null;
   return (
@@ -46,6 +46,11 @@ function MeuAcesso() {
           </>
         )}
       </div>
+      {id ? (
+        <p className={registrado === false ? "remoto-aviso" : "muted"} role="status">
+          {consertando ? "Consertando o suporte remoto deste computador…" : registrado === true ? "Suporte remoto pronto: o T.I. consegue conectar." : registrado === false ? "O suporte remoto ainda não conectou ao servidor. O Workspace tenta se consertar sozinho; se continuar assim, avise o T.I." : "Conferindo o suporte remoto…"}
+        </p>
+      ) : null}
       {!senha && id && <p className="muted">Este computador ainda não guardou uma senha. Reabra o Workspace e, se persistir, avise o T.I.</p>}
     </section>
   );
@@ -140,8 +145,10 @@ function PainelTI() {
         </div>
         {!dados?.dispositivos.length ? <EmptyState title="Nenhum computador apareceu ainda">Os computadores aparecem aqui depois de atualizar o Workspace e abri-lo.</EmptyState> : dados.dispositivos.map((d) => (
           <div key={d.usuarioId} className="atalho-linha">
-            <span>{d.nome} <small className="muted">{d.online ? "online" : d.visto ? `visto ${hora(d.visto)}` : ""}</small></span>
-            <Button type="button" disabled={!d.online || conectar.isPending} onClick={() => conectar.mutate(d)}>Conectar</Button>
+            <span>{d.nome} <small className="muted">{d.online ? "online" : d.visto ? `visto ${hora(d.visto)}` : ""}</small>
+              {d.online && d.registrado === false ? <small className="remoto-aviso"><br />Suporte remoto deste computador ainda não conectou ao servidor. O Workspace dele tenta se consertar sozinho; se não resolver, peça para fechá-lo pela bandeja e abrir de novo.</small> : null}
+            </span>
+            <Button type="button" disabled={!d.online || d.registrado === false || conectar.isPending} title={d.registrado === false ? "Este computador ainda não conectou ao servidor de suporte remoto" : undefined} onClick={() => conectar.mutate(d)}>Conectar</Button>
           </div>
         ))}
       </section>

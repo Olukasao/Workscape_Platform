@@ -104,6 +104,23 @@ export function createRemoto(options: { exePath: string | null; configDir: strin
       const id = await lerId();
       return { id, senha };
     },
+    /**
+     * Conserta o suporte remoto deste computador: fecha o programa, regrava a configuração do nosso servidor e abre de novo.
+     * Usado quando o servidor informa que este computador nunca se registrou (o RustDesk pode ter ficado preso numa
+     * configuração antiga ou bloqueado ao abrir).
+     */
+    async reiniciar(): Promise<{ id: string; senha: string | null }> {
+      if (!disponivel()) throw new Error("O módulo de suporte remoto não está instalado neste computador.");
+      gravarConfiguracao();
+      const senha = senhaPermanente();
+      await new Promise<void>((r) => execFile("taskkill", ["/F", "/IM", path.basename(options.exePath!)], { windowsHide: true }, () => r()));
+      await pausa(1500);
+      spawn(options.exePath!, ["--server"], { detached: true, stdio: "ignore", windowsHide: true }).unref();
+      iniciado = true;
+      await pausa(3000);
+      if (senha) await definirSenhaPermanente(senha);
+      return { id: await lerId(), senha };
+    },
     /** Abre a conexão com outro computador pelo ID. Com a senha permanente dele, entra direto, sem a pessoa precisar aceitar. */
     conectar(id: unknown, senha?: unknown) {
       if (!disponivel()) throw new Error("O módulo de suporte remoto não está instalado neste computador.");
