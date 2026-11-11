@@ -54,3 +54,23 @@
 .atd-chamados-lista li { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--r-md); background: var(--surface-1, var(--surface-2)); }
 .atd-chamados-lista li > div { display: flex; flex-direction: column; min-width: 0; }
 .atd-chamados-lista small { opacity: .65; font-size: var(--fs-sm); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.atd-ficha { width: 320px; flex: none; min-width: 0; overflow: auto; border-left: 1px solid var(--line); background: var(--surface-1, var(--surface-2)); padding: 14px; display: flex; flex-direction: column; gap: 12px; }
+.atd-ficha-msg { padding: 8px; }
+.atd-ficha-cab { display: flex; align-items: center; gap: 10px; }
+.atd-ficha-cab > div { display: flex; flex-direction: column; min-width: 0; }
+.atd-ficha-cab b { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.atd-ficha-cab small { opacity: .65; font-size: var(--fs-sm); }
+.atd-avatar { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; flex: none; background: var(--accent, #2563eb); color: #fff; font-weight: 700; }
+.atd-ficha-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.atd-chip { font-size: 11px; padding: 2px 9px; border-radius: 999px; background: var(--surface-2); border: 1px solid var(--line); }
+.atd-chip.ok { background: #2ea04322; border-color: #2ea04366; } .atd-chip.alerta { background: #d2992222; border-color: #d2992266; }
+.atd-ficha-bloco { display: flex; flex-direction: column; gap: 3px; padding-top: 10px; border-top: 1px solid var(--line); }
+.atd-ficha-bloco h4 { display: flex; align-items: center; gap: 6px; margin: 0 0 2px; font-size: var(--fs-sm); text-transform: uppercase; letter-spacing: .04em; opacity: .7; }
+.atd-ficha-bloco p { margin: 0; overflow-wrap: anywhere; }
+.atd-ficha small { font-size: var(--fs-sm); }
+.atd-ok { color: #2ea043; } .atd-alerta { color: #d29922; }
+.atd-sinal.boa { color: #2ea043; } .atd-sinal.media { color: #d29922; } .atd-sinal.ruim { color: #d1242f; }
+.atd-ficha-lista { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.atd-ficha-lista li { display: flex; flex-direction: column; }
+.atd-ficha-aviso { display: flex; align-items: center; gap: 6px; font-size: var(--fs-sm); padding: 8px 10px; border-radius: var(--r-md); background: #d2992222; }
+@media (max-width: 1180px) { .atd-ficha { width: 260px; } .atd-lista { width: 280px; } }

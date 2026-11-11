@@ -8,6 +8,14 @@ export interface ChangelogEntry {
 
 export const changelog: ChangelogEntry[] = [
   {
+    versao: "0.6.37",
+    data: "2026-11-11",
+    itens: [
+      "Atendimento com novo layout em três colunas: fila, conversa e a Ficha 360 do cliente (cadastro, financeiro, conexão com sinal da ONU, histórico de chamados e última avaliação).",
+      "A ficha pode ser escondida pelo botão \"Ficha\" na conversa.",
+    ],
+  },
+  {
     versao: "0.6.36",
     data: "2026-11-11",
     itens: [

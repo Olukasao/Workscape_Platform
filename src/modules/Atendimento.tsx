@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Headset, Lock, MessageSquarePlus, RefreshCw, Search, Send, UserCheck, XCircle, RotateCcw } from "lucide-react";
+import { Headset, Lock, MessageSquarePlus, RefreshCw, Search, Send, UserCheck, UserRound, XCircle, RotateCcw } from "lucide-react";
 import { clsx } from "clsx";
 import { Button } from "../components/ui/button";
 import { api, errorMessage } from "../services/api";
+import Ficha360 from "./atendimento/Ficha360";
 import "../styles/atendimento.css";
 
 type Status = "new" | "open" | "waiting_customer" | "waiting_agent" | "closed";
@@ -43,6 +44,7 @@ export default function Atendimento({ active }: { active: boolean }) {
   const [erroLogin, setErroLogin] = useState("");
   const [agente, setAgente] = useState<Agente | null>(null);
   const [conectado, setConectado] = useState(false);
+  const [fichaAberta, setFichaAberta] = useState(true);
   const [aba, setAba] = useState<"conversas" | "chamados">("conversas");
   const [filtro, setFiltro] = useState("new");
   const [busca, setBusca] = useState("");
@@ -235,6 +237,7 @@ export default function Atendimento({ active }: { active: boolean }) {
                 {!atual.assignedAgentId && !encerrada ? <Button size="sm" onClick={() => void assumir()}><UserCheck size={14} />Assumir</Button> : null}
                 {minha && !encerrada ? <Button size="sm" variant="outline" onClick={() => setEncerrando({ motivo: "resolved", nota: "" })}><XCircle size={14} />Encerrar</Button> : null}
                 {encerrada ? <Button size="sm" variant="outline" onClick={() => void reabrir()}><RotateCcw size={14} />Reabrir</Button> : null}
+                <Button size="sm" variant="outline" aria-pressed={fichaAberta} onClick={() => setFichaAberta((v) => !v)} title="Mostra ou esconde a ficha do cliente"><UserRound size={14} />Ficha</Button>
               </div>
             </header>
             {erro ? <p className="term-erro" role="alert">{erro}</p> : null}
@@ -262,6 +265,7 @@ export default function Atendimento({ active }: { active: boolean }) {
           </>
         )}
       </section>
+      {atual && fichaAberta ? <Ficha360 contrato={atual.contractId} /> : null}
       {encerrando ? (
         <div className="term-modal" role="dialog" aria-modal="true" aria-label="Encerrar conversa">
           <form className="term-form" onSubmit={(e) => { e.preventDefault(); void encerrar(); }}>
