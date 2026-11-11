@@ -7972,3 +7972,5 @@ button.tool-card {
 .term-avancado label { display: flex; flex-direction: column; gap: 4px; font-size: var(--fs-sm); margin-top: 8px; }
 .term-menu-teclas.com-barra { top: 100px; max-height: calc(100% - 112px); }
 .remoto-aviso { color: #d98e00; font-size: var(--fs-sm); }
+
+.home-semana { margin-left: 8px; padding: 2px 8px; border-radius: 999px; font-size: 0.78rem; background: rgba(60, 120, 255, 0.14); }

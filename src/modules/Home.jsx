@@ -25,6 +25,8 @@ import { useSession } from "../stores/workspace";
 import { useTelefone } from "../stores/telefone";
 import { usePerdidasNovas, usePhone } from "../stores/phone";
 import { textoPerdidas } from "../services/chamadasRecentes";
+import { atualizacoesDaSemana } from "../services/atualizacoesSemana";
+import { today } from "../services/agenda";
 import { useAccess, allowedIds } from "../services/access";
 import { Button } from "../components/ui/button";
 import HomeHighlightsCarousel from "../legacy/components/HomeHighlightsCarousel";
@@ -223,6 +225,7 @@ export default function Home() {
   const navigate = useNavigate(),
     query = useQueryClient();
   const { user, banner, agenda, avisos, lembretes } = useHomeData();
+  const semana = atualizacoesDaSemana(today());
   const { conversations, groups } = useChatData();
   const { snapshot, connected } = useDashboard();
   const [feedback, setFeedback] = useState(false);
@@ -511,6 +514,7 @@ export default function Home() {
         <Button variant="ghost" size="sm" onClick={() => navigate("/changelog")}>
           <ScrollText size={15} />
           Changelog
+          {semana.total ? <span className="home-semana" title={`Versões: ${semana.versoes.join(", ")}`}>{semana.total} {semana.total === 1 ? "atualização" : "atualizações"} nesta semana</span> : null}
         </Button>
       </div>
 

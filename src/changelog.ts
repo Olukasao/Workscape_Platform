@@ -8,6 +8,13 @@ export interface ChangelogEntry {
 
 export const changelog: ChangelogEntry[] = [
   {
+    versao: "0.6.51",
+    data: "2026-11-11",
+    itens: [
+      "Início: ao lado do Changelog agora aparece quantas atualizações o Workspace recebeu na semana.",
+    ],
+  },
+  {
     versao: "0.6.50",
     data: "2026-11-11",
     itens: [
