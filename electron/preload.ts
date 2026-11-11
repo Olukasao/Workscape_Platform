@@ -46,6 +46,17 @@ contextBridge.exposeInMainWorld("desktop", {
   browserAction: (value: unknown) => ipcRenderer.invoke("browser:action", value),
   browserSites: (value: unknown) => ipcRenderer.invoke("browser:sites", value),
   assinaturasAbrir: (token: string) => ipcRenderer.invoke("assinaturas:abrir", { token }),
+  atendimentoEntrar: () => ipcRenderer.invoke("atendimento:entrar"),
+  atendimentoEstado: () => ipcRenderer.invoke("atendimento:estado"),
+  atendimentoChamar: (value: unknown) => ipcRenderer.invoke("atendimento:chamar", value),
+  atendimentoSair: () => ipcRenderer.invoke("atendimento:sair"),
+  atendimentoDigitando: (value: unknown) => ipcRenderer.invoke("atendimento:digitando", value),
+  atendimentoEntrarNas: (value: unknown) => ipcRenderer.invoke("atendimento:entrar-nas", value),
+  onAtendimento: (canal: "atendimento:evento" | "atendimento:estado", callback: (value: unknown) => void) => {
+    const listener = (_event: unknown, value: unknown) => callback(value);
+    ipcRenderer.on(canal, listener);
+    return () => ipcRenderer.removeListener(canal, listener);
+  },
   postitAbrir: (id: number) => ipcRenderer.invoke("postit:abrir", { id }),
   postitFixar: (ligado: boolean) => ipcRenderer.invoke("postit:fixar", { ligado }),
   postitFechar: () => ipcRenderer.invoke("postit:fechar"),

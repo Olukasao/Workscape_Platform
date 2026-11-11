@@ -55,6 +55,8 @@ import { updateOrigin } from "./updateDeployment";
 import { ambienteTeste, nomeDoApp } from "./ambiente";
 import { abrirAssinaturas, tokenValido } from "./assinaturasJanela";
 import { abrirFicha, fecharFicha, fichaContents, fimDaLigacao } from "./fichaClienteJanela";
+import { criarAtendimento } from "./atendimento";
+import { atendimentoApiOrigin, atendimentoRedirectUri } from "./atendimentoDeployment";
 import { abrirPostit, fecharPostits, postitContents, postitDe } from "./postit";
 // App de testes: nome e pasta de dados próprios (não divide sessão, configuração nem trava de instância com o oficial).
 if (ambienteTeste) {
@@ -660,6 +662,24 @@ async function bootstrap() {
     await abrirFicha(v, { base: detachedBase, preload: path.join(__dirname, "preload.cjs"), icon: path.join(app.getAppPath(), process.platform === "win32" ? "assets/icon.ico" : "assets/icon.png") });
     return { ok: true as const };
   });
+  // Atendimento (chat com clientes): login, tokens e tempo real ficam aqui; a interface só recebe os dados.
+  const atendimento = criarAtendimento({
+    apiOrigin: atendimentoApiOrigin,
+    redirectUri: atendimentoRedirectUri,
+    chatOrigin: () => config.chat,
+    sessaoChat: async () => {
+      if (!encryptionAvailable()) throw new Error("Armazenamento seguro indisponível neste sistema.");
+      return JSON.parse(safeStorage.decryptString(await readFile(tokenPath()))).token as string;
+    },
+    enviar: (canal, payload) => { if (!win.isDestroyed()) win.webContents.send(canal, payload); },
+  });
+  handle("atendimento:entrar", () => atendimento.entrar());
+  handle("atendimento:estado", () => atendimento.estado());
+  handle("atendimento:chamar", (p) => atendimento.chamar(p));
+  handle("atendimento:sair", () => atendimento.sair());
+  handle("atendimento:digitando", (p) => { const v = z.object({ conversationId: z.number().int().positive(), ligado: z.boolean() }).strict().parse(p); atendimento.digitando(v.conversationId, v.ligado); });
+  handle("atendimento:entrar-nas", (p) => { const v = z.object({ ids: z.array(z.number().int().positive()).max(200) }).strict().parse(p); atendimento.entrarNas(v.ids); });
+  app.on("before-quit", () => { void atendimento.sair(); });
   handle("postit:abrir", async (payload) => {
     const v = z.object({ id: z.number().int().positive() }).strict().parse(payload);
     await abrirPostit(v.id, { base: detachedBase, preload: path.join(__dirname, "preload.cjs"), icon: path.join(app.getAppPath(), process.platform === "win32" ? "assets/icon.ico" : "assets/icon.png") });
@@ -672,6 +692,7 @@ async function bootstrap() {
   handle("ficha:fechar", () => { fecharFicha(); return { ok: true as const }; });
   app.on("before-quit", () => fecharFicha());
   handle("session:clear", async () => {
+    void atendimento.sair();
     fecharFicha();
     fecharPostits();
     await rm(tokenPath(), { force: true });

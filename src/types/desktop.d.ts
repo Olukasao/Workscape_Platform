@@ -42,6 +42,13 @@ declare global {
         avatar?: string;
         tone?: "crit" | "warn" | "info";
       }): Promise<void>;
+      atendimentoEntrar?(): Promise<{ agente: { id: number; name: string; email: string; role: string } }>;
+      atendimentoEstado?(): Promise<{ agente: { id: number; name: string; email: string; role: string } | null; conectado: boolean }>;
+      atendimentoChamar?(value: { method: "GET" | "POST" | "PATCH"; path: string; query?: Record<string, string>; body?: unknown }): Promise<any>;
+      atendimentoSair?(): Promise<void>;
+      atendimentoDigitando?(value: { conversationId: number; ligado: boolean }): Promise<void>;
+      atendimentoEntrarNas?(value: { ids: number[] }): Promise<void>;
+      onAtendimento?(canal: "atendimento:evento" | "atendimento:estado", callback: (value: any) => void): () => void;
       postitAbrir?(id: number): Promise<{ ok: true }>;
       postitFixar?(ligado: boolean): Promise<void>;
       postitFechar?(): Promise<void>;

@@ -1,0 +1,43 @@
+.atd { display: flex; height: 100%; min-height: 0; background: var(--canvas); }
+.atd-oculto { visibility: hidden; }
+.atd-lista { width: 330px; flex: none; min-width: 0; display: flex; flex-direction: column; border-right: 1px solid var(--line); background: var(--surface-1, var(--surface-2)); }
+.atd-topo { display: flex; align-items: center; gap: 8px; padding: 10px; }
+.atd-busca { flex: 1; min-width: 0; display: flex; align-items: center; gap: 6px; height: 34px; padding: 0 10px; border: 1px solid var(--line-strong); border-radius: var(--r-md); background: var(--surface-2); color: var(--ink); }
+.atd-busca input { flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; box-shadow: none; color: var(--ink); font: inherit; padding: 0; }
+.atd-ponto { width: 9px; height: 9px; border-radius: 50%; background: #d29922; flex: none; }
+.atd-ponto.on { background: #2ea043; }
+.atd-filtros { display: flex; flex-wrap: wrap; gap: 4px; padding: 0 10px 8px; }
+.atd-filtros button { border: 1px solid var(--line); background: transparent; color: var(--ink); border-radius: 999px; padding: 3px 10px; font-size: var(--fs-sm); cursor: pointer; opacity: .8; }
+.atd-filtros button.ativa { background: var(--accent, #2563eb); border-color: var(--accent, #2563eb); color: #fff; opacity: 1; }
+.atd-itens { flex: 1; overflow: auto; padding: 0 6px 10px; }
+.atd-dica { padding: 8px 10px; font-size: var(--fs-sm); }
+.atd-item { width: 100%; display: flex; flex-direction: column; gap: 3px; text-align: left; border: 0; background: transparent; color: var(--ink); padding: 9px 10px; border-radius: var(--r-md); cursor: pointer; }
+.atd-item:hover, .atd-item.ativa { background: var(--surface-2); }
+.atd-item-linha { display: flex; justify-content: space-between; align-items: center; gap: 8px; min-width: 0; }
+.atd-item b { font-size: var(--fs-md); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.atd-item small { font-size: var(--fs-sm); opacity: .65; flex: none; }
+.atd-item .atd-sub { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.atd-st { font-style: normal; font-size: 11px; padding: 1px 7px; border-radius: 999px; background: var(--surface-2); flex: none; }
+.atd-st.new { background: #1f6feb33; } .atd-st.closed { opacity: .6; }
+.atd-badge { font-style: normal; font-size: 11px; font-weight: 700; min-width: 18px; text-align: center; padding: 1px 6px; border-radius: 999px; background: #d1242f; color: #fff; flex: none; }
+.atd-rodape { padding: 8px 12px; font-size: var(--fs-sm); border-top: 1px solid var(--line); }
+.atd-conversa { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.atd-cab { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 16px; border-bottom: 1px solid var(--line); }
+.atd-cab > div:first-child { display: flex; flex-direction: column; min-width: 0; }
+.atd-cab small { opacity: .65; font-size: var(--fs-sm); }
+.atd-acoes { display: flex; gap: 8px; }
+.atd-msgs { flex: 1; min-height: 0; overflow: auto; padding: 16px; display: flex; flex-direction: column; gap: 8px; }
+.atd-msg { max-width: min(560px, 80%); padding: 8px 12px; border-radius: 12px; background: var(--surface-2); align-self: flex-start; }
+.atd-msg p { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.atd-msg small { display: block; font-size: 11px; opacity: .55; text-align: right; margin-top: 2px; }
+.atd-msg.agent { align-self: flex-end; background: var(--accent, #2563eb); color: #fff; }
+.atd-msg.system { align-self: center; background: transparent; font-size: var(--fs-sm); opacity: .7; font-style: italic; }
+.atd-digitando { font-style: italic; opacity: .6; }
+.atd-aviso { padding: 12px 16px; border-top: 1px solid var(--line); text-align: center; font-size: var(--fs-sm); opacity: .75; }
+.atd-compor { border-top: 1px solid var(--line); padding: 10px 16px; display: flex; flex-direction: column; gap: 8px; }
+.atd-compor textarea { width: 100%; resize: none; font: inherit; }
+.atd-compor-acoes { display: flex; justify-content: space-between; gap: 8px; }
+.atd-compor-acoes select { max-width: 60%; }
+.atd-vazio { height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; text-align: center; padding: 24px; opacity: .85; }
+.atd-gira { animation: atd-gira 1s linear infinite; }
+@keyframes atd-gira { to { transform: rotate(360deg); } }

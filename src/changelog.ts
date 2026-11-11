@@ -8,6 +8,14 @@ export interface ChangelogEntry {
 
 export const changelog: ChangelogEntry[] = [
   {
+    versao: "0.6.35",
+    data: "2026-11-11",
+    itens: [
+      "Novo módulo Atendimento: os atendentes respondem os clientes da Central do assinante direto no Workspace, com fila, conversa em tempo real, assumir, encerrar e respostas rápidas.",
+      "O acesso usa o mesmo login do Chat Interno (sem senha nova) e só entra quem está cadastrado como atendente.",
+    ],
+  },
+  {
     versao: "0.6.34",
     data: "2026-11-11",
     itens: [

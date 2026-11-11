@@ -113,6 +113,7 @@ const RedeOlt = lazy(() => import("../modules/RedeOlt"));
 const RotasBgp = lazy(() => import("../modules/RotasBgp"));
 import InternalNoticeManager from "../legacy/components/InternalNoticeManager";
 const TerminalSsh = lazy(() => import("../modules/Terminal"));
+const AtendimentoChat = lazy(() => import("../modules/Atendimento"));
 const Workspaces = lazy(() => import("../modules/Workspaces"));
 const Assistente = lazy(() => import("../modules/Assistente"));
 const Tools = lazy(() => import("../modules/Tools"));
@@ -295,6 +296,7 @@ function Shell() {
           : []),
         ...(rede.data && !rede.data.negado ? [{ path: "/rotas", label: "Rotas (BGP)", icon: Network }] : []),
         ...(pode("tools") ? [{ path: "/tools", label: "Ferramentas", icon: Wrench }] : []),
+        ...(pode("atendimento") && window.desktop?.atendimentoEntrar ? [{ path: "/atendimento", label: "Atendimento", icon: Headset }] : []),
         ...(pode("terminal") && window.desktop ? [{ path: "/terminal", label: "Terminal", icon: SquareTerminal }] : []),
         ...(pode("navegador") ? [{ path: "/navegador", label: "Navegador", icon: Globe }] : []),
         ...(pode("suporte") && window.desktop ? [{ path: "/suporte", label: "Suporte T.I.", icon: Headset }] : []),
@@ -318,7 +320,7 @@ function Shell() {
     },
   ];
   // Função do setor: quem não tem o módulo liberado volta ao Início se abrir o endereço na mão ou por um atalho.
-  const moduloDaRota = ["resumo", "dashboard", "assistente", "lembretes", "chat", "agenda", "contratacoes", "chamados", "rede", "tools", "terminal", "navegador", "suporte", "cursos", "marketing"].find((m) => path === `/${m}` || path.startsWith(`/${m}/`));
+  const moduloDaRota = ["resumo", "dashboard", "assistente", "lembretes", "chat", "agenda", "contratacoes", "chamados", "rede", "tools", "terminal", "atendimento", "navegador", "suporte", "cursos", "marketing"].find((m) => path === `/${m}` || path.startsWith(`/${m}/`));
   const rotaBloqueada = !!moduloDaRota && !pode(moduloDaRota);
   useEffect(() => {
     if (rotaBloqueada) navigate("/", { replace: true });
@@ -432,6 +434,7 @@ function Shell() {
                     <Route path="/contratacoes" element={<Contratacoes />} />
                     <Route path="/workspaces" element={<Workspaces />} />
                     <Route path="/assistente" element={<Assistente />} />
+                    <Route path="/atendimento" element={<AtendimentoChat active />} />
                     <Route path="/terminal" element={terminalDestacado ? <JanelaEmOutraTela kind="terminal" /> : <TerminalSsh active />} />
                     <Route path="/rotas" element={<RotasBgp />} />
                     <Route path="/rede" element={redeDestacada ? <JanelaEmOutraTela kind="rede" /> : <RedeOlt />} />
