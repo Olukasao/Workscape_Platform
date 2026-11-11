@@ -192,8 +192,9 @@ export default function Mesa({ agente, cargo, statusAtd, cfgOps, visivel, abrir,
   const abrirTransferencia = async () => {
     setTransferindo({ agentes: [], enviando: false });
     try {
-      const r = await chamar<{ agents: Array<{ id: number; name: string; email: string; role: string; attendanceStatus?: string; status?: string }> }>("GET", "/api/agent/agents");
-      const agentes: AgentOption[] = r.agents.filter((a) => a.status !== "disabled" && a.id !== agente?.id).map((a) => ({ id: String(a.id), name: a.name, email: a.email, role: a.role as AgentOption["role"], attendanceStatus: (a.attendanceStatus as AgentOption["attendanceStatus"]) ?? "AVAILABLE" }));
+      // Só quem está ativo e na fila aparece como destino (administradores que só gerenciam ficam de fora).
+      const r = await chamar<{ agents: Array<{ id: number; name: string; email: string; role: string; attendanceStatus?: string }> }>("GET", "/api/agent/ops/transfer-targets");
+      const agentes: AgentOption[] = r.agents.filter((a) => a.id !== agente?.id).map((a) => ({ id: String(a.id), name: a.name, email: a.email, role: a.role as AgentOption["role"], attendanceStatus: (a.attendanceStatus as AgentOption["attendanceStatus"]) ?? "AVAILABLE" }));
       agentes.forEach((a) => { nomesAgentes.current[a.id] = a.name; });
       setTransferindo({ agentes, enviando: false });
     } catch (e) { setTransferindo(null); setAviso(msgErro(e)); }

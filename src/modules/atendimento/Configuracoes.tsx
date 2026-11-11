@@ -8,7 +8,7 @@ interface Config {
   sectors: { id: number; slug: string; name: string; active: boolean }[];
   settings: { hours: { timezone: string; days: number[]; start: string; end: string }; sla: { firstResponseSeconds: number; warnAtSeconds: number; replySeconds: number }; afterHoursMessage: string; defaultSectorSlug: string };
 }
-interface Agente { id: number; name: string; email: string; role: "agent" | "supervisor" | "admin"; status: "active" | "disabled"; sectorIds: number[] }
+interface Agente { id: number; name: string; email: string; role: "agent" | "supervisor" | "admin"; status: "active" | "disabled"; sectorIds: number[]; inQueue: boolean }
 interface AgentesResp { agents: Agente[] }
 interface Candidato { name: string; email: string; departmentName: string | null }
 const CARGOS: { id: Agente["role"]; nome: string }[] = [{ id: "agent", nome: "Atendente" }, { id: "supervisor", nome: "Supervisor" }, { id: "admin", nome: "Administrador" }];
@@ -39,6 +39,7 @@ export default function Configuracoes() {
   const todos = agentes.data?.agents ?? [];
   const ativos = todos.filter((a) => a.status === "active");
   const removidos = todos.filter((a) => a.status === "disabled");
+  const mudarFila = async (a: Agente, inQueue: boolean) => { setAviso(""); try { await chamar("PUT", `/api/agent/ops/agents/${a.id}/queue`, { body: { inQueue } }); await agentes.refetch(); } catch (e) { setAviso(msgErro(e)); } };
   const mudarCargo = async (a: Agente, role: Agente["role"]) => { setAviso(""); try { await chamar("PATCH", `/api/agent/ops/agents/${a.id}`, { body: { role } }); await agentes.refetch(); } catch (e) { setAviso(msgErro(e)); await agentes.refetch(); } };
   const remover = async (a: Agente) => {
     if (!window.confirm(`Tirar ${a.name} do atendimento? Ele perde o acesso na hora. O histórico das conversas fica e você pode reativar depois.`)) return;
@@ -84,9 +85,9 @@ export default function Configuracoes() {
         <h3>Atendentes e setores</h3>
         <Button size="sm" onClick={() => setAdicionando(true)}><UserPlus size={14} />Adicionar pessoas</Button>
       </div>
-      <p className="muted">Atendente sem nenhum setor marcado atende todos. Os setores organizam a fila; não impedem um atendente de abrir uma conversa que lhe foi passada. Remover tira o acesso ao atendimento (o histórico das conversas fica e dá para reativar).</p>
+      <p className="muted"><b>Atende na fila:</b> desmarque para quem só administra (ex.: administradores). A pessoa continua entrando no Atendimento, mas não aparece para transferência nem nas contas de atendentes disponíveis. Atendente sem nenhum setor marcado atende todos. Os setores organizam a fila; não impedem um atendente de abrir uma conversa que lhe foi passada. Remover tira o acesso ao atendimento (o histórico das conversas fica e dá para reativar).</p>
       <table className="atd-tabela">
-        <thead><tr><th>Pessoa</th><th>Cargo</th>{cfg.data.sectors.map((s) => <th key={s.id}>{s.name}</th>)}<th /></tr></thead>
+        <thead><tr><th>Pessoa</th><th>Cargo</th><th title="Desmarque para quem só administra e não deve receber atendimentos">Atende na fila</th>{cfg.data.sectors.map((s) => <th key={s.id}>{s.name}</th>)}<th /></tr></thead>
         <tbody>
           {ativos.map((a) => (
             <tr key={a.id}>
@@ -96,13 +97,14 @@ export default function Configuracoes() {
                   {CARGOS.map((c) => <option key={c.id} value={c.id}>{c.nome}</option>)}
                 </select>
               </td>
+              <td><input type="checkbox" aria-label={`${a.name} atende na fila`} checked={a.inQueue} onChange={(e) => void mudarFila(a, e.target.checked)} /></td>
               {cfg.data!.sectors.map((s) => (
                 <td key={s.id}><input type="checkbox" aria-label={`${a.name} em ${s.name}`} checked={a.sectorIds.includes(s.id)} onChange={(e) => void setSetores(a.id, e.target.checked ? [...a.sectorIds, s.id] : a.sectorIds.filter((x) => x !== s.id))} /></td>
               ))}
               <td><button type="button" className="atd-link atd-perigo" onClick={() => void remover(a)} title="Tirar do atendimento"><UserMinus size={14} /> Remover</button></td>
             </tr>
           ))}
-          {!ativos.length ? <tr><td colSpan={cfg.data.sectors.length + 3} className="muted">Nenhum atendente cadastrado.</td></tr> : null}
+          {!ativos.length ? <tr><td colSpan={cfg.data.sectors.length + 4} className="muted">Nenhum atendente cadastrado.</td></tr> : null}
         </tbody>
       </table>
       {removidos.length ? (

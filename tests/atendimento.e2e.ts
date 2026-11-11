@@ -26,7 +26,8 @@ test("Atendimento: fila com SLA, Ficha 360, chamados abertos, supervisão, relat
       if (/\/read$/.test(p)) return null;
       if (p === "/api/agent/ops/overview") return { open: true, sla: { firstResponseSeconds: 300, warnAtSeconds: 180, replySeconds: 600 }, bySector: [{ sectorId: 1, name: "Suporte", active: 3, waiting: 2, warning: 1, breached: 1, longestWaitSeconds: 600, agentsOnline: 2 }, { sectorId: 2, name: "Financeiro", active: 1, waiting: 0, warning: 0, breached: 0, longestWaitSeconds: null, agentsOnline: 1 }], agents: [{ id: 3, name: "Lucas", role: "admin", attendanceStatus: "AVAILABLE", sectorIds: [], activeConversations: 1 }], atRisk: [{ conversationId: 1, customerName: "Maria Souza", state: "breached", kind: "first_response", waitingSeconds: 600, sectorId: 1, assignedAgentId: null }] };
       if (p === "/api/agent/ops/reports") return { totals: { created: 12, closed: 9, stillOpen: 3 }, avgFirstResponseSeconds: 210, avgResolutionSeconds: 1800, bySector: [{ sectorId: 1, created: 8, closed: 6, avgFirstResponseSeconds: 200 }], byAgent: [{ agentId: 3, name: "Lucas", handled: 12, closed: 9, avgFirstResponseSeconds: 210 }], byHour: Array.from({ length: 24 }, (_, hour) => ({ hour, count: hour >= 8 && hour <= 17 ? hour % 5 + 1 : 0 })), byDay: [], byCloseReason: [{ reason: "resolved", count: 7 }, { reason: "duplicate", count: 2 }], sectors: [{ id: 1, name: "Suporte" }] };
-      if (p === "/api/agent/ops/agents") return { agents: [{ id: 3, name: "Lucas", email: "l@x.com", role: "admin", sectorIds: [] }] };
+      if (p === "/api/agent/ops/agents") return { agents: [{ id: 3, name: "Lucas", email: "l@x.com", role: "admin", sectorIds: [], status: "active", inQueue: false }] };
+      if (p === "/api/agent/ops/transfer-targets") return { agents: [{ id: 5, name: "Maria", email: "m@x.com", role: "agent", attendanceStatus: "AVAILABLE" }] };
       // Telas do painel (vendas, monitoramento, auditoria, disparos, macros, automações): dados mínimos.
       if (p === "/api/agent/macros") return { macros: [{ id: "1", name: "Sem internet", shortcut: "/semnet", enabled: true, category: "Suporte", actions: [{ id: "a", type: "SEND_MESSAGE", text: "Olá {{customer.name}}" }] }] };
       if (p === "/api/agent/macro-queues") return { queues: [] };
@@ -131,5 +132,6 @@ test("Atendimento: fila com SLA, Ficha 360, chamados abertos, supervisão, relat
   // Configurações
   await page.getByRole("tab", { name: "Configurações" }).click();
   await expect(page.getByRole("heading", { name: "Metas de SLA" })).toBeVisible();
+  await expect(page.getByRole("checkbox", { name: "Lucas atende na fila" })).not.toBeChecked(); // admin fora da fila
   await page.screenshot({ path: "test-results/atendimento/5-config.png" });
 });

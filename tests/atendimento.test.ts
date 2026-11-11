@@ -17,6 +17,9 @@ describe("Atendimento: caminhos permitidos", () => {
     expect(caminhoPermitido("PATCH", "/api/agent/users/7/status")).toBe(false);
     expect(caminhoPermitido("GET", "/api/agent/ops/other")).toBe(false);
     expect(caminhoPermitido("GET", "/api/agent/ops/candidates")).toBe(true);
+    expect(caminhoPermitido("GET", "/api/agent/ops/transfer-targets")).toBe(true);
+    expect(caminhoPermitido("PUT", "/api/agent/ops/agents/3/queue")).toBe(true);
+    expect(caminhoPermitido("DELETE", "/api/agent/ops/agents/3/queue")).toBe(false);
     expect(caminhoPermitido("POST", "/api/agent/ops/agents")).toBe(true);
     expect(caminhoPermitido("PATCH", "/api/agent/ops/agents/9")).toBe(true);
     // O cadastro direto da chat-api (que pede senha) não é exposto: o Workspace só usa as rotas de /ops.

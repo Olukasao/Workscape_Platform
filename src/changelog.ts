@@ -8,6 +8,14 @@ export interface ChangelogEntry {
 
 export const changelog: ChangelogEntry[] = [
   {
+    versao: "0.6.47",
+    data: "2026-11-11",
+    itens: [
+      "Atendimento: nova opção \"Atende na fila\" em Configurações > Atendentes. Quem só administra (como administradores) pode ficar fora da fila: continua entrando e gerenciando, mas não aparece para transferência nem nas contagens de atendentes disponíveis, na Supervisão e no Monitoramento.",
+      "Administrador AcessaNet, Dalton, Junior e Lucas já saíram da fila.",
+    ],
+  },
+  {
     versao: "0.6.46",
     data: "2026-11-11",
     itens: [

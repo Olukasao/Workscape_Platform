@@ -27,7 +27,8 @@ const PERMITIDOS: [RegExp, RegExp][] = [
   [/^POST$/, new RegExp(`^/api/agent/conversations/${id}/notes$`)],
   [/^GET$/, /^\/api\/agent\/quick-replies$/],
   // Setores, expediente, SLA, supervisão e relatórios (o servidor confere o cargo de cada rota).
-  [/^GET$/, /^\/api\/agent\/ops\/(config|sla|overview|reports|agents|candidates)$/],
+  [/^GET$/, /^\/api\/agent\/ops\/(config|sla|overview|reports|agents|candidates|transfer-targets)$/],
+  [/^PUT$/, new RegExp(`^/api/agent/ops/agents/${id}/queue$`)],
   [/^POST$/, /^\/api\/agent\/ops\/agents$/],
   [/^PATCH$/, new RegExp(`^/api/agent/ops/agents/${id}$`)],
   [/^PUT$/, new RegExp(`^/api/agent/ops/conversations/${id}/sector$`)],
