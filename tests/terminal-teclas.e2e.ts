@@ -46,15 +46,23 @@ test("Terminal: menu Teclas muda o que Backspace, Ctrl+Backspace, Delete e Enter
   await digitar("Backspace");
   expect(await ultimo()).toBe("\x7f");
 
+  // O terminal ignora os atalhos do Workspace: Ctrl+K vai para o equipamento (0x0B) e NÃO abre a busca do Workspace.
+  await page.getByRole("button", { name: "Entendi", exact: true }).click({ timeout: 20_000 }).catch(() => undefined); // aviso de novidades (aparece com atraso)
+  await digitar("Control+k");
+  expect(await ultimo()).toBe("\x0b");
+  await expect(page.getByRole("combobox", { name: "Buscar no workspace" })).toHaveCount(0); // a paleta de busca do Workspace NÃO abriu
+
   // Menu Teclas: Backspace passa a enviar ^H (0x08), sem Ctrl.
   await page.getByRole("button", { name: "Teclas", exact: true }).click();
-  await page.getByLabel("Tecla Backspace envia").selectOption("ctrl-h");
+  await page.getByRole("radio", { name: /Equipamento de rede/ }).click();
   await page.screenshot({ path: "test-results/atendimento/teclas-menu.png" });
   await digitar("Backspace");
   expect(await ultimo()).toBe("\x08");
 
-  // Ctrl+Backspace apagando a palavra anterior (Ctrl+W).
-  await page.getByLabel("Ctrl + Backspace").selectOption("palavra");
+  // Opções avançadas (escondidas até abrir): Ctrl+Backspace apagando a palavra anterior (Ctrl+W).
+  await expect(page.getByLabel("Ctrl + Backspace faz")).toBeHidden();
+  await page.getByText("Opções avançadas").click();
+  await page.getByLabel("Ctrl + Backspace faz").selectOption("palavra");
   await digitar("Control+Backspace");
   expect(await ultimo()).toBe("\x17");
 
@@ -64,17 +72,17 @@ test("Terminal: menu Teclas muda o que Backspace, Ctrl+Backspace, Delete e Enter
   expect(await ultimo()).toBe("\x08");
 
   // Enter com CR+LF.
-  await page.getByLabel("Tecla Enter envia").selectOption("crlf");
+  await page.getByLabel("Tecla Enter").selectOption("crlf");
   await digitar("Enter");
   expect(await ultimo()).toBe("\r\n");
 
   // Barra de atalhos na tela: Apagar usa o código escolhido; Ctrl+Z e Apagar palavra enviam o combo sem a pessoa digitar.
-  await page.getByLabel(/Mostrar barra de atalhos/).check();
+  await page.getByLabel(/Mostrar botões de atalho/).check();
   const barra = page.getByRole("toolbar", { name: "Atalhos de teclado" });
   await expect(barra).toBeVisible();
   await barra.getByRole("button", { name: "⌫ Apagar" }).click();
   expect(await ultimo()).toBe("\x08");
-  await barra.getByRole("button", { name: "Ctrl+Z" }).click();
+  await barra.getByRole("button", { name: /Sair do modo/ }).click();
   expect(await ultimo()).toBe("\x1a");
   await barra.getByRole("button", { name: "Apagar palavra" }).click();
   expect(await ultimo()).toBe("\x17");
@@ -82,7 +90,7 @@ test("Terminal: menu Teclas muda o que Backspace, Ctrl+Backspace, Delete e Enter
 
   // A escolha fica guardada e "Restaurar padrão" desfaz tudo.
   expect(await page.evaluate(() => JSON.parse(localStorage.getItem("workspace:terminal:teclas") ?? "{}").backspace)).toBe("ctrl-h");
-  await page.getByRole("button", { name: "Restaurar padrão" }).click();
+  await page.getByRole("button", { name: "Voltar ao normal" }).click();
   await digitar("Backspace");
   expect(await ultimo()).toBe("\x7f");
   await expect(barra).toBeHidden();

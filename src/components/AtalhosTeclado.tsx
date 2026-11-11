@@ -1,3 +1,4 @@
+import { eventoNoTerminal } from "../services/terminalFoco";
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ACOES_ATALHO, combinacaoDoEvento, useAtalhos } from "../services/atalhos";
@@ -11,7 +12,7 @@ export default function AtalhosTeclado() {
   useEffect(() => {
     if (!logado) return;
     const tecla = (e: KeyboardEvent) => {
-      if (e.repeat || document.body.dataset.gravandoAtalho) return;
+      if (e.repeat || document.body.dataset.gravandoAtalho || eventoNoTerminal(e)) return; // no terminal, as teclas são do equipamento
       const combinacao = combinacaoDoEvento(e);
       if (!combinacao) return;
       const mapa = useAtalhos.getState().mapa;

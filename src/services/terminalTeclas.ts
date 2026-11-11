@@ -62,17 +62,17 @@ export function tratarTecla(e: TeclaPressionada, cfg: TeclasTerminal): string | 
 
 /** Atalhos da barra na tela: o que cada botão envia ao equipamento. */
 export const ATALHOS_TELA: { id: string; rotulo: string; dica: string; dados: string }[] = [
-  { id: "apagar", rotulo: "⌫ Apagar", dica: "Apaga um caractere", dados: "" /* usa o código escolhido em Backspace */ },
-  { id: "palavra", rotulo: "Apagar palavra", dica: "Apaga a palavra anterior (Ctrl+W)", dados: "\x17" },
-  { id: "linha", rotulo: "Apagar linha", dica: "Apaga a linha inteira (Ctrl+U)", dados: "\x15" },
-  { id: "tab", rotulo: "Tab", dica: "Completa o comando", dados: "\t" },
-  { id: "esc", rotulo: "Esc", dica: "Esc", dados: "\x1b" },
-  { id: "cima", rotulo: "↑", dica: "Comando anterior", dados: "\x1b[A" },
-  { id: "baixo", rotulo: "↓", dica: "Próximo comando", dados: "\x1b[B" },
-  { id: "ctrlc", rotulo: "Ctrl+C", dica: "Interrompe o comando", dados: "\x03" },
-  { id: "ctrlz", rotulo: "Ctrl+Z", dica: "Sai do modo atual (equipamentos Huawei/Cisco)", dados: "\x1a" },
-  { id: "ctrld", rotulo: "Ctrl+D", dica: "Fim de entrada / sair", dados: "\x04" },
-  { id: "ctrll", rotulo: "Limpar tela", dica: "Ctrl+L", dados: "\x0c" },
+  { id: "apagar", rotulo: "⌫ Apagar", dica: "Apaga uma letra para trás", dados: "" /* usa o código escolhido em "A tecla de apagar" */ },
+  { id: "palavra", rotulo: "Apagar palavra", dica: "Apaga a palavra de trás", dados: "\x17" },
+  { id: "linha", rotulo: "Apagar tudo", dica: "Apaga tudo o que foi digitado na linha", dados: "\x15" },
+  { id: "tab", rotulo: "Tab (completar)", dica: "Completa o comando que você começou a digitar", dados: "\t" },
+  { id: "cima", rotulo: "↑ Comando anterior", dica: "Volta ao comando que você digitou antes", dados: "\x1b[A" },
+  { id: "baixo", rotulo: "↓ Próximo", dica: "Avança para o comando seguinte", dados: "\x1b[B" },
+  { id: "ctrlc", rotulo: "Cancelar (Ctrl+C)", dica: "Interrompe o que está rodando", dados: "\x03" },
+  { id: "ctrlz", rotulo: "Sair do modo (Ctrl+Z)", dica: "Sai do modo de configuração (equipamentos Huawei e Cisco)", dados: "\x1a" },
+  { id: "ctrld", rotulo: "Ctrl+D", dica: "Fim da entrada / sair", dados: "\x04" },
+  { id: "esc", rotulo: "Esc", dica: "Tecla Esc", dados: "\x1b" },
+  { id: "ctrll", rotulo: "Limpar tela", dica: "Limpa a tela (Ctrl+L)", dados: "\x0c" },
   { id: "enter", rotulo: "Enter", dica: "Envia o comando", dados: "\r" },
 ];
 

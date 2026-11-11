@@ -1,3 +1,4 @@
+import { eventoNoTerminal } from "../services/terminalFoco";
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { isAxiosError } from "axios";
 import {
@@ -243,6 +244,8 @@ function Shell() {
   }, []);
   useEffect(() => {
     const key = (e: KeyboardEvent) => {
+      // Com o foco no terminal, Ctrl+K, Ctrl+\ e Esc são do equipamento (nada de abrir busca ou recolher a barra).
+      if (eventoNoTerminal(e)) return;
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
         e.preventDefault();
         setPalette((v) => !v);

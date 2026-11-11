@@ -182,7 +182,7 @@ export default function Terminal({ active }: { active: boolean }) {
           <div className="term-ferramentas">
             <BotaoDestacar kind="terminal" />
             <button type="button" className={clsx("term-ico", atual?.antiIdle.ativo && "ligado")} disabled={!atual} aria-label="Anti-idle" title={atual ? (atual.antiIdle.ativo ? `Anti-idle ligado (a cada ${atual.antiIdle.segundos} s)` : "Anti-idle desligado") : "Abra uma sessão para usar o anti-idle"} onClick={() => setMenu(menu === "antiidle" ? null : "antiidle")}><Timer size={16} /></button>
-            <button type="button" className={clsx("term-ico", teclas.barraAtalhos && "ligado")} aria-label="Teclas" title="Teclas e atalhos: muda o que Backspace, Delete e Enter enviam" onClick={() => setMenu(menu === "teclas" ? null : "teclas")}><Keyboard size={16} /></button>
+            <button type="button" className={clsx("term-ico", teclas.barraAtalhos && "ligado")} aria-label="Teclas" title="Teclas: ajuda quando o apagar não funciona e botões de atalho" onClick={() => setMenu(menu === "teclas" ? null : "teclas")}><Keyboard size={16} /></button>
             <button type="button" className="term-ico" aria-label="Temas e letra" title="Temas e tamanho da letra" onClick={() => setMenu(menu === "tema" ? null : "tema")}><Palette size={16} /></button>
           </div>
           <form className="term-rapido" onSubmit={(e) => { e.preventDefault(); conectarRapido(); }}>
@@ -341,45 +341,67 @@ function TelaSessoes({ sessoes, ativa, visivel, fundo }: { sessoes: Sessao[]; at
 }
 
 
-const OPCOES_APAGAR = [{ id: "del", nome: "DEL (0x7F) · padrão de servidores Linux" }, { id: "ctrl-h", nome: "^H (0x08) · muitos equipamentos de rede" }] as const;
-const OPCOES_CTRL_BACKSPACE = [
-  { id: "padrao", nome: "Padrão do terminal (^H)" }, { id: "palavra", nome: "Apagar a palavra anterior (Ctrl+W)" }, { id: "linha", nome: "Apagar a linha inteira (Ctrl+U)" },
-  { id: "del", nome: "Enviar DEL (0x7F)" }, { id: "ctrl-h", nome: "Enviar ^H (0x08)" },
-] as const;
-
-/** Menu "Teclas": o que cada tecla envia ao equipamento, para quem não alcança Ctrl+Backspace. Vale já nas abas abertas. */
+/** Menu "Teclas", em palavras simples: o essencial na frente e o resto em "Opções avançadas". Vale na hora, nas abas abertas. */
 function MenuTeclas({ teclas, aoFechar }: { teclas: TeclasTerminal; aoFechar: () => void }) {
+  const escolhaApagar: { id: TeclasTerminal["backspace"]; titulo: string; dica: string }[] = [
+    { id: "del", titulo: "Normal", dica: "Use esta primeiro." },
+    { id: "ctrl-h", titulo: "Equipamento de rede", dica: "Escolha esta se o ⌫ não apaga nada ou aparece ^? na tela." },
+  ];
   return (
-    <div className="term-menu term-menu-teclas" role="dialog" aria-label="Teclas">
-      <strong>Teclas</strong>
-      <small className="muted">Cada equipamento espera um código diferente para apagar. Se o Backspace não apaga direito, troque abaixo: vale na hora, sem reconectar.</small>
-      <label>Tecla Backspace envia
-        <select value={teclas.backspace} onChange={(e) => salvarTeclas({ backspace: e.target.value as TeclasTerminal["backspace"] })}>
-          {OPCOES_APAGAR.map((o) => <option key={o.id} value={o.id}>{o.nome}</option>)}
-        </select>
-      </label>
-      <label>Ctrl + Backspace
-        <select value={teclas.ctrlBackspace} onChange={(e) => salvarTeclas({ ctrlBackspace: e.target.value as TeclasTerminal["ctrlBackspace"] })}>
-          {OPCOES_CTRL_BACKSPACE.map((o) => <option key={o.id} value={o.id}>{o.nome}</option>)}
-        </select>
-      </label>
-      <label>Tecla Delete
-        <select value={teclas.delete} onChange={(e) => salvarTeclas({ delete: e.target.value as TeclasTerminal["delete"] })}>
-          <option value="padrao">Padrão (Delete)</option>
-          <option value="apagar">Apagar à esquerda, como o Backspace</option>
-        </select>
-      </label>
-      <label>Tecla Enter envia
-        <select value={teclas.enter} onChange={(e) => salvarTeclas({ enter: e.target.value as TeclasTerminal["enter"] })}>
-          <option value="cr">CR (padrão)</option>
-          <option value="crlf">CR + LF (alguns equipamentos antigos)</option>
-          <option value="lf">Só LF</option>
-        </select>
-      </label>
-      <label className="term-check"><input type="checkbox" checked={teclas.barraAtalhos} onChange={(e) => salvarTeclas({ barraAtalhos: e.target.checked })} />Mostrar barra de atalhos na tela (Apagar, Tab, Ctrl+C, Ctrl+Z…)</label>
-      <label className="term-check"><input type="checkbox" checked={teclas.copiarEColar} onChange={(e) => salvarTeclas({ copiarEColar: e.target.checked })} />Copiar ao selecionar e colar com o botão direito</label>
-      <div className="term-form-acoes"><Button type="button" variant="ghost" size="sm" onClick={restaurarTeclas}>Restaurar padrão</Button><Button type="button" size="sm" onClick={aoFechar}>Fechar</Button></div>
-      <small className="muted">Fica guardado neste computador.</small>
+    <div className={clsx("term-menu term-menu-teclas", teclas.barraAtalhos && "com-barra")} role="dialog" aria-label="Teclas">
+      <div className="term-menu-cab"><strong>Teclas</strong><button type="button" className="term-menu-x" aria-label="Fechar" onClick={aoFechar}><X size={15} /></button></div>
+      <small className="muted">Alguma tecla não funciona direito no equipamento? Ajuste aqui. A mudança vale na hora.</small>
+
+      <fieldset className="term-teclas-grupo">
+        <legend>1. A tecla de apagar (⌫) não está apagando?</legend>
+        <div className="term-opcoes" role="radiogroup" aria-label="Tecla de apagar">
+          {escolhaApagar.map((o) => (
+            <button key={o.id} type="button" role="radio" aria-checked={teclas.backspace === o.id} className={clsx("term-opcao", teclas.backspace === o.id && "marcada")} onClick={() => salvarTeclas({ backspace: o.id })}>
+              <b>{o.titulo}</b><small>{o.dica}</small>
+            </button>
+          ))}
+        </div>
+      </fieldset>
+
+      <fieldset className="term-teclas-grupo">
+        <legend>2. Botões na tela</legend>
+        <label className="term-interruptor">
+          <input type="checkbox" checked={teclas.barraAtalhos} onChange={(e) => salvarTeclas({ barraAtalhos: e.target.checked })} />
+          <span><b>Mostrar botões de atalho</b><small>Apagar, Tab, Cancelar, Sair do modo… é só clicar, sem apertar duas teclas juntas.</small></span>
+        </label>
+        <label className="term-interruptor">
+          <input type="checkbox" checked={teclas.copiarEColar} onChange={(e) => salvarTeclas({ copiarEColar: e.target.checked })} />
+          <span><b>Copiar e colar fácil</b><small>Selecionou o texto, já copia. Botão direito do mouse cola.</small></span>
+        </label>
+      </fieldset>
+
+      <details className="term-avancado">
+        <summary>Opções avançadas</summary>
+        <label>Ctrl + Backspace faz
+          <select value={teclas.ctrlBackspace} onChange={(e) => salvarTeclas({ ctrlBackspace: e.target.value as TeclasTerminal["ctrlBackspace"] })}>
+            <option value="padrao">O normal do terminal</option>
+            <option value="palavra">Apagar a palavra de trás</option>
+            <option value="linha">Apagar a linha toda</option>
+            <option value="del">Apagar como o modo "Normal"</option>
+            <option value="ctrl-h">Apagar como o modo "Equipamento de rede"</option>
+          </select>
+        </label>
+        <label>Tecla Delete
+          <select value={teclas.delete} onChange={(e) => salvarTeclas({ delete: e.target.value as TeclasTerminal["delete"] })}>
+            <option value="padrao">Normal</option>
+            <option value="apagar">Apagar para trás, igual ao ⌫ (se o Delete não funciona)</option>
+          </select>
+        </label>
+        <label>Tecla Enter
+          <select value={teclas.enter} onChange={(e) => salvarTeclas({ enter: e.target.value as TeclasTerminal["enter"] })}>
+            <option value="cr">Normal</option>
+            <option value="crlf">Pula a linha duas vezes em equipamentos antigos (CR+LF)</option>
+            <option value="lf">Só pular a linha (LF)</option>
+          </select>
+        </label>
+      </details>
+
+      <div className="term-form-acoes"><Button type="button" variant="ghost" size="sm" onClick={restaurarTeclas}>Voltar ao normal</Button><Button type="button" size="sm" onClick={aoFechar}>Pronto</Button></div>
     </div>
   );
 }

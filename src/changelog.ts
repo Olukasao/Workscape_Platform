@@ -8,6 +8,15 @@ export interface ChangelogEntry {
 
 export const changelog: ChangelogEntry[] = [
   {
+    versao: "0.6.46",
+    data: "2026-11-11",
+    itens: [
+      "Terminal: o menu Teclas ficou bem mais simples. Na frente só ficam duas coisas: escolher o modo da tecla de apagar (Normal ou Equipamento de rede) e ligar os botões de atalho. O resto ficou em Opções avançadas, com nomes em português claro.",
+      "Terminal: com o foco no terminal, os atalhos do Workspace (Ctrl+K, Ctrl+\\, Esc, atalhos de navegação e do telefone) não interferem mais: as teclas vão para o equipamento.",
+      "Terminal: os botões de atalho ganharam nomes mais claros (Cancelar, Sair do modo, Tab completar...), ficam numa linha só e o menu não cobre mais os botões.",
+    ],
+  },
+  {
     versao: "0.6.45",
     data: "2026-11-11",
     itens: [
