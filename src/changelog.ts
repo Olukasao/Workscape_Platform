@@ -8,6 +8,13 @@ export interface ChangelogEntry {
 
 export const changelog: ChangelogEntry[] = [
   {
+    versao: "0.6.36",
+    data: "2026-11-11",
+    itens: [
+      "No Atendimento, nova aba \"Chamados abertos\": lista os clientes com chamado aberto pela Central do assinante, com o botão \"Abrir atendimento\" para iniciar a conversa.",
+    ],
+  },
+  {
     versao: "0.6.35",
     data: "2026-11-11",
     itens: [

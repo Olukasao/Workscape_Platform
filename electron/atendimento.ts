@@ -15,6 +15,7 @@ const PERMITIDOS: [RegExp, RegExp][] = [
   [/^GET$/, new RegExp(`^/api/agent/conversations/${id}$`)],
   [/^GET$/, new RegExp(`^/api/agent/conversations/${id}/messages$`)],
   [/^POST$/, new RegExp(`^/api/agent/conversations/${id}/messages$`)],
+  [/^POST$/, /^\/api\/agent\/conversations\/start-from-ticket$/],
   [/^POST$/, new RegExp(`^/api/agent/conversations/${id}/assign$`)],
   [/^POST$/, new RegExp(`^/api/agent/conversations/${id}/read$`)],
   [/^PATCH$/, new RegExp(`^/api/agent/conversations/${id}/status$`)],

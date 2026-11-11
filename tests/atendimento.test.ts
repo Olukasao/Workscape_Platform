@@ -7,6 +7,9 @@ describe("Atendimento: caminhos permitidos", () => {
     expect(caminhoPermitido("POST", "/api/agent/conversations/12/messages")).toBe(true);
     expect(caminhoPermitido("PATCH", "/api/agent/conversations/12/status")).toBe(true);
     expect(caminhoPermitido("GET", "/api/agent/quick-replies")).toBe(true);
+    expect(caminhoPermitido("POST", "/api/agent/conversations/start-from-ticket")).toBe(true);
+    // O caminho antigo por CPF não é exposto à interface.
+    expect(caminhoPermitido("POST", "/api/agent/conversations/start")).toBe(false);
   });
   it("recusa o que não é do dia a dia (admin, transferência, exclusão, outras APIs)", () => {
     expect(caminhoPermitido("GET", "/api/agent/admin/agents")).toBe(false);

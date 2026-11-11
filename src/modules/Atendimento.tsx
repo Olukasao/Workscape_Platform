@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Headset, Lock, RefreshCw, Search, Send, UserCheck, XCircle, RotateCcw, Zap } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { Headset, Lock, MessageSquarePlus, RefreshCw, Search, Send, UserCheck, XCircle, RotateCcw } from "lucide-react";
 import { clsx } from "clsx";
 import { Button } from "../components/ui/button";
+import { api, errorMessage } from "../services/api";
 import "../styles/atendimento.css";
 
 type Status = "new" | "open" | "waiting_customer" | "waiting_agent" | "closed";
@@ -12,6 +14,7 @@ interface Conversa {
 }
 interface Mensagem { id: number; conversationId: number; clientMessageId?: string; senderType: "customer" | "agent" | "system"; senderId: string; message: string; createdAt: string; readAt: string | null }
 interface Resposta { id: number; shortcut: string; title: string; body: string }
+interface ChamadoAberto { ticketId: string | null; contractId: string | null; protocol: string | null; customerName: string | null; title: string; openedAt: string; status: string; statusLabel: string }
 type Agente = { id: number; name: string; email: string; role: string };
 
 const FILTROS: { id: string; nome: string }[] = [
@@ -40,6 +43,7 @@ export default function Atendimento({ active }: { active: boolean }) {
   const [erroLogin, setErroLogin] = useState("");
   const [agente, setAgente] = useState<Agente | null>(null);
   const [conectado, setConectado] = useState(false);
+  const [aba, setAba] = useState<"conversas" | "chamados">("conversas");
   const [filtro, setFiltro] = useState("new");
   const [busca, setBusca] = useState("");
   const [lista, setLista] = useState<Conversa[]>([]);
@@ -109,6 +113,34 @@ export default function Atendimento({ active }: { active: boolean }) {
   }, [carregarLista]);
   useEffect(() => { fim.current?.scrollIntoView({ block: "end" }); }, [msgs, selecionada]);
 
+  // Chamados abertos pela Central do assinante (lista do site, via Chat Interno): quem ainda não tem conversa.
+  const chamados = useQuery({
+    queryKey: ["atendimento", "chamados-abertos"],
+    enabled: fase === "ok" && aba === "chamados",
+    refetchInterval: 60_000,
+    queryFn: async () => {
+      const partes = await Promise.all(["open", "scheduled", "in_progress"].map(async (status) =>
+        (await api.get<{ items: ChamadoAberto[] }>("/chamados/site", { params: { period: "30d", limit: 100, status } })).data.items));
+      const vistos = new Set<string>();
+      return partes.flat().filter((c) => c.ticketId && c.contractId && !vistos.has(c.ticketId) && !!vistos.add(c.ticketId))
+        .sort((a, b) => b.openedAt.localeCompare(a.openedAt));
+    },
+  });
+  const [abrindo, setAbrindo] = useState<string | null>(null);
+  const [avisoAbrir, setAvisoAbrir] = useState("");
+  const abrirAtendimento = async (c: ChamadoAberto) => {
+    if (!c.ticketId || !c.contractId) return;
+    if (!window.confirm(`Abrir atendimento com ${c.customerName || "este cliente"}? O cliente passa a ver o chat na Central do assinante.`)) return;
+    setAbrindo(c.ticketId); setAvisoAbrir("");
+    try {
+      const r = await chamar<{ conversation: Conversa; created: boolean }>("POST", "/api/agent/conversations/start-from-ticket", { body: { contractId: c.contractId, ticketId: c.ticketId } });
+      setAba("conversas"); setFiltro("mine");
+      await abrir(r.conversation.id);
+      setAvisoAbrir(r.created ? "" : "Este cliente já tinha uma conversa ativa; ela foi aberta.");
+    } catch (e) { setAvisoAbrir(msgErro(e)); }
+    finally { setAbrindo(null); }
+  };
+
   const atual = useMemo(() => lista.find((c) => c.id === selecionada) ?? null, [lista, selecionada]);
   const minha = !!atual && !!agente && atual.assignedAgentId === agente.id;
   const encerrada = atual?.status === "closed";
@@ -148,7 +180,32 @@ export default function Atendimento({ active }: { active: boolean }) {
     );
 
   return (
-    <div className={clsx("atd", !active && "atd-oculto")}>
+    <div className={clsx("atd-raiz", !active && "atd-oculto")}>
+      <nav className="atd-abas" role="tablist" aria-label="Atendimento">
+        <button type="button" role="tab" aria-selected={aba === "conversas"} className={clsx(aba === "conversas" && "ativa")} onClick={() => setAba("conversas")}>Conversas{novasTotal ? <i className="atd-badge">{novasTotal}</i> : null}</button>
+        <button type="button" role="tab" aria-selected={aba === "chamados"} className={clsx(aba === "chamados" && "ativa")} onClick={() => setAba("chamados")}>Chamados abertos</button>
+      </nav>
+      {avisoAbrir ? <p className="term-erro" role="alert">{avisoAbrir}</p> : null}
+      {aba === "chamados" ? (
+        <div className="atd-chamados">
+          <div className="atd-chamados-topo">
+            <p className="muted">Clientes com chamado aberto pela Central do assinante. “Abrir atendimento” inicia a conversa e o cliente passa a ver o chat.</p>
+            <Button size="sm" variant="outline" onClick={() => void chamados.refetch()}><RefreshCw size={14} />Atualizar</Button>
+          </div>
+          {chamados.isError ? <p className="term-erro" role="alert">{errorMessage(chamados.error)}</p> : null}
+          {chamados.isLoading ? <p className="muted">Carregando…</p> : null}
+          {chamados.data && !chamados.data.length ? <p className="muted">Nenhum chamado aberto agora.</p> : null}
+          <ul className="atd-chamados-lista">
+            {(chamados.data ?? []).map((c) => (
+              <li key={c.ticketId}>
+                <div><b>{c.customerName || "Cliente sem nome"}</b><small>{c.title} · {c.protocol ? `#${c.protocol} · ` : ""}aberto em {new Date(c.openedAt).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })} · {c.statusLabel}</small></div>
+                <Button size="sm" disabled={abrindo === c.ticketId} onClick={() => void abrirAtendimento(c)}><MessageSquarePlus size={14} />{abrindo === c.ticketId ? "Abrindo…" : "Abrir atendimento"}</Button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+    <div className="atd" hidden={aba !== "conversas"}>
       <aside className="atd-lista">
         <div className="atd-topo">
           <label className="atd-busca"><Search size={15} /><input value={busca} onChange={(e) => setBusca(e.target.value)} onKeyDown={(e) => e.key === "Enter" && void carregarLista()} placeholder="Buscar cliente ou protocolo" aria-label="Buscar conversa" /></label>
@@ -215,6 +272,7 @@ export default function Atendimento({ active }: { active: boolean }) {
           </form>
         </div>
       ) : null}
+    </div>
     </div>
   );
 }

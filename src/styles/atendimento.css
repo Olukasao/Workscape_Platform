@@ -41,3 +41,16 @@
 .atd-vazio { height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; text-align: center; padding: 24px; opacity: .85; }
 .atd-gira { animation: atd-gira 1s linear infinite; }
 @keyframes atd-gira { to { transform: rotate(360deg); } }
+.atd-raiz { display: flex; flex-direction: column; height: 100%; min-height: 0; background: var(--canvas); }
+.atd-raiz > .atd { flex: 1; min-height: 0; }
+.atd[hidden] { display: none; }
+.atd-abas { display: flex; gap: 4px; padding: 8px 12px 0; border-bottom: 1px solid var(--line); }
+.atd-abas button { display: inline-flex; align-items: center; gap: 6px; border: 0; border-bottom: 2px solid transparent; background: transparent; color: var(--ink); padding: 8px 14px; cursor: pointer; opacity: .7; font: inherit; }
+.atd-abas button.ativa { border-bottom-color: var(--accent, #2563eb); opacity: 1; font-weight: 600; }
+.atd-chamados { flex: 1; min-height: 0; overflow: auto; padding: 14px 16px; }
+.atd-chamados-topo { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
+.atd-chamados-topo p { margin: 0; }
+.atd-chamados-lista { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.atd-chamados-lista li { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--r-md); background: var(--surface-1, var(--surface-2)); }
+.atd-chamados-lista li > div { display: flex; flex-direction: column; min-width: 0; }
+.atd-chamados-lista small { opacity: .65; font-size: var(--fs-sm); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
