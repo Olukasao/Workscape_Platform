@@ -12,7 +12,7 @@ export const changelog: ChangelogEntry[] = [
     data: "2026-11-11",
     itens: [
       "Novo módulo Atendimento: os atendentes respondem os clientes da Central do assinante direto no Workspace, com fila, conversa em tempo real, assumir, encerrar e respostas rápidas.",
-      "O acesso usa o mesmo login do Chat Interno (sem senha nova) e só entra quem está cadastrado como atendente.",
+      "O acesso usa o mesmo login do Chat Interno (sem senha nova) e só entra quem está cadastrado como atendente. Por enquanto só administradores veem o módulo (em testes).",
     ],
   },
   {
