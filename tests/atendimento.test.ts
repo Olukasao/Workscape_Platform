@@ -8,6 +8,14 @@ describe("Atendimento: caminhos permitidos", () => {
     expect(caminhoPermitido("PATCH", "/api/agent/conversations/12/status")).toBe(true);
     expect(caminhoPermitido("GET", "/api/agent/quick-replies")).toBe(true);
     expect(caminhoPermitido("POST", "/api/agent/conversations/start-from-ticket")).toBe(true);
+    expect(caminhoPermitido("GET", "/api/agent/ops/overview")).toBe(true);
+    expect(caminhoPermitido("PUT", "/api/agent/ops/conversations/5/sector")).toBe(true);
+    expect(caminhoPermitido("PUT", "/api/agent/ops/settings")).toBe(true);
+    expect(caminhoPermitido("DELETE", "/api/agent/ops/settings")).toBe(false);
+    expect(caminhoPermitido("PATCH", "/api/agent/users/me/status")).toBe(true);
+    // Mudar o status de OUTRO atendente não é exposto.
+    expect(caminhoPermitido("PATCH", "/api/agent/users/7/status")).toBe(false);
+    expect(caminhoPermitido("GET", "/api/agent/ops/other")).toBe(false);
     // O caminho antigo por CPF não é exposto à interface.
     expect(caminhoPermitido("POST", "/api/agent/conversations/start")).toBe(false);
   });

@@ -1,10 +1,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Headset, Lock, MessageSquarePlus, RefreshCw, Search, Send, UserCheck, UserRound, XCircle, RotateCcw } from "lucide-react";
+import { Headset, Lock, MessageSquarePlus, RefreshCw, Search, Send, PhoneCall, UserCheck, UserRound, XCircle, RotateCcw } from "lucide-react";
 import { clsx } from "clsx";
 import { Button } from "../components/ui/button";
 import { api, errorMessage } from "../services/api";
+import { useTelefoneAtendimento } from "./atendimento/telefone";
 import Ficha360 from "./atendimento/Ficha360";
+import Supervisao from "./atendimento/Supervisao";
+import Relatorios from "./atendimento/Relatorios";
+import Configuracoes from "./atendimento/Configuracoes";
+import { chamar, duracao, msgErro, type Cargo } from "./atendimento/chamar";
 import "../styles/atendimento.css";
 
 type Status = "new" | "open" | "waiting_customer" | "waiting_agent" | "closed";
@@ -16,6 +21,8 @@ interface Conversa {
 interface Mensagem { id: number; conversationId: number; clientMessageId?: string; senderType: "customer" | "agent" | "system"; senderId: string; message: string; createdAt: string; readAt: string | null }
 interface Resposta { id: number; shortcut: string; title: string; body: string }
 interface ChamadoAberto { ticketId: string | null; contractId: string | null; protocol: string | null; customerName: string | null; title: string; openedAt: string; status: string; statusLabel: string }
+type Sla = { conversationId: number; sectorId: number | null; state: "none" | "ok" | "warning" | "breached"; kind: string | null; waitingSeconds: number; targetSeconds: number | null };
+interface ConfigOps { sectors: { id: number; slug: string; name: string; active: boolean; mine: boolean }[]; open: boolean }
 type Agente = { id: number; name: string; email: string; role: string };
 
 const FILTROS: { id: string; nome: string }[] = [
@@ -30,25 +37,21 @@ const ROTULO: Record<Status, string> = { new: "Nova", open: "Aberta", waiting_cu
 const hora = (iso: string) => new Date(iso).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
 const quando = (iso: string) => { const d = new Date(iso); return d.toDateString() === new Date().toDateString() ? hora(iso) : d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }); };
 const nomeDe = (c: Conversa) => c.ticketMetadata?.customer?.name || `Cliente ${c.customerId}`;
-const chamar = <T,>(method: "GET" | "POST" | "PATCH", path: string, extra: { query?: Record<string, string>; body?: unknown } = {}) =>
-  window.desktop!.atendimentoChamar!({ method, path, ...extra }) as Promise<T>;
-const msgErro = (e: unknown) => {
-  const m = e instanceof Error ? e.message.replace(/^Error invoking remote method '[^']+': (Error: )?/, "") : "Erro inesperado.";
-  const mapa: Record<string, string> = { agent_not_registered: "Você não está cadastrado como atendente. Peça ao administrador.", agent_disabled: "Seu acesso ao atendimento está desativado.", conversation_assigned_to_another_agent: "Esta conversa é de outro atendente.", conversation_not_assigned: "Assuma a conversa antes de responder.", conversation_already_assigned: "Outro atendente já assumiu esta conversa.", conversation_closed: "Esta conversa já foi encerrada." };
-  return mapa[m] ?? m;
-};
-
 /** Atendimento por chat com os clientes da Central do assinante (chat-api). Tokens e tempo real ficam no processo principal. */
 export default function Atendimento({ active }: { active: boolean }) {
   const [fase, setFase] = useState<"entrando" | "ok" | "erro">("entrando");
   const [erroLogin, setErroLogin] = useState("");
   const [agente, setAgente] = useState<Agente | null>(null);
+  const [statusAtd, setStatusAtd] = useState<"AVAILABLE" | "INVISIBLE" | null>(null);
   const [conectado, setConectado] = useState(false);
   const [fichaAberta, setFichaAberta] = useState(true);
-  const [aba, setAba] = useState<"conversas" | "chamados">("conversas");
+  const [aba, setAba] = useState<"conversas" | "chamados" | "supervisao" | "relatorios" | "config">("conversas");
+  const [setorFiltro, setSetorFiltro] = useState<number | "meus" | "todos">("meus");
   const [filtro, setFiltro] = useState("new");
   const [busca, setBusca] = useState("");
   const [lista, setLista] = useState<Conversa[]>([]);
+  const [sla, setSla] = useState<Record<number, Sla>>({});
+  const [cfgOps, setCfgOps] = useState<ConfigOps | null>(null);
   const [selecionada, setSelecionada] = useState<number | null>(null);
   const [msgs, setMsgs] = useState<Mensagem[]>([]);
   const [texto, setTexto] = useState("");
@@ -64,7 +67,8 @@ export default function Atendimento({ active }: { active: boolean }) {
 
   const entrar = useCallback(async () => {
     setFase("entrando"); setErroLogin("");
-    try { const r = await window.desktop!.atendimentoEntrar!(); setAgente(r.agente); setFase("ok"); }
+    try { const r = await window.desktop!.atendimentoEntrar!(); setAgente(r.agente); setFase("ok");
+      void chamar<{ agent: { attendanceStatus?: "AVAILABLE" | "INVISIBLE" } }>("GET", "/api/agent/auth/me").then((m) => setStatusAtd(m.agent.attendanceStatus ?? "AVAILABLE")).catch(() => setStatusAtd("AVAILABLE")); }
     catch (e) { setErroLogin(msgErro(e)); setFase("erro"); }
   }, []);
   useEffect(() => { if (window.desktop?.atendimentoEntrar) void entrar(); }, [entrar]);
@@ -73,10 +77,23 @@ export default function Atendimento({ active }: { active: boolean }) {
     try {
       const r = await chamar<{ items: Conversa[] }>("GET", "/api/agent/conversations", { query: { filter: filtroRef.current, limit: "100", ...(busca.trim() ? { search: busca.trim() } : {}) } });
       setLista(r.items);
+      // SLA e setor de cada conversa visível (uma chamada só); falha aqui não impede a fila.
+      void chamar<{ items: Sla[] }>("GET", "/api/agent/ops/sla", { query: { ids: r.items.map((c) => c.id).slice(0, 100).join(",") } })
+        .then((x) => setSla(Object.fromEntries(x.items.map((i) => [i.conversationId, i])))).catch(() => undefined);
       void window.desktop!.atendimentoEntrarNas!({ ids: r.items.map((c) => c.id) });
     } catch (e) { setErro(msgErro(e)); }
   }, [busca]);
   useEffect(() => { if (fase === "ok") void carregarLista(); }, [fase, filtro, carregarLista]);
+  useEffect(() => {
+    if (fase !== "ok") return;
+    void chamar<ConfigOps>("GET", "/api/agent/ops/config").then(setCfgOps).catch(() => undefined);
+  }, [fase]);
+  // O SLA anda com o tempo: reconsulta a cada 20 s enquanto a fila está aberta.
+  useEffect(() => {
+    if (fase !== "ok" || aba !== "conversas") return;
+    const t = window.setInterval(() => void carregarLista(), 20_000);
+    return () => window.clearInterval(t);
+  }, [fase, aba, carregarLista]);
   useEffect(() => {
     if (fase !== "ok") return;
     void chamar<{ items?: Resposta[]; quickReplies?: Resposta[] }>("GET", "/api/agent/quick-replies").then((r) => setRespostas(r.items ?? r.quickReplies ?? [])).catch(() => undefined);
@@ -143,7 +160,19 @@ export default function Atendimento({ active }: { active: boolean }) {
     finally { setAbrindo(null); }
   };
 
+  const cargo = (agente?.role ?? "agent") as Cargo;
+  const ehSupervisor = cargo === "supervisor" || cargo === "admin";
+  const setorNome = (id: number | null | undefined) => cfgOps?.sectors.find((x) => x.id === id)?.name ?? "";
+  const visiveis = useMemo(() => lista.filter((c) => {
+    if (setorFiltro === "todos") return true;
+    const setorId = sla[c.id]?.sectorId ?? null;
+    if (setorFiltro === "meus") { const meus = cfgOps?.sectors.filter((x) => x.mine).map((x) => x.id); return !meus || !setorId || meus.includes(setorId); }
+    return setorId === setorFiltro;
+  }), [lista, sla, setorFiltro, cfgOps]);
+  const moverSetor = (sectorId: number) => atual && acao(async () => { await chamar("PUT", `/api/agent/ops/conversations/${atual.id}/sector`, { body: { sectorId } }); });
+
   const atual = useMemo(() => lista.find((c) => c.id === selecionada) ?? null, [lista, selecionada]);
+  const tel = useTelefoneAtendimento(atual, statusAtd);
   const minha = !!atual && !!agente && atual.assignedAgentId === agente.id;
   const encerrada = atual?.status === "closed";
   const novasTotal = Object.values(naoLidas).reduce((a, b) => a + b, 0);
@@ -186,8 +215,15 @@ export default function Atendimento({ active }: { active: boolean }) {
       <nav className="atd-abas" role="tablist" aria-label="Atendimento">
         <button type="button" role="tab" aria-selected={aba === "conversas"} className={clsx(aba === "conversas" && "ativa")} onClick={() => setAba("conversas")}>Conversas{novasTotal ? <i className="atd-badge">{novasTotal}</i> : null}</button>
         <button type="button" role="tab" aria-selected={aba === "chamados"} className={clsx(aba === "chamados" && "ativa")} onClick={() => setAba("chamados")}>Chamados abertos</button>
+        {ehSupervisor ? <button type="button" role="tab" aria-selected={aba === "supervisao"} className={clsx(aba === "supervisao" && "ativa")} onClick={() => setAba("supervisao")}>Supervisão</button> : null}
+        {ehSupervisor ? <button type="button" role="tab" aria-selected={aba === "relatorios"} className={clsx(aba === "relatorios" && "ativa")} onClick={() => setAba("relatorios")}>Relatórios</button> : null}
+        {cargo === "admin" ? <button type="button" role="tab" aria-selected={aba === "config"} className={clsx(aba === "config" && "ativa")} onClick={() => setAba("config")}>Configurações</button> : null}
+        {cfgOps && !cfgOps.open ? <span className="atd-fora" title="O relógio do SLA está parado">Fora do expediente</span> : null}
       </nav>
       {avisoAbrir ? <p className="term-erro" role="alert">{avisoAbrir}</p> : null}
+      {aba === "supervisao" && ehSupervisor ? <Supervisao aoAbrir={(id) => { setAba("conversas"); setFiltro("open"); setSetorFiltro("todos"); void abrir(id); }} /> : null}
+      {aba === "relatorios" && ehSupervisor ? <Relatorios /> : null}
+      {aba === "config" && cargo === "admin" ? <Configuracoes /> : null}
       {aba === "chamados" ? (
         <div className="atd-chamados">
           <div className="atd-chamados-topo">
@@ -216,13 +252,23 @@ export default function Atendimento({ active }: { active: boolean }) {
         <div className="atd-filtros" role="tablist">
           {FILTROS.map((f) => <button key={f.id} type="button" role="tab" aria-selected={filtro === f.id} className={clsx(filtro === f.id && "ativa")} onClick={() => setFiltro(f.id)}>{f.nome}</button>)}
         </div>
+        {cfgOps ? (
+          <div className="atd-setores">
+            <select aria-label="Setor" value={String(setorFiltro)} onChange={(e) => setSetorFiltro(e.target.value === "meus" || e.target.value === "todos" ? e.target.value : Number(e.target.value))}>
+              <option value="meus">Meus setores</option>
+              <option value="todos">Todos os setores</option>
+              {cfgOps.sectors.filter((x) => x.active).map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}
+            </select>
+          </div>
+        ) : null}
         <div className="atd-itens">
-          {!lista.length ? <p className="muted atd-dica">Nenhuma conversa neste filtro.</p> : null}
-          {lista.map((c) => (
+          {!visiveis.length ? <p className="muted atd-dica">Nenhuma conversa neste filtro.</p> : null}
+          {visiveis.map((c) => (
             <button key={c.id} type="button" className={clsx("atd-item", c.id === selecionada && "ativa")} onClick={() => void abrir(c.id)}>
               <span className="atd-item-linha"><b>{nomeDe(c)}</b><small>{quando(c.updatedAt)}</small></span>
               <span className="atd-item-linha"><small className="atd-sub">{c.ticketMetadata?.ticket?.title || `Chamado ${c.ticketId}`}</small>
                 {naoLidas[c.id] ? <i className="atd-badge">{naoLidas[c.id]}</i> : <em className={`atd-st ${c.status}`}>{ROTULO[c.status]}</em>}</span>
+              {sla[c.id] && sla[c.id]!.state !== "none" ? <span className="atd-item-linha"><small>{setorNome(sla[c.id]!.sectorId)}</small><span className={`atd-sla ${sla[c.id]!.state}`} title={sla[c.id]!.kind === "first_response" ? "Esperando a primeira resposta" : "Esperando resposta"}>{duracao(sla[c.id]!.waitingSeconds)}{sla[c.id]!.state === "breached" ? " ⚠" : ""}</span></span> : sla[c.id] ? <span className="atd-item-linha"><small>{setorNome(sla[c.id]!.sectorId)}</small></span> : null}
             </button>
           ))}
         </div>
@@ -237,10 +283,19 @@ export default function Atendimento({ active }: { active: boolean }) {
                 {!atual.assignedAgentId && !encerrada ? <Button size="sm" onClick={() => void assumir()}><UserCheck size={14} />Assumir</Button> : null}
                 {minha && !encerrada ? <Button size="sm" variant="outline" onClick={() => setEncerrando({ motivo: "resolved", nota: "" })}><XCircle size={14} />Encerrar</Button> : null}
                 {encerrada ? <Button size="sm" variant="outline" onClick={() => void reabrir()}><RotateCcw size={14} />Reabrir</Button> : null}
+                {cfgOps && !encerrada ? (
+                  <select aria-label="Mover para o setor" value={sla[atual.id]?.sectorId ?? ""} onChange={(e) => void moverSetor(Number(e.target.value))} title="Mover a conversa para outro setor">
+                    {cfgOps.sectors.filter((x) => x.active).map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}
+                  </select>
+                ) : null}
+                {tel.numeros.length ? (
+                  <Button size="sm" variant="outline" disabled={!tel.podeLigar} onClick={() => tel.ligar(tel.numeros[0]!)} title={tel.podeLigar ? `Ligar para ${tel.numeros[0]}` : tel.emLigacao ? "Você já está em uma ligação" : "Telefone desconectado"}><PhoneCall size={14} />Ligar</Button>
+                ) : null}
                 <Button size="sm" variant="outline" aria-pressed={fichaAberta} onClick={() => setFichaAberta((v) => !v)} title="Mostra ou esconde a ficha do cliente"><UserRound size={14} />Ficha</Button>
               </div>
             </header>
             {erro ? <p className="term-erro" role="alert">{erro}</p> : null}
+            {tel.chamadaDoCliente ? <div className="atd-ligacao" role="status"><PhoneCall size={14} /> {tel.chamadaDoCliente.estado === "conversando" ? "Em ligação com este cliente" : tel.chamadaDoCliente.estado === "tocando" ? "Este cliente está ligando" : "Ligando para este cliente"}</div> : null}
             <div className="atd-msgs">
               {msgs.map((m) => (
                 <div key={m.id} className={clsx("atd-msg", m.senderType)}>

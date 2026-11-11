@@ -23,13 +23,21 @@ const PERMITIDOS: [RegExp, RegExp][] = [
   [/^GET$/, new RegExp(`^/api/agent/conversations/${id}/notes$`)],
   [/^POST$/, new RegExp(`^/api/agent/conversations/${id}/notes$`)],
   [/^GET$/, /^\/api\/agent\/quick-replies$/],
+  // Setores, expediente, SLA, supervisão e relatórios (o servidor confere o cargo de cada rota).
+  [/^GET$/, /^\/api\/agent\/ops\/(config|sla|overview|reports|agents)$/],
+  [/^PUT$/, new RegExp(`^/api/agent/ops/conversations/${id}/sector$`)],
+  [/^PUT$/, /^\/api\/agent\/ops\/settings$/],
+  [/^PATCH$/, new RegExp(`^/api/agent/ops/sectors/${id}$`)],
+  [/^PUT$/, new RegExp(`^/api/agent/ops/agents/${id}/sectors$`)],
   [/^GET$/, /^\/api\/agent\/auth\/me$/],
+  // Status de disponibilidade do próprio atendente (fica "invisível" enquanto está numa ligação).
+  [/^PATCH$/, /^\/api\/agent\/users\/me\/status$/],
 ];
 export const caminhoPermitido = (metodo: string, caminho: string) => PERMITIDOS.some(([m, p]) => m.test(metodo) && p.test(caminho));
 
 export const pedidoSchema = z
   .object({
-    method: z.enum(["GET", "POST", "PATCH"]),
+    method: z.enum(["GET", "POST", "PATCH", "PUT"]),
     path: z.string().max(300),
     query: z.record(z.string().max(120), z.string().max(120)).optional(),
     body: z.unknown().optional(),

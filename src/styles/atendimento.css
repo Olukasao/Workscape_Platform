@@ -74,3 +74,29 @@
 .atd-ficha-lista li { display: flex; flex-direction: column; }
 .atd-ficha-aviso { display: flex; align-items: center; gap: 6px; font-size: var(--fs-sm); padding: 8px 10px; border-radius: var(--r-md); background: #d2992222; }
 @media (max-width: 1180px) { .atd-ficha { width: 260px; } .atd-lista { width: 280px; } }
+.atd-fora { margin-left: auto; align-self: center; font-size: 11px; padding: 2px 10px; border-radius: 999px; background: #d2992233; }
+.atd-setores { padding: 0 10px 8px; }
+.atd-setores select { width: 100%; }
+.atd-sla { font-size: 11px; font-weight: 700; padding: 1px 7px; border-radius: 999px; flex: none; }
+.atd-sla.ok { background: #2ea04333; } .atd-sla.warning { background: #d2992244; } .atd-sla.breached { background: #d1242f; color: #fff; }
+.atd-painel { flex: 1; min-height: 0; overflow: auto; padding: 16px 20px; display: flex; flex-direction: column; gap: 10px; }
+.atd-painel h3 { display: flex; align-items: center; gap: 6px; margin: 10px 0 0; font-size: var(--fs-md); }
+.atd-cartoes { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 10px; }
+.atd-cartao { display: flex; flex-direction: column; gap: 3px; padding: 12px; border: 1px solid var(--line); border-radius: var(--r-md); background: var(--surface-1, var(--surface-2)); }
+.atd-cartao b { font-size: 1.25em; }
+.atd-cartao.alerta { border-color: #d29922; } .atd-cartao.ruim { border-color: #d1242f; }
+.atd-tabela { width: 100%; border-collapse: collapse; font-size: var(--fs-sm); }
+.atd-tabela th, .atd-tabela td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line); }
+.atd-tabela th { opacity: .65; font-weight: 600; }
+.atd-link { border: 0; background: transparent; color: var(--accent, #2563eb); cursor: pointer; font: inherit; }
+.atd-barras { display: flex; align-items: flex-end; gap: 3px; height: 90px; padding-bottom: 14px; }
+.atd-barras span { position: relative; flex: 1; min-height: 2px; background: var(--accent, #2563eb); border-radius: 3px 3px 0 0; }
+.atd-barras i { position: absolute; bottom: -14px; left: 0; right: 0; text-align: center; font-size: 9px; font-style: normal; opacity: .6; }
+.atd-config label { display: flex; flex-direction: column; gap: 4px; font-size: var(--fs-sm); }
+.atd-config textarea { resize: vertical; font: inherit; }
+.atd-form-linha { display: flex; gap: 12px; flex-wrap: wrap; }
+.atd-form-linha label { min-width: 130px; }
+.atd-dias { display: flex; gap: 12px; flex-wrap: wrap; }
+.atd-dias label { flex-direction: row; align-items: center; gap: 4px; }
+.atd-ligacao { display: flex; align-items: center; gap: 8px; padding: 6px 16px; background: #2ea04322; border-bottom: 1px solid #2ea04355; font-size: var(--fs-sm); }
+.atd-painel p.muted { display: flex; align-items: center; gap: 6px; margin: 0; }

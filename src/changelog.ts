@@ -8,6 +8,17 @@ export interface ChangelogEntry {
 
 export const changelog: ChangelogEntry[] = [
   {
+    versao: "0.6.38",
+    data: "2026-11-11",
+    itens: [
+      "Atendimento com setores (Suporte, Financeiro, Comercial), expediente das 07h às 19h e SLA: a fila mostra há quanto tempo o cliente espera, com alerta amarelo e vermelho.",
+      "Nova aba Supervisão (para supervisores e administradores): filas por setor, atendentes e conversas em risco.",
+      "Nova aba Relatórios: volume, tempo de primeira resposta e de resolução, por setor, atendente e hora.",
+      "Nova aba Configurações (administradores): horário, metas de SLA, setores e quem atende cada um.",
+      "Telefone no Atendimento: botão Ligar ao cliente, aviso de ligação em andamento, nota automática na conversa ao fim da ligação e atendente fica ocupado durante a chamada.",
+    ],
+  },
+  {
     versao: "0.6.37",
     data: "2026-11-11",
     itens: [
