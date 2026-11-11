@@ -100,3 +100,31 @@
 .atd-dias label { flex-direction: row; align-items: center; gap: 4px; }
 .atd-ligacao { display: flex; align-items: center; gap: 8px; padding: 6px 16px; background: #2ea04322; border-bottom: 1px solid #2ea04355; font-size: var(--fs-sm); }
 .atd-painel p.muted { display: flex; align-items: center; gap: 6px; margin: 0; }
+.atd-config-cab { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.atd-perigo { color: #d1242f; display: inline-flex; align-items: center; gap: 4px; }
+.atd-adicionar { max-width: 520px; width: 100%; }
+.atd-candidatos { max-height: 280px; overflow: auto; border: 1px solid var(--line); border-radius: var(--r-md); padding: 4px; display: flex; flex-direction: column; }
+.atd-candidato { display: flex; flex-direction: row !important; align-items: center; gap: 10px; padding: 7px 8px; border-radius: var(--r-sm, 6px); cursor: pointer; }
+.atd-candidato:hover { background: var(--surface-2); }
+.atd-candidato span { display: flex; flex-direction: column; min-width: 0; }
+
+/* Mesa (layout do painel de atendimento): ajustes do Workspace sobre o CSS copiado em atendimento-console.css. */
+.atd-corpo { flex: 1; min-height: 0; display: flex; }
+.atd-corpo[hidden] { display: none; }
+.atd-mesa-raiz { flex: 1; min-width: 0; min-height: 0; display: flex; flex-direction: column; background: var(--bg-shell); color: var(--text-primary); }
+.atd-sc .atd-mesa { flex: 1; min-height: 0; grid-template-columns: 330px minmax(0, 1fr); }
+.atd-sc .atd-mesa.com-ficha { grid-template-columns: 330px minmax(0, 1fr) 320px; }
+.atd-sc .atd-mesa-principal { grid-template-rows: auto minmax(0, 1fr); display: grid; min-height: 0; }
+.atd-sc .atd-mesa-principal > .chat-column, .atd-sc .atd-mesa-principal > .empty-chat { min-height: 0; }
+.atd-sc .atd-mesa-barra { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 8px 12px; border-bottom: 1px solid var(--line); background: var(--surface); }
+.atd-sc .atd-mesa-barra select { max-width: 180px; }
+.atd-sc .atd-mesa-aviso { color: var(--danger); font-size: 13px; }
+.atd-sc .atd-ligacao-chip { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; background: var(--success-soft); color: var(--success-text, var(--success)); font-size: 13px; }
+.atd-sc .atd-mesa-setores { padding: 0 12px 8px; }
+.atd-sc .atd-mesa-setores select { width: 100%; }
+.atd-sc .atd-ficha { width: auto; margin-left: 12px; border-radius: 13px; border: 1px solid var(--line); background: var(--surface); color: var(--text-primary); }
+.atd-sc .atd-ficha .muted, .atd-sc .atd-ficha small { color: var(--text-muted); }
+.atd-sc .atd-sla.ok { background: var(--success-soft); color: var(--success); }
+.atd-sc .atd-sla.warning { background: var(--warning-soft); color: var(--warning); }
+.atd-sc .atd-sla.breached { background: var(--danger); color: #fff; }
+@media (max-width: 1180px) { .atd-sc .atd-mesa.com-ficha { grid-template-columns: 280px minmax(0, 1fr) 260px; } .atd-sc .atd-mesa { grid-template-columns: 280px minmax(0, 1fr); } }

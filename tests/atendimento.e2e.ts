@@ -19,6 +19,8 @@ test("Atendimento: fila com SLA, Ficha 360, chamados abertos, supervisão, relat
       if (p === "/api/agent/quick-replies") return { items: [{ id: 1, shortcut: "/boleto", title: "Boleto", body: "Segue a segunda via." }] };
       if (p === "/api/agent/ops/config") return { sectors: [{ id: 1, slug: "suporte", name: "Suporte", active: true, mine: true }, { id: 2, slug: "financeiro", name: "Financeiro", active: true, mine: true }, { id: 3, slug: "comercial", name: "Comercial", active: true, mine: true }], settings: { hours: { timezone: "America/Sao_Paulo", days: [0, 1, 2, 3, 4, 5, 6], start: "07:00", end: "19:00" }, sla: { firstResponseSeconds: 300, warnAtSeconds: 180, replySeconds: 600 }, afterHoursMessage: "Fora do horário.", defaultSectorSlug: "suporte" }, open: true };
       if (p === "/api/agent/ops/sla") return { items: [{ conversationId: 1, sectorId: 1, state: "breached", kind: "first_response", waitingSeconds: 600, targetSeconds: 300 }, { conversationId: 2, sectorId: 2, state: "warning", kind: "reply", waitingSeconds: 420, targetSeconds: 600 }] };
+      if (/^\/api\/agent\/conversations\/\d+$/.test(p)) return { conversation: conv(Number(p.split("/").pop()), "Maria Souza", "new", null) };
+      if (/\/notes$/.test(p)) return { items: [] };
       if (/\/messages$/.test(p) && r.method === "GET") return { items: [{ id: 1, conversationId: 1, senderType: "customer", senderId: "c1", message: "Minha internet caiu.", createdAt: new Date(agora - 600000).toISOString(), readAt: null }], nextCursor: null };
       if (/\/read$/.test(p)) return null;
       if (p === "/api/agent/ops/overview") return { open: true, sla: { firstResponseSeconds: 300, warnAtSeconds: 180, replySeconds: 600 }, bySector: [{ sectorId: 1, name: "Suporte", active: 3, waiting: 2, warning: 1, breached: 1, longestWaitSeconds: 600, agentsOnline: 2 }, { sectorId: 2, name: "Financeiro", active: 1, waiting: 0, warning: 0, breached: 0, longestWaitSeconds: null, agentsOnline: 1 }], agents: [{ id: 3, name: "Lucas", role: "admin", attendanceStatus: "AVAILABLE", sectorIds: [], activeConversations: 1 }], atRisk: [{ conversationId: 1, customerName: "Maria Souza", state: "breached", kind: "first_response", waitingSeconds: 600, sectorId: 1, assignedAgentId: null }] };
@@ -59,8 +61,11 @@ test("Atendimento: fila com SLA, Ficha 360, chamados abertos, supervisão, relat
   await expect(page.locator(".atd-sla.breached")).toBeVisible();
   await expect(page.locator(".atd-sla.warning")).toBeVisible();
   // Conversa + Ficha 360
-  await page.locator(".atd-item").first().click();
+  await page.locator(".attendance-desk-ticket").first().click();
   await expect(page.getByText("Minha internet caiu.")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Assumir atendimento" })).toBeVisible();
+  await expect(page.getByText("Aguardar cliente")).toBeVisible(); // botões de ação do painel
+  await expect(page.getByText("Categorias")).toBeVisible();
   await expect(page.getByText("129,90")).toBeVisible();
   await expect(page.getByText(/Sinal da ONU -26.4 dBm/)).toBeVisible();
   await expect(page.getByRole("button", { name: /Ligar/ })).toBeDisabled(); // telefone desconectado neste teste

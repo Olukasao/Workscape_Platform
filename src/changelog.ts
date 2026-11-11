@@ -8,6 +8,15 @@ export interface ChangelogEntry {
 
 export const changelog: ChangelogEntry[] = [
   {
+    versao: "0.6.42",
+    data: "2026-11-11",
+    itens: [
+      "A tela de Atendimento ficou igual à do painel de atendimento: filtros em ícones, lista de tickets, cabeçalho com status, prioridade e tempo de espera, categorias, botões de ação (aguardar cliente, transferir, encerrar, arquivar), notas internas e balões de conversa.",
+      "Dá para categorizar, arquivar e restaurar conversas, e supervisores e administradores transferem o atendimento para outra pessoa.",
+      "Em Configurações > Atendentes, o administrador escolhe pessoas do Chat Interno para atender, muda o cargo e remove quem não deve mais atender (dá para reativar).",
+    ],
+  },
+  {
     versao: "0.6.41",
     data: "2026-11-11",
     itens: [

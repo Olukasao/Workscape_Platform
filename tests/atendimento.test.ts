@@ -16,12 +16,21 @@ describe("Atendimento: caminhos permitidos", () => {
     // Mudar o status de OUTRO atendente não é exposto.
     expect(caminhoPermitido("PATCH", "/api/agent/users/7/status")).toBe(false);
     expect(caminhoPermitido("GET", "/api/agent/ops/other")).toBe(false);
+    expect(caminhoPermitido("GET", "/api/agent/ops/candidates")).toBe(true);
+    expect(caminhoPermitido("POST", "/api/agent/ops/agents")).toBe(true);
+    expect(caminhoPermitido("PATCH", "/api/agent/ops/agents/9")).toBe(true);
+    // O cadastro direto da chat-api (que pede senha) não é exposto: o Workspace só usa as rotas de /ops.
+    expect(caminhoPermitido("POST", "/api/agent/admin/agents")).toBe(false);
     // O caminho antigo por CPF não é exposto à interface.
     expect(caminhoPermitido("POST", "/api/agent/conversations/start")).toBe(false);
   });
   it("recusa o que não é do dia a dia (admin, transferência, exclusão, outras APIs)", () => {
     expect(caminhoPermitido("GET", "/api/agent/admin/agents")).toBe(false);
-    expect(caminhoPermitido("POST", "/api/agent/conversations/12/transfer")).toBe(false);
+    expect(caminhoPermitido("POST", "/api/agent/conversations/12/transfer")).toBe(true); // a chat-api só aceita supervisor/admin
+    expect(caminhoPermitido("PATCH", "/api/agent/conversations/12/tags")).toBe(true);
+    expect(caminhoPermitido("POST", "/api/agent/conversations/12/archive")).toBe(true);
+    expect(caminhoPermitido("DELETE", "/api/agent/conversations/12")).toBe(false); // excluir conversa não é exposto
+    expect(caminhoPermitido("POST", "/api/agent/conversations/12/delete")).toBe(false);
     expect(caminhoPermitido("POST", "/api/agent/campaigns")).toBe(false);
     expect(caminhoPermitido("GET", "/api/agent/conversations/12/../admin")).toBe(false);
     expect(caminhoPermitido("GET", "/api/agent/conversations/abc")).toBe(false);
