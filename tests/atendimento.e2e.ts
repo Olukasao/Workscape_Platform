@@ -4,6 +4,7 @@ import { test, expect } from "@playwright/test";
 const servers = { chat: "http://127.0.0.1:14179", agenda: "http://127.0.0.1:14180", dashboard: "http://127.0.0.1:14182", allowInsecureLan: false, launchAtLogin: false, closeToTray: true, authorizedAgendaGateway: false };
 
 test("Atendimento: fila com SLA, Ficha 360, chamados abertos, supervisão, relatórios e configurações", async ({ page }) => {
+  test.setTimeout(150_000);
   await page.addInitScript((cfg) => {
     localStorage.setItem("workspace-servers-v1", JSON.stringify(cfg));
     const agora = Date.now();
@@ -26,6 +27,19 @@ test("Atendimento: fila com SLA, Ficha 360, chamados abertos, supervisão, relat
       if (p === "/api/agent/ops/overview") return { open: true, sla: { firstResponseSeconds: 300, warnAtSeconds: 180, replySeconds: 600 }, bySector: [{ sectorId: 1, name: "Suporte", active: 3, waiting: 2, warning: 1, breached: 1, longestWaitSeconds: 600, agentsOnline: 2 }, { sectorId: 2, name: "Financeiro", active: 1, waiting: 0, warning: 0, breached: 0, longestWaitSeconds: null, agentsOnline: 1 }], agents: [{ id: 3, name: "Lucas", role: "admin", attendanceStatus: "AVAILABLE", sectorIds: [], activeConversations: 1 }], atRisk: [{ conversationId: 1, customerName: "Maria Souza", state: "breached", kind: "first_response", waitingSeconds: 600, sectorId: 1, assignedAgentId: null }] };
       if (p === "/api/agent/ops/reports") return { totals: { created: 12, closed: 9, stillOpen: 3 }, avgFirstResponseSeconds: 210, avgResolutionSeconds: 1800, bySector: [{ sectorId: 1, created: 8, closed: 6, avgFirstResponseSeconds: 200 }], byAgent: [{ agentId: 3, name: "Lucas", handled: 12, closed: 9, avgFirstResponseSeconds: 210 }], byHour: Array.from({ length: 24 }, (_, hour) => ({ hour, count: hour >= 8 && hour <= 17 ? hour % 5 + 1 : 0 })), byDay: [], byCloseReason: [{ reason: "resolved", count: 7 }, { reason: "duplicate", count: 2 }], sectors: [{ id: 1, name: "Suporte" }] };
       if (p === "/api/agent/ops/agents") return { agents: [{ id: 3, name: "Lucas", email: "l@x.com", role: "admin", sectorIds: [] }] };
+      // Telas do painel (vendas, monitoramento, auditoria, disparos, macros, automações): dados mínimos.
+      if (p === "/api/agent/macros") return { macros: [{ id: "1", name: "Sem internet", shortcut: "/semnet", enabled: true, category: "Suporte", actions: [{ id: "a", type: "SEND_MESSAGE", text: "Olá {{customer.name}}" }] }] };
+      if (p === "/api/agent/macro-queues") return { queues: [] };
+      if (p === "/api/agent/sales") return { data: [], items: [] };
+      if (p === "/api/agent/sales/summary") return { total: 0, totalValue: 0, byStatus: {} };
+      if (p === "/api/agent/monitoring/overview") return { newTickets: 2, inProgress: 3, waitingCustomer: 1, closedToday: 4, agentsOnline: 2, agentsInvisible: 0, agentsOffline: 0, agentsTotal: 2, averageWaitSeconds: 120, newPerHour: [{ hour: 9, count: 2 }] };
+      if (p === "/api/agent/monitoring/queues") return { queues: [{ tag: "wifi", waiting: 1, inProgress: 2, agentsOnline: 2, longestWaitSeconds: 300 }] };
+      if (p === "/api/agent/monitoring/agents") return { agents: [{ id: 3, name: "Lucas", role: "admin", attendanceStatus: "AVAILABLE", activeConversations: 1, statusSinceSeconds: 60, oldestActiveSeconds: 120 }] };
+      if (p === "/api/agent/audit") return { items: [], data: [], nextCursor: null };
+      if (p === "/api/agent/campaigns") return { items: [], data: [], campaigns: [] };
+      if (p === "/api/agent/automations") return { automations: [{ id: "1", name: "Boas-vindas", status: "ACTIVE", priority: 10, stopProcessing: false, trigger: { type: "MESSAGE_RECEIVED" }, conditionGroups: [], actions: [{ id: "x", type: "SEND_MESSAGE", text: "Olá" }], createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), metrics: { executionsToday: 3, failuresToday: 0, successRatePercent: 100, lastExecutionAt: null } }] };
+      if (p === "/api/agent/automation-executions") return { data: [] };
+      if (p === "/api/agent/members" || p === "/api/agent/agents") return { agents: [], members: [] };
       throw new Error(`rota não simulada: ${r.method} ${p}`);
     };
     (window as any).desktop = {
@@ -83,6 +97,21 @@ test("Atendimento: fila com SLA, Ficha 360, chamados abertos, supervisão, relat
   await page.getByRole("tab", { name: "Relatórios" }).click();
   await expect(page.getByText("conversas criadas")).toBeVisible();
   await page.screenshot({ path: "test-results/atendimento/4-relatorios.png" });
+  // Telas do painel
+  const paginaOk = async (aba: string, esperado: RegExp) => {
+    await page.getByRole("tab", { name: aba, exact: true }).click();
+    await expect(page.getByRole("heading", { name: esperado }).first()).toBeVisible({ timeout: 8000 });
+  };
+  await paginaOk("Vendas", /Vendas/);
+  await paginaOk("Finalizados", /Finalizados/i);
+  await paginaOk("Monitoramento", /Monitoramento|Operação/i);
+  await page.screenshot({ path: "test-results/atendimento/6-monitoramento.png" });
+  await paginaOk("Auditoria de tickets", /Auditoria/i);
+  await paginaOk("Auditoria de vendas", /Auditoria/i);
+  await paginaOk("Disparos", /Disparos/i);
+  await paginaOk("Automações", /Automa/i);
+  await expect(page.getByText("Boas-vindas").first()).toBeVisible();
+  await page.screenshot({ path: "test-results/atendimento/7-automacoes.png" });
   // Configurações
   await page.getByRole("tab", { name: "Configurações" }).click();
   await expect(page.getByRole("heading", { name: "Metas de SLA" })).toBeVisible();

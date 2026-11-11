@@ -45,7 +45,7 @@ declare global {
       }): Promise<void>;
       atendimentoEntrar?(): Promise<{ agente: { id: number; name: string; email: string; role: string } }>;
       atendimentoEstado?(): Promise<{ agente: { id: number; name: string; email: string; role: string } | null; conectado: boolean }>;
-      atendimentoChamar?(value: { method: "GET" | "POST" | "PATCH" | "PUT"; path: string; query?: Record<string, string>; body?: unknown }): Promise<any>;
+      atendimentoChamar?(value: { method: "GET" | "POST" | "PATCH" | "PUT" | "DELETE"; path: string; query?: Record<string, string>; body?: unknown }): Promise<any>;
       atendimentoSair?(): Promise<void>;
       atendimentoDigitando?(value: { conversationId: number; ligado: boolean }): Promise<void>;
       atendimentoEntrarNas?(value: { ids: number[] }): Promise<void>;

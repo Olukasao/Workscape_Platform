@@ -8,6 +8,16 @@ export interface ChangelogEntry {
 
 export const changelog: ChangelogEntry[] = [
   {
+    versao: "0.6.43",
+    data: "2026-11-11",
+    itens: [
+      "Atendimento: agora todos os usuários veem a área. Quem não é administrador vê o aviso EM TESTES ao entrar, e só atende quem está cadastrado como atendente.",
+      "Trouxemos para o Workspace as telas do painel de atendimento: Finalizados, Vendas, Monitoramento, Auditoria de tickets, Auditoria de vendas, Disparos e Automações, com as mesmas regras de cargo.",
+      "Macros: menu de macros ao digitar / ou no botão do campo de mensagem, com confirmação e execução passo a passo. Supervisores e administradores criam e editam as macros.",
+      "Automações: regras QUANDO → SE → ENTÃO que rodam sozinhas em eventos do atendimento (mensagem recebida ou enviada, nova conversa, atribuição, transferência, encerramento e categoria). Eventos de inatividade e de SLA ainda não disparam.",
+    ],
+  },
+  {
     versao: "0.6.42",
     data: "2026-11-11",
     itens: [

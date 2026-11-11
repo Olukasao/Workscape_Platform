@@ -30,14 +30,26 @@ describe("Atendimento: caminhos permitidos", () => {
     expect(caminhoPermitido("PATCH", "/api/agent/conversations/12/tags")).toBe(true);
     expect(caminhoPermitido("POST", "/api/agent/conversations/12/archive")).toBe(true);
     expect(caminhoPermitido("DELETE", "/api/agent/conversations/12")).toBe(false); // excluir conversa não é exposto
+    // Telas do painel
+    expect(caminhoPermitido("GET", "/api/agent/monitoring/overview")).toBe(true);
+    expect(caminhoPermitido("GET", "/api/agent/sales")).toBe(true);
+    expect(caminhoPermitido("POST", "/api/agent/campaigns/abc-123/send")).toBe(true);
+    expect(caminhoPermitido("DELETE", "/api/agent/macros/m1")).toBe(true);
+    expect(caminhoPermitido("PATCH", "/api/agent/automations/a1")).toBe(true);
+    expect(caminhoPermitido("DELETE", "/api/agent/campaigns/c1")).toBe(false); // campanha não se apaga, cancela
+    expect(caminhoPermitido("POST", "/api/agent/conversations/start")).toBe(false); // início por CPF não é exposto
+    expect(caminhoPermitido("PATCH", "/api/agent/users/5/role")).toBe(false); // mudar cargo só pelas rotas de /ops
+    expect(caminhoPermitido("GET", "/api/agent/macros/../admin/agents")).toBe(false);
     expect(caminhoPermitido("POST", "/api/agent/conversations/12/delete")).toBe(false);
-    expect(caminhoPermitido("POST", "/api/agent/campaigns")).toBe(false);
+    // Campanhas agora são parte das telas do painel; quem pode criar/enviar é decidido pelo cargo, no servidor.
+    expect(caminhoPermitido("POST", "/api/agent/campaigns")).toBe(true);
+    expect(caminhoPermitido("POST", "/api/agent/campaigns/9/transfer")).toBe(false);
     expect(caminhoPermitido("GET", "/api/agent/conversations/12/../admin")).toBe(false);
     expect(caminhoPermitido("GET", "/api/agent/conversations/abc")).toBe(false);
     expect(caminhoPermitido("POST", "//evil.com/api/agent/conversations")).toBe(false);
   });
   it("valida o formato do pedido", () => {
-    expect(() => pedidoSchema.parse({ method: "DELETE", path: "/x" })).toThrow();
+    expect(() => pedidoSchema.parse({ method: "OPTIONS", path: "/x" })).toThrow();
     expect(() => pedidoSchema.parse({ method: "GET", path: "/x", extra: 1 })).toThrow();
   });
 });

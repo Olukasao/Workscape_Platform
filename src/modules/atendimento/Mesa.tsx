@@ -1,6 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { CheckCheck, CheckCircle2, CornerDownLeft, Edit3, Inbox, MessageSquareText, PhoneCall, Search, UserCheck, UserRound } from "lucide-react";
+import { Zap, CheckCheck, CheckCircle2, CornerDownLeft, Edit3, Inbox, MessageSquareText, PhoneCall, Search, UserCheck, UserRound } from "lucide-react";
 import { usePreferences } from "../../stores/workspace";
+import { MacroAdminDialog } from "./console/components/macros/MacroAdminDialog";
+import { MacroExecutionModal } from "./console/components/macros/MacroExecutionModal";
+import { MacroExecutionProgress } from "./console/components/macros/MacroExecutionProgress";
+import { useMacroExecution, type MacroActionRunner } from "./console/hooks/useMacroExecution";
+import { useMacros } from "./console/hooks/useMacros";
+import type { Macro } from "./console/types/macro";
+import { canManageMacros } from "./console/utils/security";
 import { ChatPanel } from "./console/components/chat/ChatPanel";
 import { CloseConversationDialog } from "./console/components/chat/CloseConversationDialog";
 import { TransferDialog } from "./console/components/chat/TransferDialog";
@@ -187,6 +194,24 @@ export default function Mesa({ agente, cargo, statusAtd, cfgOps, visivel, abrir,
   const encerrar = async (motivo: ConversationCloseReason, nota: string) => { if (!detalhe) return; await executar(async () => { await chamar("PATCH", `/api/agent/conversations/${detalhe.id}/status`, { body: { status: "closed", closeReason: motivo, ...(nota.trim() ? { closeReasonNote: nota.trim() } : {}) } }); await abrirConversa(detalhe.id); }); setEncerrando(false); };
   const moverSetor = (sectorId: number) => detalhe && executar(async () => { await chamar("PUT", `/api/agent/ops/conversations/${detalhe.id}/sector`, { body: { sectorId } }); });
 
+  // Macros: o mesmo menu, confirmação e execução passo a passo do painel. As ações usam as rotas normais deste módulo.
+  const { macros, loading: carregandoMacros, reload: recarregarMacros, recentMacros, favoriteIds, registerRecent } = useMacros();
+  const [macroAdminAberta, setMacroAdminAberta] = useState(false);
+  const [macroPendente, setMacroPendente] = useState<Macro | null>(null);
+  const aplicarTags = async (tags: ConversationTag[]) => { if (!detalhe) return; await chamar("PATCH", `/api/agent/conversations/${detalhe.id}/tags`, { body: { tags } }); setDetalhe({ ...detalhe, tags }); };
+  const executorMacro: MacroActionRunner = {
+    getTags: () => detalhe?.tags ?? [],
+    sendMessage: (texto) => { void enviar(texto); },
+    updateTags: aplicarTags,
+    async addNote(texto) { if (!detalhe || !texto.trim()) return; const r = await chamar<{ note: unknown }>("POST", `/api/agent/conversations/${detalhe.id}/notes`, { body: { note: texto.trim() } }); const n = normalizeConversationNote(r.note ?? r); setNotas((x) => (x.some((y) => y.id === n.id) ? x : [...x, n])); },
+    async setPriority() { throw new Error("Definir prioridade ainda não é suportado neste servidor."); },
+    async transferToAgent(agentId) { if (!detalhe) return; await chamar("POST", `/api/agent/conversations/${detalhe.id}/transfer`, { body: { agentId: Number(agentId) } }); await abrirConversa(detalhe.id); },
+  };
+  const execucaoMacro = useMacroExecution(executorMacro);
+  const acionarMacro = (macro: Macro) => { registerRecent(macro.id); setMacroPendente(macro); };
+  const confirmarMacro = () => { if (!macroPendente || !detalhe) return; const macro = macroPendente; setMacroPendente(null); void execucaoMacro.start(macro, detalhe); };
+  const gerenciaMacros = canManageMacros(cargo);
+
   const visiveis = useMemo(() => lista.filter((c) => {
     if (setorFiltro === "todos") return true;
     const setorId = sla[c.id]?.sectorId ?? null;
@@ -271,6 +296,7 @@ export default function Mesa({ agente, cargo, statusAtd, cfgOps, visivel, abrir,
                   {cfgOps.sectors.filter((x) => x.active).map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}
                 </select>
               ) : null}
+              {gerenciaMacros ? <button type="button" className="secondary-action" onClick={() => setMacroAdminAberta(true)} title="Criar e editar macros"><Zap size={15} aria-hidden="true" /> Macros</button> : null}
               <button type="button" className={`secondary-action${fichaAberta ? " active" : ""}`} aria-pressed={fichaAberta} onClick={() => setFichaAberta((v) => !v)}><UserRound size={15} aria-hidden="true" /> Ficha</button>
               {aviso ? <span className="atd-mesa-aviso" role="alert">{aviso}</span> : null}
             </div>
@@ -280,6 +306,10 @@ export default function Mesa({ agente, cargo, statusAtd, cfgOps, visivel, abrir,
             messages={msgs}
             notes={notas}
             quickReplies={respostas}
+            macros={macros}
+            recentMacros={recentMacros}
+            favoriteMacroIds={favoriteIds}
+            onTriggerMacro={acionarMacro}
             loading={carregandoConversa}
             error={erroConversa}
             hasMore={false}
@@ -314,6 +344,9 @@ export default function Mesa({ agente, cargo, statusAtd, cfgOps, visivel, abrir,
 
         {detalhe && fichaAberta && detalhe.contractId ? <Ficha360 contrato={detalhe.contractId} /> : null}
       </section>
+      <MacroExecutionModal macro={macroPendente} onCancel={() => setMacroPendente(null)} onConfirm={confirmarMacro} />
+      <MacroExecutionProgress state={execucaoMacro.state} pendingGate={execucaoMacro.pendingGate} onConfirmStep={execucaoMacro.confirmStep} onResolveError={execucaoMacro.resolveError} onCancel={execucaoMacro.cancel} onClose={execucaoMacro.reset} />
+      {gerenciaMacros ? <MacroAdminDialog open={macroAdminAberta} macros={macros} loading={carregandoMacros} onClose={() => setMacroAdminAberta(false)} onReload={() => void recarregarMacros()} /> : null}
       <TransferDialog open={!!transferindo} agents={transferindo?.agentes ?? []} loading={transferindo?.enviando ?? false} onCancel={() => setTransferindo(null)} onConfirm={(id) => void transferir(id)} />
       <CloseConversationDialog open={encerrando} onCancel={() => setEncerrando(false)} onConfirm={(motivo, nota) => void encerrar(motivo, nota)} />
     </div>

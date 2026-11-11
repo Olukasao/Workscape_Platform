@@ -296,7 +296,7 @@ function Shell() {
           : []),
         ...(rede.data && !rede.data.negado ? [{ path: "/rotas", label: "Rotas (BGP)", icon: Network }] : []),
         ...(pode("tools") ? [{ path: "/tools", label: "Ferramentas", icon: Wrench }] : []),
-        ...(user?.perfil === "admin" && pode("atendimento") && window.desktop?.atendimentoEntrar ? [{ path: "/atendimento", label: "Atendimento", icon: Headset }] : []),
+        ...(pode("atendimento") && window.desktop?.atendimentoEntrar ? [{ path: "/atendimento", label: "Atendimento", icon: Headset }] : []),
         ...(pode("terminal") && window.desktop ? [{ path: "/terminal", label: "Terminal", icon: SquareTerminal }] : []),
         ...(pode("navegador") ? [{ path: "/navegador", label: "Navegador", icon: Globe }] : []),
         ...(pode("suporte") && window.desktop ? [{ path: "/suporte", label: "Suporte T.I.", icon: Headset }] : []),
@@ -434,7 +434,7 @@ function Shell() {
                     <Route path="/contratacoes" element={<Contratacoes />} />
                     <Route path="/workspaces" element={<Workspaces />} />
                     <Route path="/assistente" element={<Assistente />} />
-                    <Route path="/atendimento" element={user?.perfil === "admin" ? <AtendimentoChat active /> : <Navigate to="/" replace />} />
+                    <Route path="/atendimento" element={<AtendimentoChat active />} />
                     <Route path="/terminal" element={terminalDestacado ? <JanelaEmOutraTela kind="terminal" /> : <TerminalSsh active />} />
                     <Route path="/rotas" element={<RotasBgp />} />
                     <Route path="/rede" element={redeDestacada ? <JanelaEmOutraTela kind="rede" /> : <RedeOlt />} />

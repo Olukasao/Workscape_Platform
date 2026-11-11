@@ -38,11 +38,25 @@ const PERMITIDOS: [RegExp, RegExp][] = [
   // Status de disponibilidade do próprio atendente (fica "invisível" enquanto está numa ligação).
   [/^PATCH$/, /^\/api\/agent\/users\/me\/status$/],
 ];
+// Telas do painel (monitoramento, vendas, disparos, auditoria, macros e automações). Ids de macros/automações podem ser
+// textos curtos (uuid), por isso o padrão `chave`. O servidor continua conferindo o cargo de cada rota.
+const chave = "[A-Za-z0-9_-]{1,64}";
+PERMITIDOS.push(
+  [/^GET$/, /^\/api\/agent\/(audit|campaigns|sales|sales\/summary|members|macros|macro-queues|automations|automation-executions|internal-chat\/agents)$/],
+  [/^GET$/, /^\/api\/agent\/monitoring\/(overview|queues|agents)$/],
+  [/^GET$/, new RegExp(`^/api/agent/(macros|automations|automation-executions|sales|campaigns)/${chave}$`)],
+  [/^POST$/, /^\/api\/agent\/(macros|automations|campaigns|sales|quick-replies|macro-operations\/execute|campaigns\/audience-estimate|customers\/search)$/],
+  [/^POST$/, new RegExp(`^/api/agent/macros/${chave}/execute$`)],
+  [/^POST$/, new RegExp(`^/api/agent/automations/${chave}/(enable|disable|test)$`)],
+  [/^POST$/, new RegExp(`^/api/agent/campaigns/${chave}/(send|cancel)$`)],
+  [/^(PATCH|PUT)$/, new RegExp(`^/api/agent/(macros|automations|campaigns|sales|quick-replies)/${chave}$`)],
+  [/^DELETE$/, new RegExp(`^/api/agent/(macros|automations|quick-replies)/${chave}$`)],
+);
 export const caminhoPermitido = (metodo: string, caminho: string) => PERMITIDOS.some(([m, p]) => m.test(metodo) && p.test(caminho));
 
 export const pedidoSchema = z
   .object({
-    method: z.enum(["GET", "POST", "PATCH", "PUT"]),
+    method: z.enum(["GET", "POST", "PATCH", "PUT", "DELETE"]),
     path: z.string().max(300),
     query: z.record(z.string().max(120), z.string().max(120)).optional(),
     body: z.unknown().optional(),

@@ -128,3 +128,20 @@
 .atd-sc .atd-sla.warning { background: var(--warning-soft); color: var(--warning); }
 .atd-sc .atd-sla.breached { background: var(--danger); color: #fff; }
 @media (max-width: 1180px) { .atd-sc .atd-mesa.com-ficha { grid-template-columns: 280px minmax(0, 1fr) 260px; } .atd-sc .atd-mesa { grid-template-columns: 280px minmax(0, 1fr); } }
+
+/* Aviso "EM TESTES" para quem não é administrador. */
+.atd-testes-fundo { position: fixed; inset: 0; z-index: 80; display: grid; place-items: center; background: rgba(5, 10, 20, .62); backdrop-filter: blur(3px); padding: 16px; }
+.atd-testes-caixa { max-width: 440px; width: 100%; padding: 28px 26px; border-radius: 18px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 12px; background: var(--surface-1, #fff); color: var(--ink, #111); box-shadow: 0 24px 60px rgba(0, 0, 0, .45); border: 2px solid #f6b955; }
+.atd-testes-caixa h2 { margin: 0; letter-spacing: .12em; font-size: 28px; color: #d98e00; }
+.atd-testes-caixa p { margin: 0; line-height: 1.5; }
+.atd-testes-icone { width: 58px; height: 58px; border-radius: 50%; display: grid; place-items: center; background: #f6b95533; color: #d98e00; }
+.atd-selo-testes { align-self: center; margin-left: auto; font-size: 11px; font-weight: 800; letter-spacing: .12em; padding: 3px 10px; border-radius: 999px; background: #f6b955; color: #3a2600; }
+.atd-selo-testes + .atd-fora { margin-left: 8px; }
+
+/* Páginas do painel (vendas, monitoramento, auditoria, disparos, automações) dentro das abas do Atendimento. */
+.atd-pagina { flex: 1; min-height: 0; overflow: auto; background: var(--bg-shell); color: var(--text-primary); }
+.atd-pagina[hidden] { display: none; }
+.atd-sc .app-frame { display: block; min-height: 0; background: transparent; }
+.atd-sc .app-shell { min-height: 0; }
+.atd-abas { overflow-x: auto; scrollbar-width: thin; }
+.atd-abas button, .atd-abas .atd-selo-testes, .atd-abas .atd-fora { white-space: nowrap; flex: none; }
