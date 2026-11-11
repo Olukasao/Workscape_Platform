@@ -47,6 +47,7 @@ import { useRealtime } from "../services/realtime";
 import { useChatData, unreadCount } from "../services/data";
 import LegacyThemeBridge from "../components/LegacyThemeBridge";
 import FichaClienteJanela from "../components/FichaClienteJanela";
+import PostItJanela from "../components/PostItJanela";
 import { ErrorBoundary } from "../components/ErrorBoundary";
 import { Button } from "../components/ui/button";
 import Login from "../modules/Login";
@@ -91,7 +92,7 @@ import { useFuncoes } from "../services/funcoes";
 import { useDashboardConnection } from "../services/dashboard";
 import { useIncidentesFiltrados } from "../services/redeOlt";
 import { useSobreposicao } from "../services/sobreposicao";
-import { JANELA_FICHA, JANELA_DESTACADA, MINIAPPS, useDestacada, useSincronizacaoAgenda, useSincronizacaoGeral, usePresencaChat, destacar, reintegrar, trazerDeVolta, fixarSobre, type JanelaKind } from "../services/janelaDestacada";
+import { JANELA_FICHA, JANELA_POSTIT, JANELA_DESTACADA, MINIAPPS, useDestacada, useSincronizacaoAgenda, useSincronizacaoGeral, usePresencaChat, destacar, reintegrar, trazerDeVolta, fixarSobre, type JanelaKind } from "../services/janelaDestacada";
 import ModuleLinkBoundary from "../components/ModuleLinkBoundary";
 import { Titlebar } from "./shell/Titlebar";
 import { Headset, SquareTerminal, ExternalLink, PanelTopOpen, PanelTopClose, Pin, PinOff, Maximize2, Minimize2 } from "lucide-react";
@@ -825,6 +826,14 @@ function JanelaDestacada({ kind }: { kind: JanelaKind }) {
   );
 }
 export default function App() {
+  if (JANELA_POSTIT)
+    return (
+      <QueryClientProvider client={query}>
+        <ErrorBoundary>
+          <PostItJanela id={JANELA_POSTIT} />
+        </ErrorBoundary>
+      </QueryClientProvider>
+    );
   if (JANELA_FICHA)
     return (
       <QueryClientProvider client={query}>

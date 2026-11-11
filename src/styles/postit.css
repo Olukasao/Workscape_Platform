@@ -1,0 +1,16 @@
+html.postit-janela, html.postit-janela body, html.postit-janela #root { height: 100%; margin: 0; background: var(--postit-cor, #fff3a3); overflow: hidden; }
+.postit { --tinta: #3b3200; height: 100%; display: flex; flex-direction: column; background: var(--postit-cor, #fff3a3); color: var(--tinta); font-family: "Segoe UI", system-ui, sans-serif; }
+.postit-barra { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 6px 6px 12px; background: rgba(0, 0, 0, .08); -webkit-app-region: drag; user-select: none; flex: none; }
+.postit-titulo { font-size: 12px; font-weight: 600; opacity: .75; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.postit-acoes { display: flex; gap: 2px; -webkit-app-region: no-drag; }
+.postit-barra button { border: 0; background: transparent; color: var(--tinta); cursor: pointer; padding: 5px; border-radius: 6px; display: grid; place-items: center; opacity: .7; -webkit-app-region: no-drag; }
+.postit-barra button:hover { opacity: 1; background: rgba(0, 0, 0, .1); }
+.postit-texto { flex: 1; min-height: 0; resize: none; border: 0; outline: 0; background: transparent; color: var(--tinta); font: 15px/1.45 "Segoe Print", "Segoe UI", system-ui, sans-serif; padding: 10px 12px; }
+.postit-texto::placeholder { color: var(--tinta); opacity: .45; }
+.postit-rodape { display: flex; align-items: center; justify-content: space-between; padding: 6px 10px 8px; flex: none; opacity: .85; }
+.postit-cores { display: flex; gap: 6px; }
+.postit-cores button { width: 16px; height: 16px; border-radius: 50%; border: 1.5px solid rgba(0, 0, 0, .25); cursor: pointer; padding: 0; }
+.postit-cores button.ativa { border-color: var(--tinta); box-shadow: 0 0 0 2px rgba(255, 255, 255, .7); }
+.postit-estado { font-size: 11px; opacity: .65; }
+.postit-estado.erro { color: #b00020; opacity: 1; }
+.postit-aviso { padding: 14px; font-size: 13px; }

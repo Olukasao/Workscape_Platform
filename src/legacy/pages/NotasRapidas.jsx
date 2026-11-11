@@ -8,6 +8,7 @@ import {
   Pencil,
   Pin,
   Plus,
+  PictureInPicture2,
   Search,
   Share2,
   StickyNote,
@@ -573,6 +574,12 @@ export default function NotasRapidas() {
             <button type="button" onClick={() => alternarFixada(nota)} title={nota.pinned ? 'Desfixar nota' : 'Fixar nota'}>
               <Pin size={16} />
               {nota.pinned ? 'Desfixar' : 'Fixar'}
+            </button>
+          )}
+          {window.desktop?.postitAbrir && (
+            <button type="button" onClick={() => window.desktop.postitAbrir(Number(nota.id))} title="Abrir como post-it: uma janelinha sempre por cima, em um canto da tela">
+              <PictureInPicture2 size={16} />
+              Post-it
             </button>
           )}
           <button type="button" onClick={() => setNotaAberta(nota)} title="Abrir nota">

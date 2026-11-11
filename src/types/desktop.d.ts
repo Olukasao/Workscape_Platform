@@ -42,6 +42,9 @@ declare global {
         avatar?: string;
         tone?: "crit" | "warn" | "info";
       }): Promise<void>;
+      postitAbrir?(id: number): Promise<{ ok: true }>;
+      postitFixar?(ligado: boolean): Promise<void>;
+      postitFechar?(): Promise<void>;
       browserShow(value: {
         site: BrowserSite;
         bounds: { x: number; y: number; width: number; height: number };

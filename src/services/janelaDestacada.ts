@@ -22,6 +22,13 @@ export const JANELA_DESTACADA: JanelaKind | null = (() => {
   return m ? (m[1] as JanelaKind) : null;
 })();
 
+/** Post-it: nota rápida numa janelinha própria, sempre por cima. Devolve o id da nota (null fora dessa janela). */
+export const JANELA_POSTIT: number | null = (() => {
+  if (typeof location === "undefined") return null;
+  const m = /^#\/postit\?janela=1&id=(\d{1,12})$/.exec(location.hash);
+  return m ? Number(m[1]) : null;
+})();
+
 /** Janela flutuante da ficha do cliente na ligação (não é um módulo destacável). */
 export const JANELA_FICHA = typeof location !== "undefined" && /^#\/ficha\?/.test(location.hash);
 

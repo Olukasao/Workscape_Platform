@@ -55,6 +55,7 @@ import { updateOrigin } from "./updateDeployment";
 import { ambienteTeste, nomeDoApp } from "./ambiente";
 import { abrirAssinaturas, tokenValido } from "./assinaturasJanela";
 import { abrirFicha, fecharFicha, fichaContents, fimDaLigacao } from "./fichaClienteJanela";
+import { abrirPostit, fecharPostits, postitContents, postitDe } from "./postit";
 // App de testes: nome e pasta de dados próprios (não divide sessão, configuração nem trava de instância com o oficial).
 if (ambienteTeste) {
   app.setName(nomeDoApp);
@@ -107,6 +108,14 @@ function trusted(e: IpcMainInvokeEvent, channel: string) {
     e.sender === fichaContents() &&
     e.senderFrame === e.sender.mainFrame &&
     (BASE_CHANNELS.includes(channel) || channel === "ficha:fechar") &&
+    isAppSender(e.senderFrame?.url || "", dev)
+  )
+    return;
+  // Post-it (nota rápida em janelinha): só lê sessão/configuração, consulta a API e controla a própria janela.
+  if (
+    postitContents().includes(e.sender) &&
+    e.senderFrame === e.sender.mainFrame &&
+    (BASE_CHANNELS.includes(channel) || channel === "postit:fixar" || channel === "postit:fechar") &&
     isAppSender(e.senderFrame?.url || "", dev)
   )
     return;
@@ -651,11 +660,20 @@ async function bootstrap() {
     await abrirFicha(v, { base: detachedBase, preload: path.join(__dirname, "preload.cjs"), icon: path.join(app.getAppPath(), process.platform === "win32" ? "assets/icon.ico" : "assets/icon.png") });
     return { ok: true as const };
   });
+  handle("postit:abrir", async (payload) => {
+    const v = z.object({ id: z.number().int().positive() }).strict().parse(payload);
+    await abrirPostit(v.id, { base: detachedBase, preload: path.join(__dirname, "preload.cjs"), icon: path.join(app.getAppPath(), process.platform === "win32" ? "assets/icon.ico" : "assets/icon.png") });
+    return { ok: true as const };
+  });
+  handle("postit:fixar", (payload, e) => { const v = z.object({ ligado: z.boolean() }).strict().parse(payload); postitDe(e.sender)?.setAlwaysOnTop(v.ligado, v.ligado ? "floating" : "normal"); });
+  handle("postit:fechar", (_p, e) => { postitDe(e.sender)?.close(); });
+  app.on("before-quit", () => fecharPostits());
   handle("ficha:fim", () => { fimDaLigacao(); return { ok: true as const }; });
   handle("ficha:fechar", () => { fecharFicha(); return { ok: true as const }; });
   app.on("before-quit", () => fecharFicha());
   handle("session:clear", async () => {
     fecharFicha();
+    fecharPostits();
     await rm(tokenPath(), { force: true });
     await resetBrowserTabs();
     closeAllDetached();

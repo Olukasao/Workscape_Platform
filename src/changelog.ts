@@ -8,6 +8,14 @@ export interface ChangelogEntry {
 
 export const changelog: ChangelogEntry[] = [
   {
+    versao: "0.6.34",
+    data: "2026-11-11",
+    itens: [
+      "Notas rápidas agora têm o botão \"Post-it\": a nota vira uma janelinha sempre por cima, num canto da tela, como as Notas Adesivas do Windows.",
+      "No post-it dá para escolher a cor, soltar ou prender \"por cima\" e arrastar para onde quiser. O texto é salvo sozinho e a posição é lembrada.",
+    ],
+  },
+  {
     versao: "0.6.33",
     data: "2026-11-11",
     itens: [
