@@ -8,6 +8,14 @@ export interface ChangelogEntry {
 
 export const changelog: ChangelogEntry[] = [
   {
+    versao: "0.6.41",
+    data: "2026-11-11",
+    itens: [
+      "Terminal: a lista de equipamentos agora se atualiza sozinha (a cada 20 segundos e ao voltar para a janela), então o que outro administrador envia ou apaga aparece sem precisar reabrir.",
+      "A lixeira avisa se vai apagar só deste computador ou da lista de todos.",
+    ],
+  },
+  {
     versao: "0.6.40",
     data: "2026-11-11",
     itens: [

@@ -55,6 +55,16 @@ export default function Terminal({ active }: { active: boolean }) {
     finally { setEnviando(false); }
   };
   useEffect(() => { if (dono && window.desktop) void carregar(); }, [dono]);
+  // A lista central muda por outros administradores: recarrega a cada 20 s e ao voltar para a janela.
+  const recarregar = useRef(carregar);
+  recarregar.current = carregar;
+  useEffect(() => {
+    if (!dono || !window.desktop) return;
+    const t = window.setInterval(() => { if (document.visibilityState === "visible") void recarregar.current(); }, 20_000);
+    const aoVoltar = () => void recarregar.current();
+    window.addEventListener("focus", aoVoltar);
+    return () => { window.clearInterval(t); window.removeEventListener("focus", aoVoltar); };
+  }, [dono]);
 
   const grupos = useMemo(() => {
     const q = busca.trim().toLowerCase();
@@ -101,7 +111,10 @@ export default function Terminal({ active }: { active: boolean }) {
     } catch (e) { setErro(errorMessage(e)); }
   };
   const excluir = async (e: EquipamentoTerminal) => {
-    if (!window.confirm(`Excluir "${e.nome}" da lista? A senha salva também será apagada.`)) return;
+    const texto = e.local
+      ? `Excluir "${e.nome}" só deste computador? A lista de todos e os outros computadores não são afetados.`
+      : `Excluir "${e.nome}" da lista de TODOS? A senha guardada também será apagada.`;
+    if (!window.confirm(texto)) return;
     try {
       if (e.local) await window.desktop!.terminalExcluir({ dono, id: e.id });
       else await api.delete(`/admin/terminal/${encodeURIComponent(e.id)}`);
@@ -146,7 +159,7 @@ export default function Terminal({ active }: { active: boolean }) {
                   </button>
                   {!e.local ? <button type="button" aria-label={`Observação de ${e.nome}`} title={e.observacao ? "Editar observação" : "Adicionar observação"} onClick={() => setObs({ eq: e, texto: e.observacao ?? "" })}><StickyNote size={13} /></button> : null}
                   {admin && !e.local ? <button type="button" aria-label={`Editar ${e.nome}`} title="Editar" onClick={() => setEdicao({ ...e, senha: "", guardarSenha: e.temSenha })}><Pencil size={13} /></button> : null}
-                  {admin ? <button type="button" aria-label={`Excluir ${e.nome}`} title="Excluir" onClick={() => void excluir(e)}><Trash2 size={13} /></button> : null}
+                  {admin ? <button type="button" aria-label={`Excluir ${e.nome}`} title={e.local ? "Excluir só deste computador" : "Excluir da lista de todos"} onClick={() => void excluir(e)}><Trash2 size={13} /></button> : null}
                 </div>
               ))}
             </div>
