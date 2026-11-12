@@ -8,6 +8,13 @@ export interface ChangelogEntry {
 
 export const changelog: ChangelogEntry[] = [
   {
+    versao: "0.6.53",
+    data: "2026-11-12",
+    itens: [
+      "Admin > Histórico de chamadas: a transcrição agora abre numa janela sobre a página, em vez de aparecer no fim da lista.",
+    ],
+  },
+  {
     versao: "0.6.52",
     data: "2026-11-12",
     itens: [
