@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { isAxiosError } from "axios";
 import { FileText, Mic, RefreshCw, Search, Trash2 } from "lucide-react";
 import { api, errorMessage } from "../services/api";
+import ConversaTranscrita from "./ConversaTranscrita";
 
 // Admin > Histórico de chamadas: todas as ligações do Workscape Phone, com a transcrição, o resumo e o motivo sugerido.
 // O áudio é transcrito no servidor (faster-whisper) e apagado em seguida; só o texto fica, pelo prazo configurado aqui.
@@ -125,15 +126,9 @@ export default function ControleHistoricoChamadas() {
             <>
               {detalhe.data.status === "erro" ? <p role="alert" className="iaadm-erro">Não foi possível transcrever: {detalhe.data.erro}</p> : null}
               {detalhe.data.status === "sem_fala" ? <p className="muted">Não havia fala nesta gravação.</p> : null}
-              {detalhe.data.resumo ? <p><b>Resumo:</b> {detalhe.data.resumo}</p> : null}
+              {detalhe.data.falas.length ? <ConversaTranscrita falas={detalhe.data.falas} nomeAtendente={detalhe.data.nome || "Atendente"} /> : null}
+              {detalhe.data.resumo ? <p style={{ marginTop: 12 }}><b>Resumo:</b> {detalhe.data.resumo}</p> : null}
               {detalhe.data.motivo ? <p><b>Motivo sugerido:</b> {detalhe.data.motivo}</p> : null}
-              {detalhe.data.falas.length ? (
-                <div style={{ display: "grid", gap: 6, maxHeight: 360, overflow: "auto" }}>
-                  {detalhe.data.falas.map((f, i) => (
-                    <p key={i} style={{ margin: 0 }}><span className="muted">{marca(f.ini)}</span> <b>{f.quem === "atendente" ? "Atendente" : "Cliente"}:</b> {f.texto}</p>
-                  ))}
-                </div>
-              ) : null}
             </>
           ) : null}
         </div>

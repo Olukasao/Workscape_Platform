@@ -7974,3 +7974,51 @@ button.tool-card {
 .remoto-aviso { color: #d98e00; font-size: var(--fs-sm); }
 
 .home-semana { margin-left: 8px; padding: 2px 8px; border-radius: 999px; font-size: 0.78rem; background: rgba(60, 120, 255, 0.14); }
+
+/* Transcrição de ligação como painel de chat: cliente à esquerda, atendente à direita */
+.transc-chat {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 460px;
+  overflow: auto;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--surface-2);
+}
+.transc-msg {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  max-width: 78%;
+}
+.transc-msg p {
+  margin: 0;
+  padding: 8px 12px;
+  border-radius: 14px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+.transc-quem {
+  font-size: var(--fs-xs);
+  color: var(--ink-3);
+}
+.transc-msg.cliente {
+  align-self: flex-start;
+}
+.transc-msg.cliente p {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  color: var(--ink);
+  border-top-left-radius: 4px;
+}
+.transc-msg.atendente {
+  align-self: flex-end;
+  align-items: flex-end;
+}
+.transc-msg.atendente p {
+  background: var(--primary-soft);
+  color: var(--primary-text);
+  border-top-right-radius: 4px;
+}

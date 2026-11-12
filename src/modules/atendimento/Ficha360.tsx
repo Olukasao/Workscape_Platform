@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { AlertTriangle, CalendarClock, MapPin, PhoneCall, Receipt, Star, Wifi, WifiOff } from "lucide-react";
 import { api } from "../../services/api";
+import ConversaTranscrita from "../../components/ConversaTranscrita";
 import { socket } from "../../services/socket";
 import { buscarTranscricoes, type TranscricaoLigacao } from "../../services/transcricaoLigacao";
 import { dataCurta, type ClienteLigacao, type RespostaLigacao } from "../../services/clienteLigacao";
@@ -10,8 +11,6 @@ const moeda = (n: number) => n.toLocaleString("pt-BR", { style: "currency", curr
 /** GPON: acima de -25 dBm está folgado; até -28 pede atenção; abaixo disso a ONU costuma cair. */
 const qualidade = (dbm: number) => (dbm >= -25 ? "boa" : dbm >= -28 ? "media" : "ruim");
 const encerrado = (s: string) => /encerr|finaliz|conclu|cancel/i.test(s);
-
-const marca = (s: number) => `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(Math.floor(s) % 60).padStart(2, "0")}`;
 
 /** Ligações do atendente com este cliente que já foram transcritas: resumo, motivo e a conversa inteira. */
 function Ligacoes({ telefones }: { telefones: string[] }) {
@@ -44,7 +43,7 @@ function Ligacoes({ telefones }: { telefones: string[] }) {
             <details>
               <summary>{new Date(t.inicioMs).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })} · {t.direcao === "in" ? "recebida" : "feita"}{t.motivo ? ` · ${t.motivo}` : ""}</summary>
               {t.resumo ? <p>{t.resumo}</p> : null}
-              {t.falas.map((f, i) => <small key={i} style={{ display: "block" }}><span className="muted">{marca(f.ini)}</span> <b>{f.quem === "atendente" ? "Você" : "Cliente"}:</b> {f.texto}</small>)}
+              <ConversaTranscrita falas={t.falas} nomeAtendente="Você" />
             </details>
           </li>
         ))}
