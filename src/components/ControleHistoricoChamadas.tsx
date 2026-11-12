@@ -110,7 +110,8 @@ export default function ControleHistoricoChamadas() {
       </div>
 
       {aberta !== null ? (
-        <div role="dialog" aria-modal="true" aria-label="Transcrição da chamada" className="iaadm-nota" style={{ marginTop: 16, border: "1px solid var(--border, #444)", borderRadius: 8, padding: 16 }}>
+        <div className="modal-backdrop" onClick={() => setAberta(null)}>
+        <div role="dialog" aria-modal="true" aria-label="Transcrição da chamada" className="detail-panel" style={{ width: "min(760px, 100%)" }} onClick={(e) => e.stopPropagation()}>
           <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
             <h3 className="iaadm-h" style={{ margin: 0 }}>Transcrição{detalhe.data?.nome ? ` · ${detalhe.data.nome}` : ""}{detalhe.data ? ` · ${detalhe.data.numero}` : ""}</h3>
             <span style={{ display: "flex", gap: 8 }}>
@@ -135,6 +136,7 @@ export default function ControleHistoricoChamadas() {
               ) : null}
             </>
           ) : null}
+        </div>
         </div>
       ) : null}
     </section>
