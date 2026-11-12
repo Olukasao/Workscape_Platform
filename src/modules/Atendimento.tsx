@@ -38,7 +38,7 @@ export default function Atendimento({ active }: { active: boolean }) {
   const statusAtd = useAtendimento((s) => s.status);
   const naFila = useAtendimento((s) => s.naFila);
   const [cfgOps, setCfgOps] = useState<ConfigOps | null>(null);
-  const [aba, setAba] = useState<Aba>("inicio");
+  const [aba, setAba] = useState<Aba>("conversas");
   const naoLidas = useAtendimento((s) => totalNaoLidas(s.naoLidas));
   const [filtroPedido, setFiltroPedido] = useState<{ filtro: "new" | "mine"; n: number } | null>(null);
   const [pedido, setPedido] = useState<{ id: string; n: number } | null>(null);

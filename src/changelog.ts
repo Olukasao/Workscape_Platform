@@ -8,6 +8,16 @@ export interface ChangelogEntry {
 
 export const changelog: ChangelogEntry[] = [
   {
+    versao: "0.6.52",
+    data: "2026-11-12",
+    itens: [
+      "Telefone: as ligações atendidas podem ser gravadas e transcritas depois de desligar, com resumo e motivo sugerido. Só funciona quando o administrador liga em Admin > Histórico de chamadas.",
+      "Admin: aba nova \"Histórico de chamadas\" com todas as ligações, busca pelo que foi dito e a transcrição de cada uma.",
+      "Atendimento: o resumo da ligação entra como nota na conversa do cliente e as ligações transcritas aparecem na ficha dele.",
+      "Atendimento: a tela de conversas abre primeiro e mostra o \"Bem-vindo ao Desk\" enquanto nenhum ticket está aberto.",
+    ],
+  },
+  {
     versao: "0.6.51",
     data: "2026-11-11",
     itens: [

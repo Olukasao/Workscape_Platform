@@ -8,6 +8,8 @@ const out = (o) => process.stdout.write(JSON.stringify(o) + "\n");
 const rl = createInterface({ input: process.stdin });
 let id = 0;
 let dnd = false;
+let recDir = "";
+const confirmadas = new Set();
 out({ event: "hello", version: "fake" });
 rl.on("line", (linha) => {
   const m = JSON.parse(linha);
@@ -32,10 +34,19 @@ rl.on("line", (linha) => {
       id += 1;
       out({ event: "call_started", id, number: m.number });
       out({ event: "call_state", id, state: "early", status: 180, remote: `sip:${m.number}@sip.exemplo.com` });
-      setTimeout(() => out({ event: "call_state", id, state: "confirmed", status: 200, remote: `sip:${m.number}@sip.exemplo.com` }), 30);
+      setTimeout(() => { confirmadas.add(id); out({ event: "call_state", id, state: "confirmed", status: 200, remote: `sip:${m.number}@sip.exemplo.com` }); }, 30);
       break;
-    case "answer": out({ event: "call_state", id: m.id, state: "confirmed", status: 200, remote: "" }); if (modo === "incoming") setTimeout(() => out({ event: "levels", mic: 300, remoto: 90 }), 30); break;
-    case "reject": case "hangup": out({ event: "call_ended", id: m.id, status: m.cmd === "reject" ? 603 : 200, reason: "x", durationSec: 3 }); break;
+    case "rec_dir": recDir = m.dir || ""; out({ event: "rec_dir", on: !!recDir }); break;
+    case "answer": confirmadas.add(m.id); out({ event: "call_state", id: m.id, state: "confirmed", status: 200, remote: "" }); if (modo === "incoming") setTimeout(() => out({ event: "levels", mic: 300, remoto: 90 }), 30); break;
+    case "reject": case "hangup":
+      // Como o motor real: com pasta de gravação e conversa atendida, grava dois WAVs e avisa ANTES de "call_ended".
+      if (recDir && confirmadas.has(m.id)) {
+        const base = `${recDir}/chamada-${m.id}-${Date.now()}`;
+        const wav = Buffer.concat([Buffer.from("RIFF"), Buffer.alloc(4), Buffer.from("WAVE"), Buffer.alloc(40)]);
+        writeFileSync(`${base}-local.wav`, wav); writeFileSync(`${base}-remoto.wav`, wav);
+        out({ event: "recording_saved", id: m.id, local: `${base}-local.wav`, remote: `${base}-remoto.wav` });
+      }
+      out({ event: "call_ended", id: m.id, status: m.cmd === "reject" ? 603 : 200, reason: "x", durationSec: 3 }); break;
     case "quit": out({ event: "bye" }); process.exit(0);
     default: break;
   }

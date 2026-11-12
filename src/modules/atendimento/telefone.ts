@@ -2,6 +2,8 @@ import { useEffect, useMemo, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import type { PhoneEvent } from "../../../electron/phone";
 import { api } from "../../services/api";
+import { socket } from "../../services/socket";
+import { buscarTranscricoes, notaDaTranscricao } from "../../services/transcricaoLigacao";
 import type { RespostaLigacao } from "../../services/clienteLigacao";
 import { usePhone } from "../../stores/phone";
 import { chamar } from "./chamar";
@@ -50,6 +52,22 @@ export function useTelefoneAtendimento(atual: Conversa | null, statusAtual: "AVA
     const duracao = e.resultado === "atendida" ? `, duração ${Math.floor(e.duracaoSeg / 60)} min ${String(e.duracaoSeg % 60).padStart(2, "0")} s` : "";
     void chamar("POST", `/api/agent/conversations/${conversa.id}/notes`, { body: { note: `${quem} (${resultado}${duracao}).` } }).catch(() => undefined);
   }), []);
+
+  // Quando a transcrição fica pronta (alguns minutos depois), o resumo e o motivo sugerido entram como nova nota na conversa do cliente.
+  useEffect(() => {
+    const jaPostadas = new Set<number>();
+    const ao = (p?: { id?: number; numero?: string }) => {
+      const conversa = conversaRef.current;
+      if (!p?.id || !p.numero || !conversa || jaPostadas.has(p.id) || !numerosRef.current.some((n) => mesmoNumero(n, p.numero!))) return;
+      jaPostadas.add(p.id);
+      void buscarTranscricoes(p.numero).then((lista) => {
+        const t = lista.find((x) => x.id === p.id);
+        if (t && t.status === "pronta" && t.resumo) return chamar("POST", `/api/agent/conversations/${conversa.id}/notes`, { body: { note: notaDaTranscricao(t) } });
+      }).catch(() => undefined);
+    };
+    socket.on("phone:transcricao", ao);
+    return () => { socket.off("phone:transcricao", ao); };
+  }, []);
 
   // "Ocupado": durante a ligação o atendente sai da fila; ao terminar, volta ao status que tinha (só se fomos nós que mudamos).
   const mudamos = useRef<"AVAILABLE" | null>(null);

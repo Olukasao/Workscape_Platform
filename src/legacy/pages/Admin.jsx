@@ -11,6 +11,7 @@ import UsandoAgora from "../../components/UsandoAgora";
 import VersoesWorkspace from "../../components/VersoesWorkspace";
 import ControleIA from "../../components/ControleIA";
 import ControleTelefone from "../../components/ControleTelefone";
+import ControleHistoricoChamadas from "../../components/ControleHistoricoChamadas";
 import ControleTerminal from "../../components/ControleTerminal";
 import ControleFuncoes from "../../components/ControleFuncoes";
 import ControleSaude from "../../components/ControleSaude";
@@ -33,6 +34,7 @@ const ABAS = [
   { id: "versoes", rotulo: "Versões", Icone: MonitorSmartphone },
   { id: "ia", rotulo: "IA", Icone: Bot },
   { id: "telefone", rotulo: "Telefone", Icone: PhoneCall },
+  { id: "historico-chamadas", rotulo: "Histórico de chamadas", Icone: History },
   { id: "terminal", rotulo: "Terminal", Icone: SquareTerminal },
 ];
 const ATALHOS = [
@@ -2879,6 +2881,7 @@ export default function Admin() {
           {aba === "versoes" && <VersoesWorkspace />}
           {aba === "ia" && <ControleIA />}
           {aba === "telefone" && <ControleTelefone />}
+          {aba === "historico-chamadas" && <ControleHistoricoChamadas />}
           {aba === "terminal" && <ControleTerminal />}
           {aba === "funcoes" && <ControleFuncoes />}
           {aba === "navegador" && <ControleNavegador />}

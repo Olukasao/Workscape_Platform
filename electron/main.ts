@@ -356,6 +356,7 @@ async function bootstrap() {
   const remoto = createRemoto({ exePath: remotoExe, configDir: process.env.APPDATA ? path.join(process.env.APPDATA, "RustDesk", "config") : null });
   const phone = createPhone({
     enginePath: phoneEnginePath,
+    gravacaoDir: path.join(app.getPath("userData"), "gravacoes"),
     chatOrigin: () => config.chat,
     send: (event) => {
       if (!win.isDestroyed()) win.webContents.send("phone:event", event);

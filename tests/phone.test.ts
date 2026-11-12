@@ -1,4 +1,4 @@
-import { mkdtempSync, readFileSync, existsSync } from "node:fs";
+import { mkdtempSync, readFileSync, existsSync, readdirSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
@@ -208,5 +208,85 @@ describe("atualização não pode interromper ligação", () => {
     phone.desligar({ id: phone.snapshot().chamadas[0].id });
     await espera(() => phone.snapshot().chamadas.length === 0);
     expect(phone.temChamadaAtiva()).toBe(false);
+  });
+});
+
+describe("gravação e envio da conversa", () => {
+  type Chamada = { url: string; method: string; form?: FormData };
+  function fetchGravacao(opcoes: { ativa: boolean; envio: number }) {
+    const chamadas: Chamada[] = [];
+    const impl = (async (url: URL, init?: RequestInit) => {
+      const u = String(url);
+      chamadas.push({ url: u, method: init?.method ?? "GET", form: init?.body instanceof FormData ? init.body : undefined });
+      if (u.includes("/api/phone/gravacao-config")) return new Response(JSON.stringify({ ativa: opcoes.ativa }), { status: 200 });
+      if (u.includes("/api/phone/gravacoes")) return new Response(JSON.stringify({ ok: true }), { status: opcoes.envio });
+      return new Response(JSON.stringify(credenciais), { status: 200 });
+    }) as unknown as typeof fetch;
+    return { impl, chamadas };
+  }
+  const pasta = () => mkdtempSync(path.join(tmpdir(), "grav-"));
+  async function ligarEDesligar(phone: ReturnType<typeof createPhone>) {
+    await phone.conectar("token");
+    await espera(() => phone.snapshot().registro === "registrado");
+    await new Promise((r) => setTimeout(r, 80)); // deixa a resposta da configuração chegar ao motor
+    phone.ligar("1003");
+    await espera(() => phone.snapshot().chamadas[0]?.estado === "conversando");
+    phone.desligar({ id: phone.snapshot().chamadas[0].id });
+    await espera(() => phone.snapshot().chamadas.length === 0);
+  }
+
+  it("com a gravação liberada, envia os dois lados ao servidor e apaga os arquivos", async () => {
+    const dir = pasta();
+    const { impl, chamadas } = fetchGravacao({ ativa: true, envio: 201 });
+    const { phone } = novo({}, { gravacaoDir: dir, fetchImpl: impl });
+    await ligarEDesligar(phone);
+    await espera(() => chamadas.some((c) => c.url.includes("/api/phone/gravacoes")));
+    const envio = chamadas.find((c) => c.url.includes("/api/phone/gravacoes"))!;
+    expect(envio.method).toBe("POST");
+    expect(envio.form?.get("numero")).toBe("1003");
+    expect(envio.form?.get("direcao")).toBe("out");
+    expect(envio.form?.get("local")).toBeInstanceOf(Blob);
+    expect(envio.form?.get("remoto")).toBeInstanceOf(Blob);
+    await espera(() => readdirSync(dir).length === 0);
+  });
+
+  it("com a gravação desligada, o motor não grava e nada é enviado", async () => {
+    const dir = pasta();
+    const { impl, chamadas } = fetchGravacao({ ativa: false, envio: 201 });
+    const { phone } = novo({}, { gravacaoDir: dir, fetchImpl: impl });
+    await ligarEDesligar(phone);
+    await new Promise((r) => setTimeout(r, 150));
+    expect(chamadas.some((c) => c.url.includes("/api/phone/gravacoes"))).toBe(false);
+    expect(readdirSync(dir)).toEqual([]);
+  });
+
+  it("se o envio falha, guarda os arquivos e reenvia ao reconectar", async () => {
+    const dir = pasta();
+    const falha = fetchGravacao({ ativa: true, envio: 503 });
+    const a = novo({}, { gravacaoDir: dir, fetchImpl: falha.impl });
+    await ligarEDesligar(a.phone);
+    await espera(() => falha.chamadas.some((c) => c.url.includes("/api/phone/gravacoes")));
+    await new Promise((r) => setTimeout(r, 100));
+    expect(readdirSync(dir).filter((n) => n.endsWith(".wav"))).toHaveLength(2);
+    expect(readdirSync(dir).filter((n) => n.endsWith(".json"))).toHaveLength(1);
+    await a.phone.parar();
+
+    const ok = fetchGravacao({ ativa: true, envio: 201 });
+    const b = novo({}, { gravacaoDir: dir, fetchImpl: ok.impl });
+    await b.phone.conectar("token");
+    await espera(() => ok.chamadas.some((c) => c.url.includes("/api/phone/gravacoes")));
+    await espera(() => readdirSync(dir).length === 0);
+  });
+
+  it("chamada que não foi atendida não deixa gravação", async () => {
+    const dir = pasta();
+    const { impl } = fetchGravacao({ ativa: true, envio: 201 });
+    const { phone, eventos } = novo({ FAKE_MODE: "incoming" }, { gravacaoDir: dir, fetchImpl: impl });
+    await phone.conectar("t");
+    await espera(() => eventos.some((e) => e.type === "incoming"));
+    const entrada = eventos.find((e) => e.type === "incoming") as Extract<PhoneEvent, { type: "incoming" }>;
+    phone.rejeitar({ id: entrada.call.id });
+    await espera(() => phone.snapshot().chamadas.length === 0);
+    expect(readdirSync(dir)).toEqual([]);
   });
 });

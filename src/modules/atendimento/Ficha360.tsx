@@ -1,12 +1,57 @@
-import { useQuery } from "@tanstack/react-query";
-import { AlertTriangle, CalendarClock, MapPin, Receipt, Star, Wifi, WifiOff } from "lucide-react";
+import { useEffect } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { AlertTriangle, CalendarClock, MapPin, PhoneCall, Receipt, Star, Wifi, WifiOff } from "lucide-react";
 import { api } from "../../services/api";
+import { socket } from "../../services/socket";
+import { buscarTranscricoes, type TranscricaoLigacao } from "../../services/transcricaoLigacao";
 import { dataCurta, type ClienteLigacao, type RespostaLigacao } from "../../services/clienteLigacao";
 
 const moeda = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 /** GPON: acima de -25 dBm está folgado; até -28 pede atenção; abaixo disso a ONU costuma cair. */
 const qualidade = (dbm: number) => (dbm >= -25 ? "boa" : dbm >= -28 ? "media" : "ruim");
 const encerrado = (s: string) => /encerr|finaliz|conclu|cancel/i.test(s);
+
+const marca = (s: number) => `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(Math.floor(s) % 60).padStart(2, "0")}`;
+
+/** Ligações do atendente com este cliente que já foram transcritas: resumo, motivo e a conversa inteira. */
+function Ligacoes({ telefones }: { telefones: string[] }) {
+  const cliente = useQueryClient();
+  const chave = ["atendimento", "ligacoes", ...telefones];
+  const q = useQuery({
+    queryKey: chave,
+    enabled: telefones.length > 0,
+    queryFn: async () => {
+      const listas = await Promise.all(telefones.map((n) => buscarTranscricoes(n).catch(() => [] as TranscricaoLigacao[])));
+      const vistos = new Map<number, TranscricaoLigacao>();
+      for (const t of listas.flat()) vistos.set(t.id, t);
+      return [...vistos.values()].sort((a, b) => b.inicioMs - a.inicioMs).slice(0, 5);
+    },
+    staleTime: 60_000,
+  });
+  useEffect(() => {
+    const ao = () => { void cliente.invalidateQueries({ queryKey: ["atendimento", "ligacoes"] }); };
+    socket.on("phone:transcricao", ao);
+    return () => { socket.off("phone:transcricao", ao); };
+  }, [cliente]);
+  const lista = (q.data ?? []).filter((t) => t.status === "pronta");
+  if (!lista.length) return null;
+  return (
+    <section className="atd-ficha-bloco">
+      <h4><PhoneCall size={13} /> Ligações transcritas</h4>
+      <ul className="atd-ficha-lista">
+        {lista.map((t) => (
+          <li key={t.id}>
+            <details>
+              <summary>{new Date(t.inicioMs).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })} · {t.direcao === "in" ? "recebida" : "feita"}{t.motivo ? ` · ${t.motivo}` : ""}</summary>
+              {t.resumo ? <p>{t.resumo}</p> : null}
+              {t.falas.map((f, i) => <small key={i} style={{ display: "block" }}><span className="muted">{marca(f.ini)}</span> <b>{f.quem === "atendente" ? "Você" : "Cliente"}:</b> {f.texto}</small>)}
+            </details>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
 
 /** Ficha 360 do cliente ao lado da conversa: cadastro, financeiro, conexão, histórico de chamados e última avaliação. */
 export default function Ficha360({ contrato }: { contrato: string }) {
@@ -93,6 +138,7 @@ export default function Ficha360({ contrato }: { contrato: string }) {
           {c.ultimaAvaliacao.comentario ? <small className="muted">“{c.ultimaAvaliacao.comentario}”</small> : null}
         </section>
       ) : c.mediaAvaliacoes ? null : null}
+      <Ligacoes telefones={(c.contatos ?? []).filter((x) => x.tipo === "telefone").map((x) => x.valor).filter((v, i, a) => v.replace(/\D/g, "").length >= 8 && a.indexOf(v) === i).slice(0, 3)} />
       {f && f.emAberto > 0 && !f.isento ? <p className="atd-ficha-aviso"><AlertTriangle size={13} /> Cliente com valor em aberto: confira antes de prometer prazo.</p> : null}
     </aside>
   );

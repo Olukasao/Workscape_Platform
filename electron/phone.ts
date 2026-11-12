@@ -1,4 +1,6 @@
 import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
+import { mkdirSync, readdirSync, readFileSync, statSync, unlinkSync, writeFileSync } from "node:fs";
+import path from "node:path";
 import { z } from "zod";
 
 // Workscape Phone, lado do processo principal. O motor SIP roda como processo filho separado da interface:
@@ -58,7 +60,13 @@ export interface PhoneOptions {
   /** Quanto esperar a central responder ao registro antes de avisar que não respondeu (ms). */
   registerTimeoutMs?: number;
   fetchImpl?: typeof fetch;
+  /** Pasta onde o motor grava as conversas até o envio ao servidor. Sem pasta, o telefone nunca grava. */
+  gravacaoDir?: string;
 }
+
+/** Metadados guardados ao lado dos WAVs até o envio dar certo (se o envio falhar, tenta de novo ao reconectar). */
+interface GravacaoPendente { direcao: "in" | "out"; numero: string; inicioMs: number; duracaoSeg: number; local: string; remoto: string }
+const GRAVACAO_VALIDADE_MS = 7 * 86_400_000;
 
 const NUMERO = /^[0-9+*#]{1,32}$/;
 
@@ -104,6 +112,8 @@ export function createPhone(options: PhoneOptions) {
   let pendingInit: { resolve: () => void; reject: (e: Error) => void } | null = null;
   const stderrTail: string[] = [];
   const confirmadas = new Set<number>(); // chamadas que chegaram a ser atendidas
+  const gravadas = new Map<number, { local: string; remoto: string }>(); // arquivos que o motor terminou de gravar, por chamada
+  let gravacaoAtiva = false;
   const rejeitadas = new Set<number>();
   /** Número com o prefixo de saída → como a pessoa digitou (para mostrar e gravar no histórico). */
   const prefixados = new Map<string, string>();
@@ -139,6 +149,76 @@ export function createPhone(options: PhoneOptions) {
     engine.stdin.write(JSON.stringify(cmd) + "\n");
   }
 
+  // ---- gravação e envio -------------------------------------------------------------------------
+  const apagar = (...arquivos: string[]) => { for (const a of arquivos) { try { unlinkSync(a); } catch { /* já não existe */ } } };
+  /** Dentro da pasta de gravações e com o nome que o motor gera: nada que a interface ou o servidor mande vira caminho. */
+  const dentroDaPasta = (arq: string) => {
+    if (!options.gravacaoDir) return false;
+    const rel = path.relative(options.gravacaoDir, arq);
+    return !!rel && !rel.startsWith("..") && !path.isAbsolute(rel) && /^chamada-\d+-\d+-(local|remoto)\.wav$/.test(path.basename(arq));
+  };
+
+  /** Pergunta ao servidor se a gravação está liberada (o administrador liga em Admin > Histórico de chamadas) e avisa o motor. */
+  async function atualizarGravacao() {
+    if (!options.gravacaoDir || !ultimoToken || !engine) return;
+    try {
+      const r = await doFetch(new URL("/api/phone/gravacao-config", options.chatOrigin()), { headers: { Authorization: `Bearer ${ultimoToken}`, Accept: "application/json" }, redirect: "error", signal: AbortSignal.timeout(8000) });
+      const corpo: unknown = await r.json().catch(() => ({}));
+      const ativa = r.ok && (corpo as { ativa?: unknown })?.ativa === true;
+      if (ativa) mkdirSync(options.gravacaoDir, { recursive: true });
+      gravacaoAtiva = ativa;
+      enviar({ cmd: "rec_dir", dir: ativa ? options.gravacaoDir.replace(/\\/g, "/") : "" });
+    } catch { /* sem resposta: mantém o que já estava */ }
+  }
+
+  async function enviarGravacao(g: GravacaoPendente, metaPath: string): Promise<boolean> {
+    if (!ultimoToken) return false;
+    try {
+      const form = new FormData();
+      form.set("direcao", g.direcao);
+      form.set("numero", g.numero);
+      form.set("inicioMs", String(g.inicioMs));
+      form.set("duracaoSeg", String(g.duracaoSeg));
+      form.set("local", new Blob([readFileSync(g.local)], { type: "audio/wav" }), "local.wav");
+      form.set("remoto", new Blob([readFileSync(g.remoto)], { type: "audio/wav" }), "remoto.wav");
+      const r = await doFetch(new URL("/api/phone/gravacoes", options.chatOrigin()), { method: "POST", headers: { Authorization: `Bearer ${ultimoToken}` }, body: form, redirect: "error", signal: AbortSignal.timeout(120_000) });
+      if (r.ok || r.status === 409 || r.status === 400 || r.status === 403) { apagar(g.local, g.remoto, metaPath); return r.ok || r.status === 409; } // o servidor decidiu: não adianta reenviar
+      return false;
+    } catch (e) {
+      log("warn", `gravação não enviada: ${e instanceof Error ? e.message : "erro"}`);
+      return false;
+    }
+  }
+
+  /** Reenvia o que ficou para trás (sem rede, servidor fora). Apaga o que passou de 7 dias. */
+  async function reenviarPendentes() {
+    if (!options.gravacaoDir) return;
+    let nomes: string[] = [];
+    try { nomes = readdirSync(options.gravacaoDir); } catch { return; }
+    for (const nome of nomes) {
+      const arq = path.join(options.gravacaoDir, nome);
+      try {
+        if (Date.now() - statSync(arq).mtimeMs > GRAVACAO_VALIDADE_MS) { apagar(arq); continue; }
+        if (!nome.endsWith(".json")) continue;
+        const g = JSON.parse(readFileSync(arq, "utf8")) as GravacaoPendente;
+        if (!dentroDaPasta(g.local) || !dentroDaPasta(g.remoto)) { apagar(arq); continue; }
+        await enviarGravacao(g, arq);
+      } catch { /* arquivo incompleto: o prazo de 7 dias limpa */ }
+    }
+  }
+
+  function guardarGravacao(c: PhoneCall, atendida: boolean, duracaoSeg: number) {
+    const arqs = gravadas.get(c.id);
+    gravadas.delete(c.id);
+    if (!arqs) return;
+    // Só guarda conversa de verdade: chamada que não foi atendida ou sem arquivos válidos é descartada na hora.
+    if (!atendida || !dentroDaPasta(arqs.local) || !dentroDaPasta(arqs.remoto)) { apagar(arqs.local, arqs.remoto); return; }
+    const g: GravacaoPendente = { direcao: c.direcao, numero: c.numero, inicioMs: c.inicioMs, duracaoSeg, local: arqs.local, remoto: arqs.remoto };
+    const metaPath = arqs.local.replace(/-local\.wav$/, ".json");
+    try { writeFileSync(metaPath, JSON.stringify(g)); } catch { /* sem meta, ainda tenta enviar agora */ }
+    void enviarGravacao(g, metaPath);
+  }
+
   function fecharChamada(c: PhoneCall, status: number, duracaoSegMotor: number) {
     const atendida = confirmadas.has(c.id);
     let resultado: PhoneResult;
@@ -148,6 +228,7 @@ export function createPhone(options: PhoneOptions) {
     else resultado = status >= 400 && status !== 487 ? "falhou" : "nao_atendida";
     const duracaoSeg = atendida ? Math.max(duracaoSegMotor, c.atendidaMs ? Math.round((Date.now() - c.atendidaMs) / 1000) : 0) : 0;
     options.send({ type: "history", direcao: c.direcao, numero: c.numero, resultado, duracaoSeg, inicioMs: c.inicioMs });
+    guardarGravacao(c, atendida, duracaoSeg);
     confirmadas.delete(c.id);
     rejeitadas.delete(c.id);
   }
@@ -165,6 +246,11 @@ export function createPhone(options: PhoneOptions) {
       case "levels": {
         const nivel = (v: unknown) => Math.max(0, Math.min(255, int(v)));
         if (snapshot.chamadas.some((c) => c.estado === "conversando")) options.send({ type: "levels", mic: nivel(m.mic), remoto: nivel(m.remoto) });
+        break;
+      }
+      case "recording_saved": {
+        const local = text(m.local, 600), remoto = text(m.remote, 600);
+        if (local && remoto) gravadas.set(int(m.id, -1), { local, remoto });
         break;
       }
       case "devices": {
@@ -206,6 +292,7 @@ export function createPhone(options: PhoneOptions) {
           try { enviar({ cmd: "reject", id }); } catch { /* motor já caiu */ }
           break; // sem toque, sem faixa, sem aviso na tela
         }
+        void atualizarGravacao();
         const c: PhoneCall = { id, direcao: "in", numero: r.numero, nome: r.nome, estado: "tocando", inicioMs: Date.now(), atendidaMs: null, mudo: false, espera: false };
         snapshot.chamadas = [...snapshot.chamadas.filter((x) => x.id !== id), c];
         options.send({ type: "incoming", call: { ...c } });
@@ -373,6 +460,7 @@ export function createPhone(options: PhoneOptions) {
         port: conta.sipPort, transport: conta.transport, displayName: conta.displayName, registerRefresh: 60, keepAlive: 15,
       });
       enviar({ cmd: "devices" });
+      void atualizarGravacao().then(reenviarPendentes);
       publicar();
     } catch (e) {
       ajustar({ registro: "falhou", mensagem: e instanceof Error ? e.message : "Falha ao conectar o telefone." });
@@ -399,6 +487,7 @@ export function createPhone(options: PhoneOptions) {
       const discado = numeroDeSaida(n);
       // A tela e o histórico seguem mostrando o número como a pessoa digitou (sem o 0 que a central exige).
       if (discado !== n) prefixados.set(discado, n);
+      void atualizarGravacao();
       enviar({ cmd: "call", number: discado });
     },
     /** Há ligação tocando, sendo feita ou em andamento: o aplicativo não pode reiniciar nem fechar para atualizar. */

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { PanelLeftClose, PanelLeftOpen, ChevronsLeft, ChevronsRight, Zap, CheckCheck, CheckCircle2, CornerDownLeft, Edit3, Inbox, MessageSquareText, PhoneCall, Search, UserCheck, UserRound } from "lucide-react";
+import { PanelLeftClose, PanelLeftOpen, ChevronsLeft, ChevronsRight, Zap, CheckCheck, CheckCircle2, CornerDownLeft, Edit3, Inbox, MessageSquareText, MessageCircle, Mail, Phone, PhoneCall, Search, UserCheck, UserRound } from "lucide-react";
 import { usePreferences } from "../../stores/workspace";
 import { useAtendimento } from "../../stores/atendimentoSessao";
 import { MacroAdminDialog } from "./console/components/macros/MacroAdminDialog";
@@ -53,6 +53,28 @@ interface Props {
 }
 
 /** Mesa de atendimento: o mesmo layout e componentes do painel de atendimento, ligados aos dados e ao telefone do Workspace. */
+function BoasVindasDesk() {
+  const itens: [string, React.ReactNode, string, string][] = [
+    ["chat", <MessageSquareText size={22} />, "Chat em Tempo Real", "Converse com clientes no web-chat, em tempo real"],
+    ["whatsapp", <MessageCircle size={22} />, "WhatsApp business", "Acesso direto aos contatos feitos por usuários ao WhatsApp business"],
+    ["voice", <Phone size={22} />, "Chamadas de voz", "Atenda a chamadas de voz de forma simples e integrada com a tabulação."],
+    ["mail", <Mail size={22} />, "E-mail", "Veja contatos realizados via e-mail e responda sem mudar de tela."],
+  ];
+  return (
+    <section className="attendance-desk-welcome" aria-label="Bem-vindo ao Desk">
+      <span className="attendance-desk-welcome-icon" aria-hidden="true"><MessageSquareText size={30} /></span>
+      <h2>Bem-vindo ao Desk</h2>
+      <p>Selecione um ticket da lista ao lado para começar a visualizar conversas, responder emails ou gerenciar solicitações de suporte.</p>
+      <div className="attendance-desk-feature-list">
+        {itens.map(([c, ic, t, d]) => (
+          <article key={c} className="attendance-desk-feature"><span className={c} aria-hidden="true">{ic}</span><div><h3>{t}</h3><p>{d}</p></div></article>
+        ))}
+      </div>
+      <span className="attendance-desk-start-hint">← Clique em um ticket para começar</span>
+    </section>
+  );
+}
+
 export default function Mesa({ agente, cargo, statusAtd, cfgOps, visivel, abrir, filtroPedido }: Props) {
   const tema = usePreferences((s) => s.theme) === "light" ? "claro" : "escuro";
   const [filtro, setFiltro] = useState<FiltroMesa>("new");
@@ -326,6 +348,7 @@ export default function Mesa({ agente, cargo, statusAtd, cfgOps, visivel, abrir,
               {aviso ? <span className="atd-mesa-aviso" role="alert">{aviso}</span> : null}
             </div>
           ) : null}
+          {detalhe || carregandoConversa || erroConversa ? (
           <ChatPanel
             conversation={detalhe}
             messages={msgs}
@@ -365,6 +388,7 @@ export default function Mesa({ agente, cargo, statusAtd, cfgOps, visivel, abrir,
             onOpenDelete={() => undefined}
             onRetryLoad={() => detalhe && void abrirConversa(detalhe.id)}
           />
+          ) : <BoasVindasDesk />}
         </div>
 
         {detalhe && fichaAberta && detalhe.contractId ? <Ficha360 contrato={detalhe.contractId} /> : null}
