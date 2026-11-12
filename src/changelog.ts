@@ -8,6 +8,13 @@ export interface ChangelogEntry {
 
 export const changelog: ChangelogEntry[] = [
   {
+    versao: "0.6.54",
+    data: "2026-11-12",
+    itens: [
+      "Transcrição das ligações agora aparece como um chat: cliente de um lado, atendente do outro, com o minuto de cada fala.",
+    ],
+  },
+  {
     versao: "0.6.53",
     data: "2026-11-12",
     itens: [
