@@ -51,7 +51,11 @@ export function disconnectSocket() {
 
 /** Avisa o servidor que este usuário está com o aplicativo aberto (lista "usando agora" do painel admin). */
 export async function anunciarWorkspace() {
-  if (!window.desktop) return;
+  if (!window.desktop) {
+    // Navegador: só no ambiente de testes (lá o Workspace aberto no navegador também conta como online no Escritório).
+    if (import.meta.env.VITE_AMBIENTE === "teste") socket.emit("workspace_presence", { versao: "", dispositivo: "", computador: "" });
+    return;
+  }
   let versao = "";
   try { versao = (await window.desktop.updateStatus()).currentVersion; } catch { /* Sem versão. */ }
   // Identificador e nome do computador: alimentam o painel de versões da Administração.

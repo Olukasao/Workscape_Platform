@@ -32,6 +32,20 @@ export default function Escritorio3D() {
   }, []);
   useEffect(() => { if (!noApp) void abrir(); }, [noApp, abrir]);
 
+  // O Escritório não tem login: se a sessão dele vencer, ele pede aqui um bilhete novo (no máximo um a cada 20 s, para não repetir em laço).
+  useEffect(() => {
+    let ultimo = 0;
+    const ouvir = (e: MessageEvent) => {
+      if (!destino || e.origin !== destino.origem || (e.data as { type?: string } | null)?.type !== "office3d:sessao-expirou") return;
+      if (Date.now() - ultimo < 20_000) return;
+      ultimo = Date.now();
+      setVersao((v) => v + 1);
+      void abrir();
+    };
+    window.addEventListener("message", ouvir);
+    return () => window.removeEventListener("message", ouvir);
+  }, [destino, abrir]);
+
   return (
     <div className="page escritorio-page">
       <PageHeader
