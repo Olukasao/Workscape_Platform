@@ -1,5 +1,5 @@
-/* Aba Escritório (testes). Só tokens do Workspace. */
-.escritorio-page { display: flex; flex-direction: column; gap: var(--sp-3); height: 100%; min-height: 0; }
+/* Aba Escritório (testes): ocupa a área toda, sem a margem das outras páginas. Só tokens do Workspace. */
+.page.escritorio-page { max-width: none; height: 100%; padding: 12px 16px; box-sizing: border-box; display: flex; flex-direction: column; gap: var(--sp-3); min-height: 0; }
 .escritorio-acoes { display: flex; gap: var(--sp-2); }
-.escritorio-frame { flex: 1; min-height: 520px; width: 100%; border: 1px solid var(--line-strong); border-radius: var(--r-md, 12px); background: var(--surface-sunken); }
+.escritorio-frame { flex: 1 1 auto; min-height: 0; width: 100%; border: 1px solid var(--line-strong); border-radius: var(--r-md, 12px); background: var(--surface-sunken); }
 .escritorio-aviso { display: flex; align-items: center; gap: var(--sp-3); flex-wrap: wrap; padding: var(--sp-4); border: 1px dashed var(--line-strong); border-radius: var(--r-md, 12px); color: var(--ink-2); }
