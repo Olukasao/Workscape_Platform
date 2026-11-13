@@ -64,7 +64,8 @@ declare global {
       fichaFechar?(): Promise<{ ok: boolean }>;
       onFichaEvento?(callback: (evento: { tipo: "nova"; numero: string; nome: string; direcao: "in" | "out"; estado: "tocando" | "chamando" | "conversando"; atendidaMs: number | null } | { tipo: "fim"; fechaEm: number }) => void): () => void;
       browserSites?(lista: { id: string; label: string; url: string }[]): Promise<{ ok: boolean }>;
-      browserHide(opcoes?: { somente?: "agendaweb" | "navegador" }): Promise<void>;
+      browserHide(opcoes?: { somente?: "agendaweb" | "escritorio" | "navegador" }): Promise<void>;
+      escritorioAbrir(url: string): Promise<void>;
       agendaWebSession(value: { token: string }): Promise<void>;
       browserAction(value: {
         site: BrowserSite;

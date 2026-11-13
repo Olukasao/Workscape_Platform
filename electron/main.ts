@@ -39,6 +39,7 @@ import { isPinnedAgendaCertificate } from "./agendaTrust";
 import { isPinnedUpdateCertificate } from "./updateTrust";
 import { showToast, initToasts, closeAllToasts } from "./toast";
 import { initDetachedWindows, openDetached, closeDetached, setDetachedOnTop, setDetachedCompact, captureDetachedLayout, closeAllDetached, detachedContents, detachedKindOf, detachedKinds, isDetachedOpen, type DetachedKind } from "./detachedWindows";
+import { urlDoEscritorioValida } from "./escritorioDeployment";
 import { initBrowserTabs, showBrowser, updateBrowserBounds, hideBrowser, moveBrowserTabs, browserAction, browserOpenUrl, closeBrowserTabs, resetBrowserTabs, setAgendaWebSession, browserSites, isKnownSite, registerCustomSites, type BrowserSite } from "./browserTabs";
 import { deleteWorkspace, findWorkspace, listWorkspaces, saveWorkspace, tileLayout, workspaceItemSchema } from "./workspaces";
 import { attachContextMenu, configureSpellChecker } from "./contextMenu";
@@ -853,7 +854,7 @@ async function bootstrap() {
     showBrowser(v.site, v.bounds, callerWindow(e));
   });
   handle("browser:bounds", (payload, e) => updateBrowserBounds(boundsSchema.parse(payload), callerWindow(e)));
-  handle("browser:hide", (payload, e) => hideBrowser(callerWindow(e), z.object({ somente: z.enum(["agendaweb", "navegador"]).optional() }).strict().optional().parse(payload)?.somente));
+  handle("browser:hide", (payload, e) => hideBrowser(callerWindow(e), z.object({ somente: z.enum(["agendaweb", "escritorio", "navegador"]).optional() }).strict().optional().parse(payload)?.somente));
   handle("agenda-web:session", async (payload) => {
     const v = z.object({ token: z.string().max(4096) }).strict().parse(payload);
     await setAgendaWebSession(v.token);
@@ -864,6 +865,12 @@ async function bootstrap() {
     if (url.hostname !== "acessanet.sgp.net.br" || url.protocol !== "https:" || url.username || url.password)
       throw new Error("Link fora do domínio do SGP.");
     browserOpenUrl("sgp", url.href);
+  });
+  // Escritório: carrega o endereço de login único (bilhete de uso único) na visão nativa do Escritório.
+  handle("escritorio:abrir", (payload) => {
+    const url = urlDoEscritorioValida(z.string().max(2048).parse(payload));
+    if (!url) throw new Error("Endereço fora do Escritório.");
+    browserOpenUrl("escritorio", url);
   });
   handle("browser:action", (payload) => {
     const v = z.object({ site: siteSchema, action: z.enum(["back", "forward", "reload", "home", "go", "zoomIn", "zoomOut", "zoomReset"]), value: z.string().max(2048).optional() }).strict().parse(payload);

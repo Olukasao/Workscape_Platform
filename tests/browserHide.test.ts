@@ -21,4 +21,10 @@ describe("quem pode esconder a página nativa", () => {
     expect(deveEsconder("agendaweb")).toBe(true);
     expect(deveEsconder("sgp")).toBe(true);
   });
+  it("o Escritório tem escopo próprio: o Navegador que sai de cena não o esconde, e ele só esconde a si mesmo", () => {
+    expect(deveEsconder("escritorio", "navegador")).toBe(false);
+    expect(deveEsconder("escritorio", "agendaweb")).toBe(false);
+    expect(deveEsconder("sgp", "escritorio")).toBe(false);
+    expect(deveEsconder("escritorio", "escritorio")).toBe(true);
+  });
 });

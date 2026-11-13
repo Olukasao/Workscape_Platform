@@ -1,6 +1,7 @@
 import { deveEsconder, type EscopoEsconder } from "./browserHide";
 import { BrowserWindow, session, shell, WebContentsView } from "electron";
 import { agendaOrigin } from "./agendaDeployment";
+import { escritorioOrigin } from "./escritorioDeployment";
 import { isPinnedAgendaCertificate } from "./agendaTrust";
 
 // Aba "Navegador": cada site fica em sua própria visão nativa, numa sessão isolada
@@ -16,6 +17,8 @@ export const browserSites = {
   comum: { label: "Navegador comum", url: "https://www.google.com/" },
   // Agenda original (versão web) dentro do app: não aparece nos atalhos do Navegador; abre pelo botão "Versão web" da agenda.
   agendaweb: { label: "Agenda (versão web)", url: agendaOrigin },
+  // Escritório (Office 3D) dentro do app: só abre pelo item Escritório do menu, com login único; não aparece nos atalhos do Navegador.
+  escritorio: { label: "Escritório", url: escritorioOrigin },
 } as const;
 export type BuiltinSite = keyof typeof browserSites;
 /** Sites padrão do app mais os extras que o administrador cadastrou (ids "site-<número>"). */
@@ -55,7 +58,11 @@ const defaultZoom = (site: BrowserSite) => (site === "agendaweb" ? 75 : 100);
 // A versão web da agenda tem sessão própria (cookies e dados separados dos sites do Navegador) e aceita
 // somente o certificado fixado do servidor da agenda.
 const AGENDA_WEB_PARTITION = "persist:agenda-web";
-const partitionOf = (site: BrowserSite) => (site === "agendaweb" ? AGENDA_WEB_PARTITION : PARTITION);
+// O Escritório também tem sessão própria (cookie do Escritório separado dos sites do Navegador).
+const ESCRITORIO_PARTITION = "persist:escritorio";
+const partitionOf = (site: BrowserSite) => (site === "agendaweb" ? AGENDA_WEB_PARTITION : site === "escritorio" ? ESCRITORIO_PARTITION : PARTITION);
+/** Sites que só podem navegar dentro da própria origem (links para fora vão para o navegador do sistema). */
+const restrictedOrigin = (site: BrowserSite): string | null => (site === "agendaweb" ? agendaOrigin : site === "escritorio" ? escritorioOrigin : null);
 let agendaOriginProvider: () => string = () => "";
 const AGENDA_COOKIE = "agenda_chat_session";
 const IDLE_UNLOAD_MS = 30 * 60 * 1000;
@@ -147,8 +154,8 @@ function create(site: BrowserSite, host: BrowserWindow) {
   });
   const wc = view.webContents;
   // Só http/https; popups e links "nova janela" abrem na própria visão.
-  const onlyAgenda = site === "agendaweb";
-  const sameOrigin = (url: string) => { try { return new URL(url).origin === agendaOrigin; } catch { return false; } };
+  const onlyAgenda = restrictedOrigin(site) !== null;
+  const sameOrigin = (url: string) => { try { return new URL(url).origin === restrictedOrigin(site); } catch { return false; } };
   const guard = (event: Electron.Event, url: string) => {
     const safe = parseWebUrl(url);
     if (!safe || (onlyAgenda && !sameOrigin(safe))) {
@@ -213,7 +220,7 @@ function unload(site: BrowserSite) {
 export function initBrowserTabs(win: BrowserWindow, getAgendaOrigin: () => string) {
   mainHost = win;
   agendaOriginProvider = getAgendaOrigin;
-  for (const name of [PARTITION, AGENDA_WEB_PARTITION]) {
+  for (const name of [PARTITION, AGENDA_WEB_PARTITION, ESCRITORIO_PARTITION]) {
     session.fromPartition(name).setPermissionRequestHandler((_w, _p, cb) => cb(false));
     session.fromPartition(name).setPermissionCheckHandler(() => false);
   }
@@ -312,7 +319,7 @@ export async function resetBrowserTabs() {
   current = null;
   for (const site of [...entries.keys()]) unload(site);
   entries.clear();
-  for (const name of [PARTITION, AGENDA_WEB_PARTITION]) {
+  for (const name of [PARTITION, AGENDA_WEB_PARTITION, ESCRITORIO_PARTITION]) {
     await session.fromPartition(name).clearStorageData().catch(() => undefined);
     await session.fromPartition(name).clearCache().catch(() => undefined);
   }
