@@ -8,6 +8,13 @@ export interface ChangelogEntry {
 
 export const changelog: ChangelogEntry[] = [
   {
+    versao: "0.6.55",
+    data: "2026-11-16",
+    itens: [
+      "Novo aviso quando um cliente troca a senha do Wi-Fi pela Central do Assinante. Se o cliente não conseguir conectar, o aviso fica em destaque e já mostra o número do chamado aberto.",
+    ],
+  },
+  {
     versao: "0.6.54",
     data: "2026-11-12",
     itens: [
