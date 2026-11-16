@@ -1,3 +1,4 @@
+import { ligarPara } from "./ramais";
 import { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
@@ -196,6 +197,13 @@ export function useRealtime() {
           }),
         );
     };
+    // Pedido de ligação vindo do mapa do Escritório (botão "Ligar" no cartão da pessoa): discamos pelo nosso telefone.
+    const ligarDoMapa = async (e: { numero?: string; nome?: string }) => {
+      const numero = String(e?.numero ?? "").replace(/\D/g, "");
+      if (!numero) return;
+      const erro = await ligarPara(numero);
+      if (erro) void window.desktop?.notify({ title: `Não foi possível ligar para ${String(e?.nome ?? "o colega").slice(0, 60)}`, body: erro.slice(0, 200), target: "/", kind: "system", context: "Escritório", tone: "warn" });
+    };
     const direct = notify("direct"),
       group = notify("group");
     socket
@@ -207,7 +215,8 @@ export function useRealtime() {
       .on("new_direct_message_notification", direct)
       .on("receive_group_message", group)
       .on("olt_incidente_novo", incidenteNovo)
-      .on("olt_evento_massa", eventoMassa);
+      .on("olt_evento_massa", eventoMassa)
+      .on("escritorio_ligar", ligarDoMapa);
     const events = [
       "user_status_changed",
       "direct_message_status",
@@ -237,7 +246,8 @@ export function useRealtime() {
         .off("new_direct_message_notification", direct)
         .off("receive_group_message", group)
         .off("olt_incidente_novo", incidenteNovo)
-        .off("olt_evento_massa", eventoMassa);
+        .off("olt_evento_massa", eventoMassa)
+        .off("escritorio_ligar", ligarDoMapa);
       events.forEach((e) => socket.off(e, invalidate));
       window.removeEventListener("online", online);
       window.removeEventListener("offline", onDisconnect);
