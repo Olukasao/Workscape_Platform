@@ -89,6 +89,7 @@ import CelebracaoVenda from "../components/CelebracaoVenda";
 import EfeitosSonorosRemotos from "../components/EfeitosSonorosRemotos";
 import { useContratacoes, useContratacoesFeed } from "../services/contratacoes";
 import { useAvaliacoesFeed } from "../services/avaliacoes";
+import { useTrocasWifiAviso } from "../services/trocasWifi";
 const Agenda = lazy(() => import("../modules/Agenda"));
 const Profile = lazy(() => import("../modules/Profile"));
 const Notifications = lazy(() => import("../modules/Notifications"));
@@ -154,6 +155,7 @@ function Shell() {
   useDashboardConnection();
   useContratacoesFeed();
   useAvaliacoesFeed();
+  useTrocasWifiAviso();
   const contratacoesPendentes = useContratacoes((s) => s.pendentes);
   const atdNaoLidas = useAtendimento((s) => totalNaoLidas(s.naoLidas));
   const user = useSession((s) => s.user),
