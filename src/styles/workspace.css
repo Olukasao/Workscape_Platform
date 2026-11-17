@@ -8051,3 +8051,5 @@ button.tool-card {
 .rede-mapa-legenda { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 6px; font-size: var(--fs-sm); color: var(--ink-2); }
 .rede-mapa-legenda i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 5px; vertical-align: -1px; border: 1px solid rgba(0, 0, 0, 0.4); }
 .rede-mapa-legenda i.cto { background: #8aa0b8; width: 7px; height: 7px; }
+.contratacoes-grupos { padding-bottom: 0; border-bottom: 0; }
+.contratacoes-motivo { max-width: 360px; white-space: normal; overflow-wrap: anywhere; }

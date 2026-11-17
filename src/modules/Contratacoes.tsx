@@ -1,6 +1,13 @@
 import { useEffect, useState } from "react";
 import { ClipboardCheck, Copy, ExternalLink, Search, WifiOff, X } from "lucide-react";
-import { useContratacoes, type Contratacao } from "../services/contratacoes";
+import {
+  grupoDoStatus,
+  STATUS_ROTULO,
+  useContratacoes,
+  type Contratacao,
+  type ContratacaoAndamento,
+  type GrupoContratacao,
+} from "../services/contratacoes";
 import { Button } from "../components/ui/button";
 import {
   Badge,
@@ -41,9 +48,10 @@ const quando = (iso?: string) => {
 };
 
 export default function Contratacoes() {
-  const { recebido, conectado, pendentes, itens, atualizadoEm, novos, limparNovos } =
+  const { recebido, conectado, pendentes, itens, andamento, atualizadoEm, novos, limparNovos } =
     useContratacoes();
   const [busca, setBusca] = useState("");
+  const [grupo, setGrupo] = useState<GrupoContratacao>("aguardando");
   const [copiado, setCopiado] = useState("");
   const [, tick] = useState(0);
   useEffect(() => {
@@ -66,11 +74,28 @@ export default function Contratacoes() {
     }
   };
   const termo = norm(busca.trim());
+  const doGrupo = (g: GrupoContratacao) =>
+    andamento.filter((i: ContratacaoAndamento) => grupoDoStatus(i.status) === g);
+  const contagem: Record<GrupoContratacao, number> = {
+    aguardando: recebido ? pendentes : 0,
+    atendimento: doGrupo("atendimento").length,
+    cancelados: doGrupo("cancelados").length,
+    encerrados: doGrupo("encerrados").length,
+  };
+  const base: ContratacaoAndamento[] =
+    grupo === "aguardando" ? itens.map((i) => ({ ...i, status: "novo" })) : doGrupo(grupo);
   const lista = termo
-    ? itens.filter((i: Contratacao) =>
-        norm([i.cliente, i.protocolo, i.plano, i.cidade].filter(Boolean).join(" ")).includes(termo),
+    ? base.filter((i) =>
+        norm([i.cliente, i.protocolo, i.plano, i.cidade, i.responsavel, i.motivo].filter(Boolean).join(" ")).includes(termo),
       )
-    : itens;
+    : base;
+  const aguardando = grupo === "aguardando";
+  const vazio = {
+    aguardando: "Nenhum pedido aguardando atendimento.",
+    atendimento: "Nenhum pedido em atendimento.",
+    cancelados: "Nenhum pedido cancelado.",
+    encerrados: "Nenhum pedido encerrado.",
+  }[grupo];
   const maisAntigo = itens.reduce<Contratacao | null>(
     (acc, i) => (!acc || (i.criadoEm || "") < (acc.criadoEm || "") ? i : acc),
     null,
@@ -80,7 +105,7 @@ export default function Contratacoes() {
       <PageHeader
         icon={ClipboardCheck}
         title="Contratações do site"
-        description="Clientes que contrataram pelo site acessanet.com.br e aguardam atendimento."
+        description="Pedidos de contratação feitos pelo site acessanet.com.br, do primeiro contato ao encerramento."
         meta={
           <span className={`connection ${conectado ? "online" : ""}`} role="status">
             <i />
@@ -137,6 +162,22 @@ export default function Contratacoes() {
         </p>
       ) : null}
       <section className="panel panel--flush" aria-label="Pedidos pendentes">
+        <div className="contratacoes-toolbar contratacoes-grupos">
+          <div className="segmented" role="group" aria-label="Filtrar por situação">
+            {(
+              [
+                ["aguardando", "Aguardando"],
+                ["atendimento", "Em atendimento"],
+                ["cancelados", "Cancelados"],
+                ["encerrados", "Encerrados"],
+              ] as const
+            ).map(([id, rotulo]) => (
+              <button key={id} type="button" aria-pressed={grupo === id} onClick={() => setGrupo(id)}>
+                {rotulo} <span className="muted">({recebido ? contagem[id] : "—"})</span>
+              </button>
+            ))}
+          </div>
+        </div>
         <div className="contratacoes-toolbar">
           <label className="search-box">
             <Search size={15} />
@@ -168,7 +209,10 @@ export default function Contratacoes() {
                 <th>Cidade</th>
                 <th>Protocolo</th>
                 <th>Pedido em</th>
-                <th>Esperando</th>
+                {aguardando ? <th>Esperando</th> : <th>Situação</th>}
+                {grupo === "cancelados" ? <th>Motivo</th> : null}
+                {!aguardando ? <th>Responsável</th> : null}
+                {!aguardando ? <th>Atualizado em</th> : null}
                 <th aria-label="Ações" />
               </tr>
             </thead>
@@ -189,11 +233,20 @@ export default function Contratacoes() {
                     <td className="mono">{i.protocolo || "—"}</td>
                     <td>{quando(i.criadoEm)}</td>
                     <td>
-                      <span className="contratacoes-espera" data-tone={tone}>
-                        <StatusDot tone={tone} />
-                        {e.label}
-                      </span>
+                      {aguardando ? (
+                        <span className="contratacoes-espera" data-tone={tone}>
+                          <StatusDot tone={tone} />
+                          {e.label}
+                        </span>
+                      ) : (
+                        <Badge tone={i.status === "cancelado" ? "crit" : i.status === "contratado" ? "ok" : "neutral"}>
+                          {STATUS_ROTULO[i.status] || i.status}
+                        </Badge>
+                      )}
                     </td>
+                    {grupo === "cancelados" ? <td className="contratacoes-motivo">{i.motivo || "Sem motivo registrado"}</td> : null}
+                    {!aguardando ? <td>{i.responsavel || "—"}</td> : null}
+                    {!aguardando ? <td>{quando(i.atualizadoEm)}</td> : null}
                     <td>
                       <button
                         type="button"
@@ -211,8 +264,8 @@ export default function Contratacoes() {
             </tbody>
           </table>
         ) : (
-          <EmptyState compact icon={ClipboardCheck} tone="ok" title={busca ? "Nenhum pedido corresponde à busca." : "Nenhum pedido aguardando atendimento."}>
-            {busca ? "" : "Novos pedidos aparecem aqui e geram uma notificação."}
+          <EmptyState compact icon={ClipboardCheck} tone="ok" title={busca ? "Nenhum pedido corresponde à busca." : vazio}>
+            {busca || !aguardando ? "" : "Novos pedidos aparecem aqui e geram uma notificação."}
           </EmptyState>
         )}
       </section>

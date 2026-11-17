@@ -16,11 +16,38 @@ export type Contratacao = {
   cidade?: string;
   criadoEm?: string;
 };
+/** Pedido que já saiu de "novo" (vem do feed "andamento" do site). */
+export type ContratacaoAndamento = Contratacao & {
+  status: string;
+  atualizadoEm?: string;
+  responsavel?: string | null;
+  /** Só nos cancelados. */
+  motivo?: string | null;
+};
+export const STATUS_ROTULO: Record<string, string> = {
+  em_analise: "Em análise",
+  em_atendimento: "Em atendimento",
+  agendado: "Agendado",
+  sem_cobertura: "Sem cobertura",
+  contratado: "Contratado",
+  cancelado: "Cancelado",
+};
+export type GrupoContratacao = "aguardando" | "atendimento" | "cancelados" | "encerrados";
+/** Mesmos status do painel do site, agrupados: Em atendimento / Cancelados / Encerrados (contratado ou sem cobertura). */
+export const grupoDoStatus = (status: string): Exclude<GrupoContratacao, "aguardando"> | null =>
+  status === "em_analise" || status === "em_atendimento" || status === "agendado"
+    ? "atendimento"
+    : status === "cancelado"
+      ? "cancelados"
+      : status === "contratado" || status === "sem_cobertura"
+        ? "encerrados"
+        : null;
 type Estado = {
   recebido: boolean;
   conectado: boolean;
   pendentes: number;
   itens: Contratacao[];
+  andamento: ContratacaoAndamento[];
   atualizadoEm: string | null;
   novos: number[];
 };
@@ -29,6 +56,7 @@ const vazio: Estado = {
   conectado: false,
   pendentes: 0,
   itens: [],
+  andamento: [],
   atualizadoEm: null,
   novos: [],
 };
@@ -55,6 +83,7 @@ export function useContratacoesFeed() {
         conectado: !!dados.conectado,
         pendentes: Math.max(0, Number(dados.pendentes) || 0),
         itens: Array.isArray(dados.itens) ? dados.itens : [],
+        andamento: Array.isArray(dados.andamento) ? dados.andamento : [],
         atualizadoEm: dados.atualizadoEm || new Date().toISOString(),
       });
     };

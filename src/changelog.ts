@@ -13,6 +13,7 @@ export const changelog: ChangelogEntry[] = [
     itens: [
       "Depois que o Workspace reinicia sozinho para atualizar, ele volta para a aba em que você estava (antes voltava sempre para o Início).",
       "Escritório: a tela não é mais recarregada nem descarregada por tempo parado (o mapa não volta do zero), e a sessão dura mais.",
+      "Contratações: novos filtros Em atendimento, Cancelados (com o motivo) e Encerrados, como no painel do site.",
     ],
   },
   {
