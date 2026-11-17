@@ -250,3 +250,11 @@ export function duracaoTexto(minutos: number) {
   const d = Math.floor(h / 24);
   return `${d} dia${d === 1 ? "" : "s"} ${h % 24} h`;
 }
+
+export interface BairroAfetado { bairro: string; cidade: string; clientes: number; semEnergia: number; loss: number; pct: number }
+export interface BairrosResposta { configurada: boolean; total: number; consultados: number; semContrato: number; semEnergia: number; loss: number; leitura: string; bairros: BairroAfetado[] }
+/** Clientes afetados de um incidente por bairro (SGP) e por estado (sem energia x LOSS). */
+export async function carregarBairros(id: string) {
+  const { data } = await clients.chat.get<BairrosResposta>(`/integrations/olt/incidentes/${encodeURIComponent(id)}/bairros`, { timeout: 90000 });
+  return data;
+}

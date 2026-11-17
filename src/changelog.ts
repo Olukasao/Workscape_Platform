@@ -14,6 +14,7 @@ export const changelog: ChangelogEntry[] = [
       "Rede (OLT): nas quedas de PON, o número de clientes afetados agora conta só quem tem contrato. Quem não tem contrato aparece como \"+N sem contrato\".",
       "Nova contratação pelo site agora aparece em um aviso verde, com o título \"NOVA CONTRATAÇÃO PELO SITE\" e o nome da pessoa.",
       "Rede: novas abas \"Sinal crítico\" (clientes com sinal fraco por PON, para visita preventiva), \"Quedas repetidas\" (clientes que caem várias vezes por dia) e \"PONs problemáticas\" (quais PONs mais caem na semana e no mês).",
+      "Em cada queda, a lista de clientes afetados agora mostra por bairro e quantos estão sem energia ou em LOSS, para separar falta de energia de problema na fibra.",
       "Quando uma queda de PON ou CTO normaliza, aparece um aviso verde \"PON X voltou\", com o tempo que ficou fora do ar.",
       "Na ficha do cliente, a conexão mostra se ele está instável (por exemplo, \"8 quedas em 24 h\") e avisa quando o sinal está crítico.",
     ],

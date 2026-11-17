@@ -8032,3 +8032,13 @@ button.tool-card {
 .rede-linha-clicavel { cursor: pointer; }
 .rede-linha-clicavel:hover { background: rgba(255, 255, 255, 0.04); }
 .rede-linha-botao { display: inline-flex; align-items: center; gap: 6px; background: none; border: 0; color: inherit; font: inherit; cursor: pointer; padding: 0; text-align: left; }
+
+/* Rede: clientes afetados por bairro */
+.rede-bairros { margin-bottom: 12px; padding: 10px 12px; border-radius: 12px; background: rgba(255, 255, 255, 0.04); }
+.rede-bairros-topo { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: 4px; font-size: var(--fs-sm); }
+.rede-bairros-leitura { margin: 2px 0 8px; font-size: var(--fs-sm); color: var(--ink-2); }
+.rede-bairros ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 5px; }
+.rede-bairros li { display: grid; grid-template-columns: minmax(110px, 200px) 1fr 34px minmax(80px, auto); align-items: center; gap: 10px; font-size: var(--fs-sm); }
+.rede-bairro-nome { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rede-bairro-n { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
+.rede-bairros .rede-barra { margin: 0; }

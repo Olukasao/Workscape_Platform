@@ -9,6 +9,7 @@ import { errorMessage } from "../services/api";
 import BotaoDestacar from "../components/BotaoDestacar";
 import { textoParaAtendimento } from "./rede/explicacao";
 import {
+  carregarBairros,
   carregarClientesAfetados,
   haQuanto,
   tipoRotulo,
@@ -50,6 +51,37 @@ function Afetados({ i }: { i: IncidenteRede }) {
   );
 }
 
+/** Onde estão os clientes afetados: por bairro e por estado. "Sem energia" aponta energia; "LOSS" aponta fibra. */
+function PorBairro({ id }: { id: string }) {
+  const q = useQuery({ queryKey: ["rede", "bairros", id], queryFn: () => carregarBairros(id), staleTime: 60000, retry: 0 });
+  if (q.isPending) return <div className="rede-bairros muted">Buscando o bairro dos clientes no SGP…</div>;
+  if (q.isError || !q.data?.configurada || !q.data.total) return null;
+  const d = q.data;
+  const maior = Math.max(1, ...d.bairros.map((b) => b.clientes));
+  return (
+    <div className="rede-bairros" aria-label="Clientes afetados por bairro">
+      <div className="rede-bairros-topo">
+        <strong>Por bairro</strong>
+        <span className="muted">
+          {d.semEnergia} sem energia · {d.loss} em LOSS (fibra){d.semContrato ? ` · ${d.semContrato} sem contrato (fora da conta)` : ""}
+        </span>
+      </div>
+      {d.leitura ? <p className="rede-bairros-leitura">{d.leitura}</p> : null}
+      <ul>
+        {d.bairros.map((b) => (
+          <li key={`${b.bairro}|${b.cidade}`}>
+            <span className="rede-bairro-nome" title={b.cidade || undefined}>{b.bairro}</span>
+            <div className="rede-barra" role="img" aria-label={`${b.clientes} clientes (${b.pct}%)`}><i style={{ width: `${Math.round((b.clientes / maior) * 100)}%` }} /></div>
+            <span className="rede-bairro-n">{b.clientes}</span>
+            <span className="muted rede-bairro-estado">{b.semEnergia ? `${b.semEnergia} s/ energia` : ""}{b.semEnergia && b.loss ? " · " : ""}{b.loss ? `${b.loss} LOSS` : ""}</span>
+          </li>
+        ))}
+      </ul>
+      {d.consultados < d.total ? <p className="muted">Bairros de {d.consultados} dos {d.total} clientes.</p> : null}
+    </div>
+  );
+}
+
 function ClientesAfetados({ id }: { id: string }) {
   const q = useQuery({ queryKey: ["rede", "clientes", id], queryFn: () => carregarClientesAfetados(id), staleTime: 20000, retry: 1 });
   const [copiado, setCopiado] = useState(false);
@@ -60,6 +92,7 @@ function ClientesAfetados({ id }: { id: string }) {
   const contratos = lista.map((c) => c.contrato).filter(Boolean).join("\n");
   return (
     <div className="rede-clientes">
+      <PorBairro id={id} />
       <div className="rede-clientes-topo">
         <span>
           {q.data.total} cliente{q.data.total === 1 ? "" : "s"} offline
