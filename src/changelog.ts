@@ -8,6 +8,13 @@ export interface ChangelogEntry {
 
 export const changelog: ChangelogEntry[] = [
   {
+    versao: "0.6.58",
+    data: "2026-11-17",
+    itens: [
+      "Corrigido de vez: ao sair da aba Navegador para qualquer outra categoria do Workspace, a página do navegador some na hora e nunca mais fica presa por cima das outras telas.",
+    ],
+  },
+  {
     versao: "0.6.57",
     data: "2026-11-17",
     itens: [

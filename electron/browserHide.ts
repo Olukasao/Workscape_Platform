@@ -27,3 +27,15 @@ export const limitarAoConteudo = (b: { x: number; y: number; width: number; heig
   const y = Math.min(Math.max(0, b.y), Math.max(0, alturaJanela));
   return { x, y, width: Math.max(0, Math.min(b.width, larguraJanela - x)), height: Math.max(0, Math.min(b.height, alturaJanela - y)) };
 };
+
+/**
+ * Rotas do Workspace (#/rota) em que existe uma página nativa por cima do app: Navegador, versão web da agenda (dentro de /agenda)
+ * e Escritório. Em qualquer outra rota nenhuma página nativa pode ficar visível: o processo principal esconde sozinho ao ver a
+ * rota mudar (não depende do pedido da tela, que pode se perder ou chegar fora de ordem).
+ */
+const ROTAS_COM_PAGINA_NATIVA = new Set(["/navegador", "/agenda", "/escritorio"]);
+export const rotaComPaginaNativa = (url: string): boolean => {
+  const hash = String(url ?? "").split("#")[1] ?? "";
+  const caminho = hash.split("?")[0].replace(/\/+$/, "") || "/";
+  return ROTAS_COM_PAGINA_NATIVA.has(caminho);
+};

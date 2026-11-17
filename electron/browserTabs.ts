@@ -1,4 +1,4 @@
-import { deveEsconder, limitarAoConteudo, sinalVencido, type EscopoEsconder } from "./browserHide";
+import { deveEsconder, limitarAoConteudo, rotaComPaginaNativa, sinalVencido, type EscopoEsconder } from "./browserHide";
 import { BrowserWindow, session, shell, WebContentsView } from "electron";
 import { agendaOrigin } from "./agendaDeployment";
 import { escritorioOrigin } from "./escritorioDeployment";
@@ -74,6 +74,32 @@ let lastBounds: Bounds | null = null;
 // Última vez que a tela pediu a página visível (show/bounds). O vigia esconde a página do Navegador se o sinal parar.
 let ultimoSinal = 0;
 let vigia: NodeJS.Timeout | undefined;
+// Rota atual de cada janela: se ela não tem página nativa, nenhuma página pode ficar visível (nem por um "mostrar" atrasado).
+const rotaPermite = new WeakMap<BrowserWindow, boolean>();
+const observadas = new WeakSet<BrowserWindow>();
+function esconderTodasDe(win: BrowserWindow) {
+  for (const [site, e] of entries) {
+    if (e.host !== win || !e.view) continue;
+    e.view.setVisible(false);
+    e.hiddenAt = Date.now();
+    if (current === site) current = null;
+  }
+}
+/** Acompanha a rota da janela: ao sair de Navegador/Agenda/Escritório, esconde a página nativa na hora. */
+function observarRota(win: BrowserWindow) {
+  if (observadas.has(win) || win.isDestroyed()) return;
+  observadas.add(win);
+  let url = "";
+  try { url = win.webContents.getURL(); } catch { /* sem URL ainda: assume que pode */ }
+  rotaPermite.set(win, url ? rotaComPaginaNativa(url) || !/#/.test(url) : true);
+  const mudou = (_e: unknown, destino: string) => {
+    const permite = rotaComPaginaNativa(destino);
+    rotaPermite.set(win, permite);
+    if (!permite) esconderTodasDe(win);
+  };
+  win.webContents.on("did-navigate-in-page", mudou as never);
+  win.webContents.on("did-navigate", mudou as never);
+}
 let sweeper: NodeJS.Timeout | undefined;
 
 export function parseWebUrl(input: string): string | null {
@@ -246,6 +272,9 @@ export function initBrowserTabs(win: BrowserWindow, getAgendaOrigin: () => strin
 
 export function showBrowser(site: BrowserSite, bounds: Bounds, host: BrowserWindow | null) {
   if (!host || host.isDestroyed()) return;
+  observarRota(host);
+  // "Mostrar" atrasado, chegando depois de a pessoa já ter saído da tela: não mostra (nunca fica solta por cima de outra tela).
+  if (rotaPermite.get(host) === false) return;
   if (current && current !== site) hideCurrent();
   // Garante que nenhuma outra página fique visível (mesmo se o controle de "página atual" tiver ficado fora de sincronia).
   for (const [outro, o] of entries) if (outro !== site && o.view) o.view.setVisible(false);

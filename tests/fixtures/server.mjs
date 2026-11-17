@@ -199,6 +199,10 @@ const apiServer = createServer(async (req, res) => {
     updateReceivedAt: new Date().toISOString(), customersReceivedAt: new Date().toISOString(), error: null,
   });
   if (p === "/api/me") return send(user);
+  // rotas que o app consulta ao abrir (sem elas as consultas voltavam vazias e a tela quebrava)
+  if (p === "/api/me/funcoes") return send({ modulos: null });
+  if (p === "/api/chamados/avaliacoes/destaques") return send({ itens: [] });
+  if (p === "/api/phone/diretorio") return send({ ramais: [] });
   if (p === "/api/profile" && req.method === "PUT") {
     const b = json();
     if (b.email) {

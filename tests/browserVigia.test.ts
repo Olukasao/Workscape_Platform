@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { LEASE_MS, limitarAoConteudo, precisaDeSinal, sinalVencido } from "../electron/browserHide";
+import { LEASE_MS, limitarAoConteudo, precisaDeSinal, rotaComPaginaNativa, sinalVencido } from "../electron/browserHide";
 
 describe("vigia da página nativa do Navegador", () => {
   it("só os sites do Navegador precisam do sinal; agenda web e Escritório não", () => {
@@ -27,5 +27,17 @@ describe("limites da página nativa", () => {
     expect(limitarAoConteudo({ x: 200, y: 80, width: 5000, height: 5000 }, 1280, 800)).toEqual({ x: 200, y: 80, width: 1080, height: 720 });
     expect(limitarAoConteudo({ x: -50, y: -10, width: 300, height: 300 }, 1280, 800)).toEqual({ x: 0, y: 0, width: 300, height: 300 });
     expect(limitarAoConteudo({ x: 2000, y: 900, width: 300, height: 300 }, 1280, 800)).toEqual({ x: 1280, y: 800, width: 0, height: 0 });
+  });
+});
+
+describe("rotas do Workspace com página nativa", () => {
+  it("só Navegador, Agenda (versão web) e Escritório", () => {
+    expect(rotaComPaginaNativa("app://workspace/index.html#/navegador")).toBe(true);
+    expect(rotaComPaginaNativa("app://workspace/index.html#/agenda?data=2026-11-17")).toBe(true);
+    expect(rotaComPaginaNativa("app://workspace/index.html#/escritorio/")).toBe(true);
+    expect(rotaComPaginaNativa("app://workspace/index.html#/chamados")).toBe(false);
+    expect(rotaComPaginaNativa("app://workspace/index.html#/rede")).toBe(false);
+    expect(rotaComPaginaNativa("app://workspace/index.html")).toBe(false);
+    expect(rotaComPaginaNativa("app://workspace/index.html#/navegadores")).toBe(false);
   });
 });
