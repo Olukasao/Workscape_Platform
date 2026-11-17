@@ -39,6 +39,7 @@ function Afetados({ i }: { i: IncidenteRede }) {
     <div className="rede-afetados">
       <strong>{ativos}</strong>
       <span>{total ? `de ${total} clientes` : "clientes afetados"}</span>
+      {i.semContrato ? <small className="muted" title="Equipamentos desta queda que não têm contrato cadastrado">+{i.semContrato} sem contrato</small> : null}
       {pct !== null ? (
         <div className="rede-barra" role="img" aria-label={`${pct}% dos clientes afetados`}>
           <i style={{ width: `${pct}%` }} />

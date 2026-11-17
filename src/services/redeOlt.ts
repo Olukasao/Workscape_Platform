@@ -14,6 +14,8 @@ export interface IncidenteRede {
   descricao: string;
   totalDispositivos: number | null;
   dispositivosAtivos: number | null;
+  /** Equipamentos que o alerta conta mas não têm contrato (não são clientes). Só vem para incidentes de PON. */
+  semContrato?: number | null;
   pon: string;
   slotPon: string;
   cto: string;

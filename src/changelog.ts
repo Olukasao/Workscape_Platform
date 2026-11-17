@@ -8,6 +8,14 @@ export interface ChangelogEntry {
 
 export const changelog: ChangelogEntry[] = [
   {
+    versao: "0.6.56",
+    data: "2026-11-17",
+    itens: [
+      "Rede (OLT): nas quedas de PON, o número de clientes afetados agora conta só quem tem contrato. Quem não tem contrato aparece como \"+N sem contrato\".",
+      "Nova contratação pelo site agora aparece em um aviso verde, com o título \"NOVA CONTRATAÇÃO PELO SITE\" e o nome da pessoa.",
+    ],
+  },
+  {
     versao: "0.6.55",
     data: "2026-11-16",
     itens: [

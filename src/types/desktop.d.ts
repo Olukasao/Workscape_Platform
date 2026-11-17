@@ -40,7 +40,7 @@ declare global {
         context?: string;
         kind?: "direct" | "group" | "system";
         avatar?: string;
-        tone?: "crit" | "warn" | "info";
+        tone?: "crit" | "warn" | "info" | "novo";
         size?: "normal" | "grande";
       }): Promise<void>;
       atendimentoEntrar?(): Promise<{ agente: { id: number; name: string; email: string; role: string } }>;

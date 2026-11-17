@@ -171,6 +171,13 @@ body { padding: 8px; }
 .toast.tom-warn .pulso { border-color: #ffb020; }
 .toast.tom-warn .context, .toast.tom-warn .tipo { color: #ffd76a; }
 .toast.tom-warn .progress { background: #ffb020; }
+/* Contratação nova pelo site: verde (cor própria, diferente de vermelho/âmbar/azul da rede). */
+.toast.tom-novo { box-shadow: 0 0 0 1px rgba(52, 211, 153, 0.6), 0 0 22px rgba(16, 185, 129, 0.3), 0 10px 26px rgba(0, 0, 0, 0.5); background: radial-gradient(90% 140% at 100% 0%, rgba(16, 185, 129, 0.3), transparent 60%), linear-gradient(160deg, #06160f, var(--navy-950)); }
+.toast.tom-novo .bar { background: linear-gradient(180deg, #10b981, #6ee7b7); }
+.toast.tom-novo .avatar { background: linear-gradient(140deg, #34d399, #047857); }
+.toast.tom-novo .pulso { border-color: #34d399; }
+.toast.tom-novo .context, .toast.tom-novo .tipo { color: #6ee7b7; }
+.toast.tom-novo .progress { background: #34d399; }
 @keyframes batida { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.08); } }
 @media (prefers-reduced-motion: reduce) { .toast.tom-crit .avatar { animation: none; } }
 

@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { create } from "zustand";
 import { socket } from "./socket";
 import { useNotices, useSession } from "../stores/workspace";
+import { textoDoAviso } from "./contratacaoAviso";
 
 // Contratações pendentes do site (acessanet.com.br). O backend do Chat Interno
 // consulta a API do site com token próprio e repassa pelo socket do chat:
@@ -62,14 +63,7 @@ export function useContratacoesFeed() {
       useContratacoes.setState((s) => ({
         novos: [...new Set([...itens.map((i) => i.id), ...s.novos])].slice(0, 50),
       }));
-      const principal = itens[0];
-      const title =
-        itens.length > 1
-          ? `${itens.length} novas contratações no site`
-          : "Nova contratação no site";
-      const body = [principal.cliente, descreverPedido(principal)]
-        .filter(Boolean)
-        .join(" — ");
+      const { title, body } = textoDoAviso(itens);
       useNotices.getState().add({
         id: `contratacao:${itens.map((i) => i.id).join(",")}`,
         title,
@@ -77,15 +71,15 @@ export function useContratacoesFeed() {
         target: "/contratacoes",
         time: new Date().toISOString(),
       });
-      if (!location.hash.startsWith("#/contratacoes") || !document.hasFocus())
-        void window.desktop?.notify({
-          title,
-          body,
-          target: "/contratacoes",
-          sender: principal.cliente || undefined,
-          context: "Contratação pelo site",
-          kind: "system",
-        });
+      // Sempre avisa (mesmo com a tela de Contratações aberta), com destaque verde como o aviso de rede tem o vermelho.
+      void window.desktop?.notify({
+        title,
+        body,
+        target: "/contratacoes",
+        context: "Contratação pelo site",
+        kind: "system",
+        tone: "novo",
+      });
     };
     socket.on("contratacoes:resumo", resumo);
     socket.on("contratacoes:novo", novo);

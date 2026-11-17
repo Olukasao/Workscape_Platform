@@ -10,8 +10,8 @@ export type ToastData = {
   context?: string;
   kind?: "direct" | "group" | "system";
   avatar?: string;
-  /** Destaque do aviso: crítico (vermelho), alerta (âmbar) ou informativo. Usado nos incidentes de rede. */
-  tone?: "crit" | "warn" | "info";
+  /** Destaque do aviso: crítico (vermelho), alerta (âmbar), informativo (azul) ou novidade boa (verde, ex.: contratação pelo site). */
+  tone?: "crit" | "warn" | "info" | "novo";
   time?: string;
   /** "grande": janela maior e letras maiores (usado nas avaliações, que precisam ser lidas de longe). */
   size?: "normal" | "grande";

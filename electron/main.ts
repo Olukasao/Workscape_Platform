@@ -891,7 +891,7 @@ async function bootstrap() {
         sender: z.string().max(120).optional(),
         context: z.string().max(120).optional(),
         kind: z.enum(["direct", "group", "system"]).optional(),
-        tone: z.enum(["crit", "warn", "info"]).optional(),
+        tone: z.enum(["crit", "warn", "info", "novo"]).optional(),
         size: z.enum(["normal", "grande"]).optional(),
         // Miniatura da foto de quem enviou, já reduzida pela interface.
         avatar: z

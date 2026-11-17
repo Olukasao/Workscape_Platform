@@ -35,7 +35,7 @@
   // Incidente de rede: ícone de alerta no lugar das iniciais, cor própria e permanência maior.
   const grande = dados.size === "grande";
   if (grande) $("toast").classList.add("grande");
-  const tom = ["crit", "warn", "info"].includes(dados.tone) ? dados.tone : "";
+  const tom = ["crit", "warn", "info", "novo"].includes(dados.tone) ? dados.tone : "";
   if (tom) {
     $("toast").classList.add(`tom-${tom}`);
     const NS = "http://www.w3.org/2000/svg";
@@ -49,7 +49,8 @@
     svg.setAttribute("stroke-linecap", "round");
     svg.setAttribute("stroke-linejoin", "round");
     const forma = document.createElementNS(NS, "path");
-    forma.setAttribute("d", "M12 3 2 20h20L12 3Zm0 6v5m0 3.5h.01");
+    // alerta (triangulo) para rede; "novo" usa o icone de cliente com mais (pessoa nova)
+    forma.setAttribute("d", tom === "novo" ? "M16 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2m6.5-10a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM19 8v6m3-3h-6" : "M12 3 2 20h20L12 3Zm0 6v5m0 3.5h.01");
     svg.appendChild(forma);
     $("avatar").textContent = "";
     $("avatar").appendChild(svg);
