@@ -8,6 +8,13 @@ export interface ChangelogEntry {
 
 export const changelog: ChangelogEntry[] = [
   {
+    versao: "0.6.60",
+    data: "2026-11-17",
+    itens: [
+      "Escritório (Workspace 3D) agora aparece no menu para quem o administrador liberar, com a equipe real.",
+    ],
+  },
+  {
     versao: "0.6.59",
     data: "2026-11-17",
     itens: [
