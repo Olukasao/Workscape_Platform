@@ -16,7 +16,7 @@ type Estado = "verificando" | "no-ar" | "fora" | "desligado";
 type Sso = { ativo: boolean; url?: string; origem?: string };
 
 // A visão nativa continua viva ao sair da aba; só pedimos bilhete novo depois de um tempo ou pelo botão Recarregar.
-const REABRIR_APOS_MS = 20 * 60_000;
+const REABRIR_APOS_MS = 12 * 3600_000; // a visão não é recarregada por tempo curto (zerava o mapa); a sessão do Escritório dura mais que isso
 let abertoEm = 0;
 
 export default function Escritorio3D() {

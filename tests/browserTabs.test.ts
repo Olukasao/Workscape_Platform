@@ -174,4 +174,18 @@ describe("página nativa do Navegador (processo principal)", () => {
     janela.irPara("/chamados");
     expect(visiveis()).toHaveLength(0);
   });
+
+  it("parado por muito tempo: os sites do Navegador são descarregados, mas o Escritório fica vivo (não zera o mapa)", () => {
+    janela.irPara("/escritorio");
+    mod.showBrowser("escritorio", limites, janela);
+    const escritorio = views[0];
+    mod.showBrowser("sgp", limites, janela); // troca: o Escritório fica escondido
+    const sgp = views[1];
+    mod.hideBrowser(janela, "navegador");
+    expect(janela.children).toContain(escritorio);
+    expect(janela.children).toContain(sgp);
+    vi.advanceTimersByTime(40 * 60_000); // passa dos 30 min de inatividade
+    expect(janela.children).toContain(escritorio);
+    expect(janela.children).not.toContain(sgp);
+  });
 });

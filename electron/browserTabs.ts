@@ -260,7 +260,8 @@ export function initBrowserTabs(win: BrowserWindow, getAgendaOrigin: () => strin
   });
   sweeper = setInterval(() => {
     for (const [site, e] of entries)
-      if (e.view && site !== current && Date.now() - e.hiddenAt > IDLE_UNLOAD_MS) unload(site);
+      // O Escritório fica vivo (descarregar zeraria o mapa e o bilhete de entrada já foi usado); os demais saem depois de um tempo parados.
+      if (e.view && site !== current && site !== "escritorio" && Date.now() - e.hiddenAt > IDLE_UNLOAD_MS) unload(site);
   }, 60_000);
   sweeper.unref();
   // Vigia: página do Navegador visível sem sinal da tela por alguns segundos = esconde (nunca deixa a pessoa presa atrás dela).

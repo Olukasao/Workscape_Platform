@@ -80,6 +80,7 @@ import NovidadeTelefone from "../components/NovidadeTelefone";
 import NovidadesVersao from "../components/NovidadesVersao";
 import AmbienteTeste from "../components/AmbienteTeste";
 import { useEscritorioDisponivel } from "../services/escritorioAcesso";
+import { CHAVE_ULTIMA_ROTA, rotaParaRestaurar, serializarRota } from "../services/ultimaRota";
 import ChamadaRecebida from "../components/ChamadaRecebida";
 import AlarmeLembretes from "../components/AlarmeLembretes";
 import TourGuiado from "../components/TourGuiado";
@@ -215,9 +216,27 @@ function Shell() {
   // Uma página nativa do Electron fica acima do React. Esta proteção no nível
   // da rota garante que ela seja escondida mesmo se o módulo que a abriu falhar.
   useEffect(() => {
-    if (path !== "/agenda" && path !== "/navegador")
+    if (path !== "/agenda" && path !== "/navegador" && path !== "/escritorio")
       void window.desktop?.browserHide?.();
   }, [path]);
+  // O app reinicia sozinho para atualizar: ao abrir no Início, volta para a tela em que a pessoa estava (até 12 h antes).
+  const restaurou = useRef(false);
+  useEffect(() => {
+    if (restaurou.current) return;
+    restaurou.current = true;
+    try {
+      const destino = rotaParaRestaurar(localStorage.getItem(CHAVE_ULTIMA_ROTA), path);
+      if (destino) navigate(destino, { replace: true });
+    } catch { /* Sem armazenamento: abre no Início. */ }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  useEffect(() => {
+    if (!restaurou.current) return;
+    try {
+      const guardada = serializarRota(path + loc.search);
+      if (guardada) localStorage.setItem(CHAVE_ULTIMA_ROTA, guardada);
+    } catch { /* Sem armazenamento. */ }
+  }, [path, loc.search]);
   const { q: rede, visiveis: redeVisiveis } = useIncidentesFiltrados();
   const agendaDestacada = useDestacada("agenda"),
     chatDestacado = useDestacada("chat"),

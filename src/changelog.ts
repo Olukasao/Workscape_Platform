@@ -8,6 +8,14 @@ export interface ChangelogEntry {
 
 export const changelog: ChangelogEntry[] = [
   {
+    versao: "0.6.61",
+    data: "2026-11-17",
+    itens: [
+      "Depois que o Workspace reinicia sozinho para atualizar, ele volta para a aba em que você estava (antes voltava sempre para o Início).",
+      "Escritório: a tela não é mais recarregada nem descarregada por tempo parado (o mapa não volta do zero), e a sessão dura mais.",
+    ],
+  },
+  {
     versao: "0.6.60",
     data: "2026-11-17",
     itens: [
