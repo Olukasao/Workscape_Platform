@@ -78,7 +78,8 @@ import TelefoneFlutuante, { TelefoneJanela } from "../components/TelefoneFlutuan
 import TelefoneMotor from "../components/TelefoneMotor";
 import NovidadeTelefone from "../components/NovidadeTelefone";
 import NovidadesVersao from "../components/NovidadesVersao";
-import AmbienteTeste, { AMBIENTE_TESTE } from "../components/AmbienteTeste";
+import AmbienteTeste from "../components/AmbienteTeste";
+import { useEscritorioDisponivel } from "../services/escritorioAcesso";
 import ChamadaRecebida from "../components/ChamadaRecebida";
 import AlarmeLembretes from "../components/AlarmeLembretes";
 import TourGuiado from "../components/TourGuiado";
@@ -205,7 +206,8 @@ function Shell() {
     [agendaVisited, setAgendaVisited] = useState(false),
     [navegadorVisited, setNavegadorVisited] = useState(false),
     [palette, setPalette] = useState(false),
-    chamadaTocando = useSobreposicao((s) => s.chamada);
+    chamadaTocando = useSobreposicao((s) => s.chamada),
+    escritorioOk = useEscritorioDisponivel();
   const { conversations, groups } = useChatData();
   const unread =
     unreadCount(conversations.data || []) + unreadCount(groups.data || []);
@@ -308,8 +310,8 @@ function Shell() {
         ...(pode("tools") ? [{ path: "/tools", label: "Ferramentas", icon: Wrench }] : []),
         ...(pode("atendimento") && window.desktop?.atendimentoEntrar ? [{ path: "/atendimento", label: "Atendimento", icon: Headset, badge: atdNaoLidas }] : []),
         ...(pode("terminal") && window.desktop ? [{ path: "/terminal", label: "Terminal", icon: SquareTerminal }] : []),
-        // Escritório 3D: por enquanto só no ambiente de testes.
-        ...(AMBIENTE_TESTE ? [{ path: "/escritorio", label: "Escritório", icon: Building2 }] : []),
+        // Escritório 3D: só para quem o servidor liberar (ESCRITORIO_USUARIOS).
+        ...(escritorioOk ? [{ path: "/escritorio", label: "Escritório", icon: Building2 }] : []),
         ...(pode("navegador") ? [{ path: "/navegador", label: "Navegador", icon: Globe }] : []),
         ...(pode("suporte") && window.desktop ? [{ path: "/suporte", label: "Suporte T.I.", icon: Headset }] : []),
       ],
@@ -442,7 +444,7 @@ function Shell() {
                     <Route path="/" element={<Home />} />
                     <Route path="/resumo" element={resumoDestacado ? <JanelaEmOutraTela kind="resumo" /> : <Resumo />} />
                     <Route path="/marketing" element={<Marketing />} />
-                    {AMBIENTE_TESTE ? <Route path="/escritorio" element={<Escritorio3D />} /> : null}
+                    {escritorioOk ? <Route path="/escritorio" element={<Escritorio3D />} /> : null}
                     <Route path="/cursos/*" element={<Cursos />} />
                     <Route path="/chamados" element={<Chamados />} />
                     <Route path="/contratacoes" element={<Contratacoes />} />
