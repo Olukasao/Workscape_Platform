@@ -4,7 +4,7 @@ import { clsx } from "clsx";
 import type { BrowserState } from "../../../electron/browserTabs";
 import { agendaSessionToken } from "../../services/api";
 import { criarRenovador, RENOVAR_A_CADA_MS } from "../../services/agendaWebSessao";
-import { useSobreposicao } from "../../services/sobreposicao";
+import { useJanelaAbertaNaTela, useSobreposicao } from "../../services/sobreposicao";
 import { JANELA_DESTACADA, destacar, podeDestacar, reintegrar } from "../../services/janelaDestacada";
 
 /**
@@ -17,7 +17,8 @@ export default function AgendaWeb({ active, onBack }: { active: boolean; onBack:
   const [aviso, setAviso] = useState("");
   const [pronta, setPronta] = useState(false);
   const paleta = useSobreposicao((s) => s.paleta || s.chamada);
-  const visible = active && !paleta && pronta;
+  const janelaAberta = useJanelaAbertaNaTela();
+  const visible = active && !paleta && !janelaAberta && pronta;
 
   const bounds = useCallback(() => {
     const r = area.current?.getBoundingClientRect();

@@ -1,4 +1,4 @@
-import { deveEsconder, type EscopoEsconder } from "./browserHide";
+import { deveEsconder, limitarAoConteudo, sinalVencido, type EscopoEsconder } from "./browserHide";
 import { BrowserWindow, session, shell, WebContentsView } from "electron";
 import { agendaOrigin } from "./agendaDeployment";
 import { escritorioOrigin } from "./escritorioDeployment";
@@ -71,6 +71,9 @@ const entries = new Map<BrowserSite, Entry>();
 let mainHost: BrowserWindow | null = null;
 let current: BrowserSite | null = null;
 let lastBounds: Bounds | null = null;
+// Última vez que a tela pediu a página visível (show/bounds). O vigia esconde a página do Navegador se o sinal parar.
+let ultimoSinal = 0;
+let vigia: NodeJS.Timeout | undefined;
 let sweeper: NodeJS.Timeout | undefined;
 
 export function parseWebUrl(input: string): string | null {
@@ -119,12 +122,14 @@ function applyBounds(site: BrowserSite) {
   if (!host || host.isDestroyed() || !e?.view || !lastBounds) return;
   // As medidas vêm em pixels CSS; com zoom do aplicativo precisam virar pixels da janela.
   const z = host.webContents.getZoomFactor();
-  e.view.setBounds({
-    x: Math.round(lastBounds.x * z),
-    y: Math.round(lastBounds.y * z),
-    width: Math.max(0, Math.round(lastBounds.width * z)),
-    height: Math.max(0, Math.round(lastBounds.height * z)),
-  });
+  const [largura, altura] = host.getContentSize();
+  e.view.setBounds(
+    limitarAoConteudo(
+      { x: Math.round(lastBounds.x * z), y: Math.round(lastBounds.y * z), width: Math.round(lastBounds.width * z), height: Math.round(lastBounds.height * z) },
+      largura,
+      altura,
+    ),
+  );
 }
 function stepZoom(site: BrowserSite, dir: "in" | "out" | "reset") {
   const e = entries.get(site);
@@ -232,13 +237,21 @@ export function initBrowserTabs(win: BrowserWindow, getAgendaOrigin: () => strin
       if (e.view && site !== current && Date.now() - e.hiddenAt > IDLE_UNLOAD_MS) unload(site);
   }, 60_000);
   sweeper.unref();
+  // Vigia: página do Navegador visível sem sinal da tela por alguns segundos = esconde (nunca deixa a pessoa presa atrás dela).
+  vigia ??= setInterval(() => {
+    if (current && sinalVencido(current, Date.now(), ultimoSinal)) hideCurrent();
+  }, 1000);
+  vigia.unref();
 }
 
 export function showBrowser(site: BrowserSite, bounds: Bounds, host: BrowserWindow | null) {
   if (!host || host.isDestroyed()) return;
   if (current && current !== site) hideCurrent();
+  // Garante que nenhuma outra página fique visível (mesmo se o controle de "página atual" tiver ficado fora de sincronia).
+  for (const [outro, o] of entries) if (outro !== site && o.view) o.view.setVisible(false);
   current = site;
   lastBounds = bounds;
+  ultimoSinal = Date.now();
   const e = entry(site);
   let view = e.view;
   if (!view) view = create(site, host);
@@ -255,6 +268,7 @@ export function showBrowser(site: BrowserSite, bounds: Bounds, host: BrowserWind
 export function updateBrowserBounds(bounds: Bounds, host: BrowserWindow | null) {
   if (!current || entries.get(current)?.host !== host) return;
   lastBounds = bounds;
+  ultimoSinal = Date.now();
   applyBounds(current);
 }
 function hideCurrent() {
@@ -311,6 +325,8 @@ export function browserOpenUrl(site: BrowserSite, url: string) {
   if (wc && !wc.isDestroyed()) void wc.loadURL(url).catch(() => undefined);
 }
 export function closeBrowserTabs() {
+  if (vigia) clearInterval(vigia);
+  vigia = undefined;
   if (sweeper) clearInterval(sweeper);
   for (const site of [...entries.keys()]) unload(site);
 }

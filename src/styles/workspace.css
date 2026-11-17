@@ -8042,3 +8042,12 @@ button.tool-card {
 .rede-bairro-nome { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .rede-bairro-n { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
 .rede-bairros .rede-barra { margin: 0; }
+
+/* Rede: mapa da queda */
+.rede-mapa-bloco { margin-bottom: 10px; }
+.rede-mapa-topo { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; font-size: var(--fs-sm); }
+.rede-mapa-sat { display: inline-flex; align-items: center; gap: 6px; margin-left: auto; cursor: pointer; }
+.rede-mapa { height: 340px; margin-top: 8px; border-radius: 12px; overflow: hidden; border: 1px solid var(--line); }
+.rede-mapa-legenda { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 6px; font-size: var(--fs-sm); color: var(--ink-2); }
+.rede-mapa-legenda i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 5px; vertical-align: -1px; border: 1px solid rgba(0, 0, 0, 0.4); }
+.rede-mapa-legenda i.cto { background: #8aa0b8; width: 7px; height: 7px; }

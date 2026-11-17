@@ -252,9 +252,16 @@ export function duracaoTexto(minutos: number) {
 }
 
 export interface BairroAfetado { bairro: string; cidade: string; clientes: number; semEnergia: number; loss: number; pct: number }
-export interface BairrosResposta { configurada: boolean; total: number; consultados: number; semContrato: number; semEnergia: number; loss: number; leitura: string; bairros: BairroAfetado[] }
+export interface PontoAfetado { lat: number; lng: number; estado: "semEnergia" | "loss"; bairro: string }
+export interface CtoMapa { lat: number; lng: number; portas: number | null }
+export interface BairrosResposta { configurada: boolean; total: number; consultados: number; semContrato: number; semEnergia: number; loss: number; leitura: string; bairros: BairroAfetado[]; pontos: PontoAfetado[]; ctos: CtoMapa[] }
 /** Clientes afetados de um incidente por bairro (SGP) e por estado (sem energia x LOSS). */
 export async function carregarBairros(id: string) {
   const { data } = await clients.chat.get<BairrosResposta>(`/integrations/olt/incidentes/${encodeURIComponent(id)}/bairros`, { timeout: 90000 });
   return data;
 }
+
+// ---- ONUs instaladas esperando autorização na OLT ----
+export interface OnuNaoAutorizada { serie: string; modelo: string; olt: string; oltId: string; slot: string; pon: string; temCliente: boolean; vistoDesde: string }
+export interface NaoAutorizadasResposta { configurada: boolean; atualizadoEm?: string; total?: number; itens?: OnuNaoAutorizada[] }
+export const useNaoAutorizadas = (habilitado: boolean) => useAnalise<NaoAutorizadasResposta>("nao-autorizadas", "/integrations/olt/nao-autorizadas", habilitado);

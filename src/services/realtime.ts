@@ -158,6 +158,17 @@ export function useRealtime() {
       useNotices.getState().add({ id: `olt:voltou:${i.id}`, title, body, target: "/rede", time: new Date().toISOString() });
       void window.desktop?.notify({ title, body, target: "/rede", kind: "system", context: "Rede · OLT", tone: "novo" });
     };
+    // ONU instalada esperando autorização na OLT: aviso âmbar para quem acompanha a rede.
+    const onuNaoAutorizada = ({ itens = [], total = itens.length }: { itens?: { serie: string; modelo?: string; olt?: string; slot?: string; pon?: string }[]; total?: number } = {}) => {
+      if (!itens.length) return;
+      void query.invalidateQueries({ queryKey: ["rede", "nao-autorizadas"] });
+      const o = itens[0];
+      const local = [o.olt, o.slot && o.pon ? `slot ${o.slot} · PON ${o.pon}` : ""].filter(Boolean).join(" · ") || "OLT não informada";
+      const title = total > 1 ? `${total} ONUs aguardando autorização` : "ONU aguardando autorização";
+      const body = `${local} — ${[o.modelo, o.serie].filter(Boolean).join(" ")}${total > 1 ? ` (+${total - 1})` : ""}`.slice(0, 480);
+      useNotices.getState().add({ id: `olt:autorizar:${itens.map((i) => i.serie).join(",")}`, title, body, target: "/rede", time: new Date().toISOString() });
+      void window.desktop?.notify({ title, body, target: "/rede", kind: "system", context: "Rede · ONU nova", tone: "warn" });
+    };
     const onDisconnect = () =>
       setStatus(navigator.onLine ? "Reconectando…" : "Sem conexão");
     const onError = (e: Error) => {
@@ -229,6 +240,7 @@ export function useRealtime() {
       .on("receive_group_message", group)
       .on("olt_incidente_novo", incidenteNovo)
       .on("olt_incidente_normalizado", incidenteNormalizado)
+      .on("olt_onu_nao_autorizada", onuNaoAutorizada)
       .on("olt_evento_massa", eventoMassa)
       .on("escritorio_ligar", ligarDoMapa);
     const events = [
@@ -261,6 +273,7 @@ export function useRealtime() {
         .off("receive_group_message", group)
         .off("olt_incidente_novo", incidenteNovo)
         .off("olt_incidente_normalizado", incidenteNormalizado)
+        .off("olt_onu_nao_autorizada", onuNaoAutorizada)
         .off("olt_evento_massa", eventoMassa)
         .off("escritorio_ligar", ligarDoMapa);
       events.forEach((e) => socket.off(e, invalidate));

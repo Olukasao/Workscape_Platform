@@ -8,6 +8,15 @@ export interface ChangelogEntry {
 
 export const changelog: ChangelogEntry[] = [
   {
+    versao: "0.6.57",
+    data: "2026-11-17",
+    itens: [
+      "Corrigido: o Navegador (e a agenda web) podia ficar por cima de tudo, sem como fechar. Agora ele sai da frente sozinho quando aparece qualquer janela ou aviso (alarme de lembrete, atualização, telefone, assistente) e some em poucos segundos se algo travar.",
+      "Rede: na lista de clientes afetados de uma queda, o botão \"Ver no mapa\" mostra onde estão os clientes (sem energia em âmbar, LOSS em vermelho) e as CTOs da região.",
+      "Rede: nova aba \"A autorizar\" e aviso quando uma ONU instalada está esperando autorização na OLT.",
+    ],
+  },
+  {
     versao: "0.6.56",
     data: "2026-11-17",
     itens: [

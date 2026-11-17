@@ -5,6 +5,7 @@ import { clsx } from "clsx";
 import { Button } from "../components/ui/button";
 import { Badge, EmptyState, PageHeader, Segmented, Skeleton, type Tone } from "../components/ui/primitives";
 import Analises, { ABAS_REDE, type AbaRede } from "./rede/Analises";
+import MapaQueda from "./rede/MapaQueda";
 import { errorMessage } from "../services/api";
 import BotaoDestacar from "../components/BotaoDestacar";
 import { textoParaAtendimento } from "./rede/explicacao";
@@ -60,6 +61,7 @@ function PorBairro({ id }: { id: string }) {
   const maior = Math.max(1, ...d.bairros.map((b) => b.clientes));
   return (
     <div className="rede-bairros" aria-label="Clientes afetados por bairro">
+      {d.pontos?.length ? <MapaQueda pontos={d.pontos} ctos={d.ctos ?? []} total={d.total} /> : null}
       <div className="rede-bairros-topo">
         <strong>Por bairro</strong>
         <span className="muted">

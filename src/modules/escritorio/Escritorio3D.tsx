@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Building2, ExternalLink, RefreshCw } from "lucide-react";
 import { api } from "../../services/api";
 import { PageHeader } from "../../components/ui/primitives";
-import { useSobreposicao } from "../../services/sobreposicao";
+import { useJanelaAbertaNaTela, useSobreposicao } from "../../services/sobreposicao";
 import "./escritorio.css";
 
 /**
@@ -26,7 +26,8 @@ export default function Escritorio3D() {
   const [destino, setDestino] = useState<{ url: string; origem: string } | null>(null);
   const [versao, setVersao] = useState(0);
   const [pronta, setPronta] = useState(false);
-  const coberta = useSobreposicao((s) => s.paleta || s.chamada);
+  const janelaAberta = useJanelaAbertaNaTela();
+  const coberta = useSobreposicao((s) => s.paleta || s.chamada) || janelaAberta;
 
   const abrir = useCallback(async () => {
     setEstado("verificando");

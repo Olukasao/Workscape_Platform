@@ -11,3 +11,19 @@ export const deveEsconder = (atual: string | null, somente?: EscopoEsconder): bo
   if (somente === "navegador") return atual !== "agendaweb" && atual !== "escritorio";
   return true;
 };
+
+/**
+ * Vigia da página nativa do Navegador: enquanto a tela quer a página visível ela avisa a cada segundo (browser:show).
+ * Se o aviso para por mais que `LEASE_MS`, a página é escondida sozinha, mesmo que o pedido de esconder tenha se perdido.
+ * A agenda web e o Escritório não enviam o sinal (não entram no vigia).
+ */
+export const LEASE_MS = 4000;
+export const precisaDeSinal = (site: string | null) => site !== null && site !== "agendaweb" && site !== "escritorio";
+export const sinalVencido = (site: string | null, agora: number, ultimoSinal: number, ttl = LEASE_MS) => precisaDeSinal(site) && agora - ultimoSinal > ttl;
+
+/** A página nativa nunca passa da área de conteúdo da janela (medida errada não pode cobrir o app inteiro nem sair da tela). */
+export const limitarAoConteudo = (b: { x: number; y: number; width: number; height: number }, larguraJanela: number, alturaJanela: number) => {
+  const x = Math.min(Math.max(0, b.x), Math.max(0, larguraJanela));
+  const y = Math.min(Math.max(0, b.y), Math.max(0, alturaJanela));
+  return { x, y, width: Math.max(0, Math.min(b.width, larguraJanela - x)), height: Math.max(0, Math.min(b.height, alturaJanela - y)) };
+};

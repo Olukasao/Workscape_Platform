@@ -7,6 +7,7 @@ import { errorMessage } from "../../services/api";
 import {
   duracaoTexto,
   useInstaveis,
+  useNaoAutorizadas,
   useNomesClientes,
   useRankingPons,
   useSinalCritico,
@@ -16,12 +17,13 @@ import {
 } from "../../services/redeOlt";
 import { Activity, ShieldAlert } from "lucide-react";
 
-export type AbaRede = "incidentes" | "sinal" | "instaveis" | "pons";
+export type AbaRede = "incidentes" | "sinal" | "instaveis" | "pons" | "autorizar";
 export const ABAS_REDE: readonly (readonly [AbaRede, string])[] = [
   ["incidentes", "Incidentes"],
   ["sinal", "Sinal crítico"],
   ["instaveis", "Quedas repetidas"],
   ["pons", "PONs problemáticas"],
+  ["autorizar", "A autorizar"],
 ];
 
 const dbmTexto = (v: number | null) => (v === null ? "—" : `${v.toFixed(1).replace(".", ",")} dBm`);
@@ -257,6 +259,48 @@ function PainelPons() {
   );
 }
 
+function PainelAutorizar() {
+  const q = useNaoAutorizadas(true);
+  if (q.isPending) return <Carregando texto="Consultando as OLTs…" />;
+  if (q.isError) return <Falha erro={q.error} refazer={() => void q.refetch()} />;
+  const d = q.data;
+  if (!d.configurada) return <EmptyState icon={ShieldAlert} tone="warn" title="OLT Cloud ainda não configurada">O servidor do Chat precisa das credenciais da OLT Cloud.</EmptyState>;
+  const lista = d.itens ?? [];
+  return (
+    <section className="rede-analise" aria-label="ONUs aguardando autorização">
+      <div className="rede-analise-topo">
+        <span className="muted">
+          {lista.length} ONU{lista.length === 1 ? "" : "s"} aguardando autorização
+          {d.atualizadoEm ? ` · lido às ${horaCurta(d.atualizadoEm)}` : ""}
+        </span>
+        <Button variant="outline" size="sm" disabled={q.isFetching} onClick={() => void q.refetch()}>
+          <RefreshCw size={15} className={clsx(q.isFetching && "girando")} /> Atualizar
+        </Button>
+      </div>
+      <p className="muted rede-nota">Equipamentos que o técnico já ligou na fibra e que ainda precisam ser liberados na OLT. Você recebe um aviso quando aparece uma nova. Esta tela só mostra: a autorização é feita na OLT Cloud.</p>
+      {!lista.length ? (
+        <EmptyState icon={Activity} tone="ok" title="Nenhuma ONU esperando">Todas as ONUs ligadas já foram autorizadas.</EmptyState>
+      ) : (
+        <div className="panel">
+          <table className="rede-tabela">
+            <thead><tr><th>OLT · slot/PON</th><th>Série da ONU</th><th>Modelo</th><th>Aguardando desde</th></tr></thead>
+            <tbody>
+              {lista.map((o) => (
+                <tr key={o.serie}>
+                  <td>{local(o.olt, o.slot, o.pon)}</td>
+                  <td>{o.serie}</td>
+                  <td>{o.modelo || "—"}</td>
+                  <td>{o.vistoDesde ? dataHora(o.vistoDesde) : "—"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </section>
+  );
+}
+
 export default function Analises({ aba }: { aba: Exclude<AbaRede, "incidentes"> }) {
-  return aba === "sinal" ? <PainelSinal /> : aba === "instaveis" ? <PainelInstaveis /> : <PainelPons />;
+  return aba === "sinal" ? <PainelSinal /> : aba === "instaveis" ? <PainelInstaveis /> : aba === "autorizar" ? <PainelAutorizar /> : <PainelPons />;
 }

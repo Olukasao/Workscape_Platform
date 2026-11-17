@@ -6,6 +6,7 @@ import { api } from "../services/api";
 import type { BrowserSite, BrowserState } from "../../electron/browserTabs";
 import { EVENTO_SITE_NAVEGADOR } from "../services/navegadorInterno";
 import { JANELA_DESTACADA, destacar, reintegrar, podeDestacar } from "../services/janelaDestacada";
+import { useJanelaAbertaNaTela } from "../services/sobreposicao";
 
 // Quais sites aparecem vem do servidor (Admin > Navegador): cada setor vê os que o administrador liberou. Os endereços dos
 // sites padrão ficam no processo principal; os extras seguem do servidor e são revalidados lá.
@@ -57,7 +58,9 @@ export default function Navegador({ active, paused }: { active: boolean; paused:
     return () => window.removeEventListener(EVENTO_SITE_NAVEGADOR, trocar);
   }, []);
   const state = states[site];
-  const visible = active && !paused && pronto && SITES.length > 0;
+  // A página nativa fica por cima de tudo: se há janela/aviso/alarme aberto, ela sai da frente (senão o botão de fechar some atrás dela).
+  const janelaAberta = useJanelaAbertaNaTela();
+  const visible = active && !paused && !janelaAberta && pronto && SITES.length > 0;
 
   const bounds = useCallback(() => {
     const r = area.current?.getBoundingClientRect();
@@ -87,7 +90,14 @@ export default function Navegador({ active, paused }: { active: boolean; paused:
       if (next) void desktop.browserBounds(next);
     };
     window.addEventListener("resize", onResize);
+    // Sinal de vida: enquanto a tela quer a página visível, avisa a cada segundo. Se o sinal parar (tela travou, aviso por cima,
+    // pedido de esconder perdido), o processo principal esconde a página sozinho em poucos segundos.
+    const sinal = setInterval(() => {
+      const next = bounds();
+      if (next) void desktop.browserShow({ site, bounds: next });
+    }, 1000);
     return () => {
+      clearInterval(sinal);
       observer.disconnect();
       window.removeEventListener("resize", onResize);
     };
