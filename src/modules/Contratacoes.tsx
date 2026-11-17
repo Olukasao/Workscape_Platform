@@ -244,7 +244,7 @@ export default function Contratacoes() {
                         </Badge>
                       )}
                     </td>
-                    {grupo === "cancelados" ? <td className="contratacoes-motivo">{i.motivo || "Sem motivo registrado"}</td> : null}
+                    {grupo === "cancelados" ? <td className="contratacoes-motivo"><span title={i.motivo || undefined}>{i.motivo || "Sem motivo registrado"}</span></td> : null}
                     {!aguardando ? <td>{i.responsavel || "—"}</td> : null}
                     {!aguardando ? <td>{quando(i.atualizadoEm)}</td> : null}
                     <td>
