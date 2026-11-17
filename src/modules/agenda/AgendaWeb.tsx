@@ -5,6 +5,7 @@ import type { BrowserState } from "../../../electron/browserTabs";
 import { agendaSessionToken } from "../../services/api";
 import { criarRenovador, RENOVAR_A_CADA_MS } from "../../services/agendaWebSessao";
 import { useJanelaAbertaNaTela, useSobreposicao } from "../../services/sobreposicao";
+import { medirAreaLivre } from "../../services/areaLivre";
 import { JANELA_DESTACADA, destacar, podeDestacar, reintegrar } from "../../services/janelaDestacada";
 
 /**
@@ -16,14 +17,11 @@ export default function AgendaWeb({ active, onBack }: { active: boolean; onBack:
   const [state, setState] = useState<BrowserState | null>(null);
   const [aviso, setAviso] = useState("");
   const [pronta, setPronta] = useState(false);
-  const paleta = useSobreposicao((s) => s.paleta || s.chamada);
+  const paleta = useSobreposicao((s) => s.paleta);
   const janelaAberta = useJanelaAbertaNaTela();
   const visible = active && !paleta && !janelaAberta && pronta;
 
-  const bounds = useCallback(() => {
-    const r = area.current?.getBoundingClientRect();
-    return r ? { x: r.x, y: r.y, width: r.width, height: r.height } : null;
-  }, []);
+  const bounds = useCallback(() => medirAreaLivre(area.current), []);
 
   useEffect(() => window.desktop?.onBrowserState((s) => s.site === "agendaweb" && setState(s)), []);
 
@@ -68,7 +66,10 @@ export default function AgendaWeb({ active, onBack }: { active: boolean; onBack:
     const observer = new ResizeObserver(sync);
     observer.observe(el);
     window.addEventListener("resize", sync);
+    // desvia do painel do telefone mesmo quando ele é arrastado
+    const acompanhar = setInterval(sync, 200);
     return () => {
+      clearInterval(acompanhar);
       observer.disconnect();
       window.removeEventListener("resize", sync);
     };

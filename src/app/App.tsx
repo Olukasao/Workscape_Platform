@@ -510,7 +510,7 @@ function Shell() {
                     {navegadorDestacado ? (
                       <JanelaEmOutraTela kind="navegador" />
                     ) : (
-                      <Navegador active={path === "/navegador"} paused={palette || chamadaTocando} />
+                      <Navegador active={path === "/navegador"} paused={palette} />
                     )}
                   </div>
                 )}

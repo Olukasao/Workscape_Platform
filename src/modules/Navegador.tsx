@@ -7,6 +7,7 @@ import type { BrowserSite, BrowserState } from "../../electron/browserTabs";
 import { EVENTO_SITE_NAVEGADOR } from "../services/navegadorInterno";
 import { JANELA_DESTACADA, destacar, reintegrar, podeDestacar } from "../services/janelaDestacada";
 import { useJanelaAbertaNaTela } from "../services/sobreposicao";
+import { medirAreaLivre } from "../services/areaLivre";
 
 // Quais sites aparecem vem do servidor (Admin > Navegador): cada setor vê os que o administrador liberou. Os endereços dos
 // sites padrão ficam no processo principal; os extras seguem do servidor e são revalidados lá.
@@ -62,10 +63,8 @@ export default function Navegador({ active, paused }: { active: boolean; paused:
   const janelaAberta = useJanelaAbertaNaTela();
   const visible = active && !paused && !janelaAberta && pronto && SITES.length > 0;
 
-  const bounds = useCallback(() => {
-    const r = area.current?.getBoundingClientRect();
-    return r ? { x: r.x, y: r.y, width: r.width, height: r.height } : null;
-  }, []);
+  // A página nativa desvia do telefone, do aviso de chamada e do assistente (ficam visíveis por cima do atendimento).
+  const bounds = useCallback(() => medirAreaLivre(area.current), []);
 
   useEffect(() => window.desktop?.onBrowserState((s) => setStates((p) => ({ ...p, [s.site]: s }))), []);
 
@@ -92,10 +91,16 @@ export default function Navegador({ active, paused }: { active: boolean; paused:
     window.addEventListener("resize", onResize);
     // Sinal de vida: enquanto a tela quer a página visível, avisa a cada segundo. Se o sinal parar (tela travou, aviso por cima,
     // pedido de esconder perdido), o processo principal esconde a página sozinho em poucos segundos.
+    let ultimo = JSON.stringify(b);
+    let tique = 0;
     const sinal = setInterval(() => {
       const next = bounds();
-      if (next) void desktop.browserShow({ site, bounds: next });
-    }, 1000);
+      if (!next) return;
+      // acompanha o painel do telefone sendo arrastado (a cada ~150 ms só envia se mudou) e renova o sinal de vida a cada ~1 s
+      const chave = JSON.stringify(next);
+      if (chave !== ultimo) { ultimo = chave; void desktop.browserBounds(next); }
+      if (++tique % 7 === 0) void desktop.browserShow({ site, bounds: next });
+    }, 150);
     return () => {
       clearInterval(sinal);
       observer.disconnect();

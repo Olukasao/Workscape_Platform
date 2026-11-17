@@ -8,6 +8,13 @@ export interface ChangelogEntry {
 
 export const changelog: ChangelogEntry[] = [
   {
+    versao: "0.6.59",
+    data: "2026-11-17",
+    itens: [
+      "Telefone e Navegador agora funcionam juntos: o painel do telefone, o aviso de chamada recebida e o assistente ficam por cima, e a página do atendimento (Navegador e agenda web) encolhe para abrir espaço, acompanhando quando você arrasta o painel.",
+    ],
+  },
+  {
     versao: "0.6.58",
     data: "2026-11-17",
     itens: [

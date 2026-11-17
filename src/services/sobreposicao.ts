@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { create } from "zustand";
+import { SELETOR_FLUTUANTES } from "./areaLivre";
 
 /** Camadas do app que precisam ficar acima das páginas nativas (Navegador, versão web da agenda). */
 export const useSobreposicao = create<{ paleta: boolean; setPaleta: (aberta: boolean) => void; chamada: boolean; setChamada: (tocando: boolean) => void }>((set) => ({
@@ -13,6 +14,8 @@ export const useSobreposicao = create<{ paleta: boolean; setPaleta: (aberta: boo
 const SELETOR_JANELA = '[aria-modal="true"], [role="dialog"], [role="alertdialog"]';
 const aparece = (el: Element) => {
   const h = el as HTMLElement;
+  // Telefone, aviso de chamada e assistente flutuam por cima: a página nativa desvia deles em vez de sair da frente.
+  if (h.closest(SELETOR_FLUTUANTES)) return false;
   return h.getClientRects().length > 0 && getComputedStyle(h).visibility !== "hidden" && !h.hidden && h.getAttribute("aria-hidden") !== "true";
 };
 
