@@ -145,6 +145,19 @@ export function useRealtime() {
       useNotices.getState().add({ id: `olt:${i.id}`, title: `${titulo} na OLT Cloud`, body, target: "/rede", time: new Date().toISOString() });
       void window.desktop?.notify({ title: titulo.slice(0, 120), body, target: "/rede", kind: "system", context: "Rede · OLT", tone: (({ pon_loss: "crit", pon_down: "crit", pon_no_power: "warn", cto_loss: "warn" } as Record<string, "crit" | "warn">)[i.tipo ?? ""]) ?? "info" });
     };
+    // Queda normalizada: aviso verde "PON X voltou", com a duração total.
+    const incidenteNormalizado = (i: { id?: string; tipo?: string; olt?: string; pon?: string; slotPon?: string; cto?: string; dispositivosAtivos?: number | null; duracaoMs?: number }) => {
+      void query.invalidateQueries({ queryKey: ["rede"] });
+      const minutos = Math.max(0, Math.round((i.duracaoMs ?? 0) / 60000));
+      const durou = minutos < 60 ? `${minutos} min` : `${Math.floor(minutos / 60)} h ${String(minutos % 60).padStart(2, "0")} min`;
+      const alvo = i.tipo?.startsWith("cto") ? (i.cto || "CTO") : i.pon ? `PON ${i.pon}` : "Rede";
+      const local = [i.olt, i.slotPon ? `slot ${i.slotPon}` : "", i.pon ? `PON ${i.pon}` : "", i.cto].filter(Boolean).join(" · ") || "local não informado";
+      const clientes = typeof i.dispositivosAtivos === "number" && i.dispositivosAtivos > 0 ? ` · ${i.dispositivosAtivos} cliente${i.dispositivosAtivos === 1 ? "" : "s"} afetado${i.dispositivosAtivos === 1 ? "" : "s"}` : "";
+      const title = `${alvo} voltou`.slice(0, 120);
+      const body = `${local} — ficou ${durou} fora${clientes}`.slice(0, 480);
+      useNotices.getState().add({ id: `olt:voltou:${i.id}`, title, body, target: "/rede", time: new Date().toISOString() });
+      void window.desktop?.notify({ title, body, target: "/rede", kind: "system", context: "Rede · OLT", tone: "novo" });
+    };
     const onDisconnect = () =>
       setStatus(navigator.onLine ? "Reconectando…" : "Sem conexão");
     const onError = (e: Error) => {
@@ -215,6 +228,7 @@ export function useRealtime() {
       .on("new_direct_message_notification", direct)
       .on("receive_group_message", group)
       .on("olt_incidente_novo", incidenteNovo)
+      .on("olt_incidente_normalizado", incidenteNormalizado)
       .on("olt_evento_massa", eventoMassa)
       .on("escritorio_ligar", ligarDoMapa);
     const events = [
@@ -246,6 +260,7 @@ export function useRealtime() {
         .off("new_direct_message_notification", direct)
         .off("receive_group_message", group)
         .off("olt_incidente_novo", incidenteNovo)
+        .off("olt_incidente_normalizado", incidenteNormalizado)
         .off("olt_evento_massa", eventoMassa)
         .off("escritorio_ligar", ligarDoMapa);
       events.forEach((e) => socket.off(e, invalidate));

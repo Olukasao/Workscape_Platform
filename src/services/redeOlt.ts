@@ -187,3 +187,66 @@ export function useIncidentesFiltrados() {
     ignorados: lista.filter((i) => ids.includes(i.id)),
   };
 }
+
+// ---- análises: sinal crítico, quedas repetidas, ranking de PONs e estabilidade do contrato ----
+export interface ClienteSinal { contrato: string; serie: string; rxOnu: number | null; rxOlt: number | null }
+export interface PonSinal { olt: string; slot: string; pon: string; total: number; avisos: number; criticos: number; pctCriticos: number; clientes: ClienteSinal[] }
+export interface SinalResposta { configurada: boolean; atualizadoEm?: string; limite?: number; totalClientes?: number; totalPons?: number; pons?: PonSinal[] }
+export interface ClienteInstavel { contrato: string; serie: string; olt: string; slot: string; pon: string; status: string; rxOnu: number | null; quedas24h: number; quedas7d: number; ultimas: string[] }
+export interface InstaveisResposta { configurada: boolean; atualizadoEm?: string; verificados?: number; minimoQuedas?: number; clientes?: ClienteInstavel[] }
+export interface ResumoQuedas { quedas: number; minutos: number; maxAfetados: number }
+export interface PonRanking { chave: string; olt: string; slotPon: string; pon: string; semana: ResumoQuedas; mes: ResumoQuedas; ultima: string }
+export interface RankingResposta { configurada: boolean; atualizadoEm?: string; cobreDesde?: string; semana?: PonRanking[]; mes?: PonRanking[] }
+
+// A primeira leitura dos 10 mil equipamentos leva ~20 s: prazo maior que o padrão.
+const LONGO = { timeout: 90000 };
+function useAnalise<T>(chave: string, caminho: string, habilitado: boolean, extra: Record<string, unknown> = {}) {
+  const user = useSession((s) => s.user);
+  return useQuery({
+    queryKey: ["rede", chave, user?.id, extra],
+    enabled: !!user && habilitado,
+    staleTime: 60000,
+    refetchInterval: 5 * 60000,
+    retry: 1,
+    queryFn: async () => (await clients.chat.get<T>(caminho, { ...LONGO, params: extra })).data,
+  });
+}
+export const useSinalCritico = (dbm: number, habilitado: boolean) => useAnalise<SinalResposta>("sinal", "/integrations/olt/sinal", habilitado, { dbm });
+export const useInstaveis = (habilitado: boolean) => useAnalise<InstaveisResposta>("instaveis", "/integrations/olt/instaveis", habilitado);
+export const useRankingPons = (habilitado: boolean) => useAnalise<RankingResposta>("ranking", "/integrations/olt/ranking", habilitado);
+
+/** Nomes dos clientes (SGP) de uma lista de contratos, sob demanda. */
+export function useNomesClientes(contratos: string[]) {
+  const lista = [...new Set(contratos.filter(Boolean))].slice(0, 60);
+  return useQuery({
+    queryKey: ["rede", "nomes", lista.join(",")],
+    enabled: lista.length > 0,
+    staleTime: 10 * 60000,
+    retry: 0,
+    queryFn: async () => (await clients.chat.get<{ nomes: Record<string, string> }>("/integrations/olt/nomes", { timeout: 60000, params: { contratos: lista.join(",") } })).data.nomes,
+  });
+}
+
+export interface EstabilidadeEquipamento { serie: string; status: string; olt: string; slot: string; pon: string; rxOnu: number | null; rxOlt: number | null; sinal: "ok" | "fraco" | "critico" | "sem_leitura"; quedas24h: number; quedas7d: number; ultimas: string[] }
+export interface EstabilidadeResposta { configurada: boolean; encontrado?: boolean; contrato?: string; instavel?: boolean; equipamentos?: EstabilidadeEquipamento[] }
+/** Quedas das últimas 24 h / 7 dias e sinal do contrato (ficha do cliente). */
+export function useEstabilidade(contrato: string | undefined) {
+  const user = useSession((s) => s.user);
+  return useQuery({
+    queryKey: ["rede", "estabilidade", user?.id, contrato],
+    enabled: !!user && !!contrato,
+    staleTime: 2 * 60000,
+    retry: 0,
+    queryFn: async () => (await clients.chat.get<EstabilidadeResposta>(`/integrations/olt/clientes/${encodeURIComponent(contrato!)}/estabilidade`, { timeout: 30000 })).data,
+  });
+}
+
+/** "45 min", "3 h 05 min", "2 dias 4 h". */
+export function duracaoTexto(minutos: number) {
+  const m = Math.max(0, Math.round(minutos));
+  if (m < 60) return `${m} min`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h} h ${String(m % 60).padStart(2, "0")} min`;
+  const d = Math.floor(h / 24);
+  return `${d} dia${d === 1 ? "" : "s"} ${h % 24} h`;
+}

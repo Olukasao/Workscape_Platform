@@ -8022,3 +8022,13 @@ button.tool-card {
   color: var(--primary-text);
   border-top-right-radius: 4px;
 }
+
+/* Rede: abas de análise (sinal crítico, quedas repetidas, PONs problemáticas) */
+.rede-abas { margin: 0 0 14px; }
+.rede-analise { display: flex; flex-direction: column; gap: 10px; }
+.rede-analise-topo { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; }
+.rede-analise-topo select { margin-left: 4px; padding: 4px 8px; border-radius: 8px; background: var(--surface-2, rgba(255,255,255,0.06)); color: inherit; border: 1px solid var(--line); }
+.rede-nota { margin: 0; font-size: var(--fs-sm); }
+.rede-linha-clicavel { cursor: pointer; }
+.rede-linha-clicavel:hover { background: rgba(255, 255, 255, 0.04); }
+.rede-linha-botao { display: inline-flex; align-items: center; gap: 6px; background: none; border: 0; color: inherit; font: inherit; cursor: pointer; padding: 0; text-align: left; }

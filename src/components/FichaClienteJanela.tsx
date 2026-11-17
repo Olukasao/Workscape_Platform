@@ -6,6 +6,7 @@ import { formatarTelefone } from "../services/chamador";
 import { useAparencia } from "../services/aparencia";
 import { dataCurta, useClienteLigacao, useVincularCliente, type ChamadoResumo, type ClienteLigacao } from "../services/clienteLigacao";
 import { errorMessage } from "../services/api";
+import { useEstabilidade } from "../services/redeOlt";
 import "../styles/ficha-cliente.css";
 
 type Fase = "tocando" | "chamando" | "conversando";
@@ -81,6 +82,26 @@ function avisosDo(c: ClienteLigacao): Aviso[] {
   return a;
 }
 
+/** Quedas das últimas 24 h / 7 dias (OLT Cloud): "Instável: 8 quedas em 24 h" ou "Estável". Some se o contrato não está na OLT. */
+function Estabilidade({ contrato }: { contrato: string }) {
+  const q = useEstabilidade(contrato);
+  const eqs = q.data?.encontrado ? q.data.equipamentos ?? [] : [];
+  if (!eqs.length) return null;
+  const q24 = Math.max(...eqs.map((e) => e.quedas24h));
+  const q7 = Math.max(...eqs.map((e) => e.quedas7d));
+  const instavel = q.data?.instavel === true;
+  const sinalRuim = eqs.some((e) => e.sinal === "critico");
+  return (
+    <ul className="fc-avisos" aria-label="Estabilidade da conexão">
+      <li className={instavel ? "ruim" : q24 > 0 ? "alerta" : "ok"}>
+        <Repeat size={14} aria-hidden="true" />
+        {instavel ? `Instável: ${q24} quedas em 24 h (${q7} em 7 dias)` : q24 > 0 ? `${q24} queda${q24 === 1 ? "" : "s"} em 24 h (${q7} em 7 dias)` : q7 > 0 ? `Sem quedas em 24 h (${q7} em 7 dias)` : "Estável: nenhuma queda em 7 dias"}
+      </li>
+      {sinalRuim ? <li className="ruim"><AlertTriangle size={14} aria-hidden="true" />Sinal crítico: considerar visita preventiva</li> : null}
+    </ul>
+  );
+}
+
 function CartaoCliente({ c, outros }: { c: ClienteLigacao; outros?: string[] }) {
   const h = c.historico;
   const abertos = h ? h.abertos : (c.chamados ?? []).filter((x) => !encerrado(x.status)).length;
@@ -132,6 +153,7 @@ function CartaoCliente({ c, outros }: { c: ClienteLigacao; outros?: string[] }) 
               {cx.modelo ? <Linha rotulo="Equipamento">{cx.modelo}</Linha> : null}
               {cx.olt ? <Linha rotulo="OLT / porta">{cx.olt}{cx.porta ? ` · ${cx.porta}` : ""}</Linha> : null}
             </dl>
+            <Estabilidade contrato={c.contrato} />
           </div>
         </Painel>
       ) : null}

@@ -3,7 +3,8 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Activity, ChevronDown, Clipboard, EyeOff, Eye, MessageSquareText, RadioTower, RefreshCw, ShieldAlert, Users } from "lucide-react";
 import { clsx } from "clsx";
 import { Button } from "../components/ui/button";
-import { Badge, EmptyState, PageHeader, Skeleton, type Tone } from "../components/ui/primitives";
+import { Badge, EmptyState, PageHeader, Segmented, Skeleton, type Tone } from "../components/ui/primitives";
+import Analises, { ABAS_REDE, type AbaRede } from "./rede/Analises";
 import { errorMessage } from "../services/api";
 import BotaoDestacar from "../components/BotaoDestacar";
 import { textoParaAtendimento } from "./rede/explicacao";
@@ -151,6 +152,7 @@ export default function RedeOlt() {
   const { q, visiveis, ignorados } = useIncidentesFiltrados();
   const { ignorar, restaurar } = useIgnorados();
   const [verIgnorados, setVerIgnorados] = useState(false);
+  const [aba, setAba] = useState<AbaRede>("incidentes");
   const panorama = usePanoramaRede(!!q.data?.configurada && !q.data?.negado);
   const client = useQueryClient();
   const [aberto, setAberto] = useState<string | null>(null);
@@ -192,7 +194,12 @@ export default function RedeOlt() {
           </>
         }
       />
-      {q.isPending ? (
+      <div className="rede-abas">
+        <Segmented label="Análises da rede" value={aba} options={ABAS_REDE} onChange={setAba} />
+      </div>
+      {aba !== "incidentes" ? (
+        <Analises aba={aba} />
+      ) : q.isPending ? (
         <div className="rede-lista"><Skeleton className="h-28" /><Skeleton className="h-28" /></div>
       ) : dados?.negado ? (
         <EmptyState icon={ShieldAlert} tone="warn" title="Sem acesso à rede">
