@@ -18,6 +18,8 @@ class AudioFalso {
 // Cadeia de áudio falsa, para conferir a amplificação acima de 100%.
 const cadeia: { ganho?: { gain: { value: number } }; limitador?: { threshold: { value: number } }; ligados: string[] } = { ligados: [] };
 class ContextoFalso {
+  state = "running";
+  currentTime = 0;
   destination = { nome: "saida" };
   resume() { return Promise.resolve(); }
   createMediaElementSource() { const n = { connect: (x: { nome?: string }) => { cadeia.ligados.push(`fonte->${x.nome}`); return x; } }; return n; }
@@ -27,7 +29,7 @@ class ContextoFalso {
 const janela: Record<string, unknown> = { Audio: AudioFalso };
 vi.stubGlobal("window", janela);
 
-const { caminhoPermitido, urlDoSom, percentDoEfeito, tocarEfeitoRemoto } = await import("../src/services/efeitosSonoros");
+const { ajustarVolumeAoVivo, reiniciarContextoDeAudio, caminhoPermitido, urlDoSom, percentDoEfeito, tocarEfeitoRemoto } = await import("../src/services/efeitosSonoros");
 const CHAT = "http://192.168.1.133:8600";
 
 describe("efeitos sonoros remotos", () => {
@@ -103,5 +105,44 @@ describe("efeitos sonoros remotos", () => {
     const aviso = vi.spyOn(console, "warn").mockImplementation(() => {});
     expect(await tocarEfeitoRemoto({ sound: "/sounds/custom/bloqueia.mp3" })).toBe(false);
     aviso.mockRestore();
+  });
+
+  it("volume ao vivo: no caminho do ganho vai de 0 a 200% com o som tocando, inclusive subindo acima de onde começou", async () => {
+    janela.AudioContext = ContextoFalso;
+    cadeia.ligados = [];
+    expect(await tocarEfeitoRemoto({ sound_key: "bruh", volume_percent: 60 })).toBe(true);
+    const audio = AudioFalso.criados.at(-1)!;
+    expect(audio.volume).toBe(1); // o volume fica no ganho
+    expect(cadeia.ganho!.gain.value).toBeCloseTo(0.6);
+    expect(ajustarVolumeAoVivo(150)).toBe(true);
+    expect(cadeia.ganho!.gain.value).toBeCloseTo(1.5); // acima de onde começou
+    expect(ajustarVolumeAoVivo(0)).toBe(true);
+    expect(cadeia.ganho!.gain.value).toBe(0);
+    expect(ajustarVolumeAoVivo(999)).toBe(true);
+    expect(cadeia.ganho!.gain.value).toBeCloseTo(2); // teto de 200%
+    expect(audio.pausado).toBe(false); // o som não foi cortado
+    delete janela.AudioContext;
+  });
+
+  it("volume ao vivo sem ganho (caminho simples): acompanha até 100%; sem som tocando devolve false", async () => {
+    delete janela.AudioContext;
+    expect(await tocarEfeitoRemoto({ sound_key: "bruh", volume_percent: 40 })).toBe(true);
+    const audio = AudioFalso.criados.at(-1)!;
+    expect(audio.volume).toBeCloseTo(0.4);
+    expect(ajustarVolumeAoVivo(25)).toBe(true);
+    expect(audio.volume).toBeCloseTo(0.25);
+    expect(ajustarVolumeAoVivo(180)).toBe(true);
+    expect(audio.volume).toBe(1); // sem amplificador, o teto é 100%
+  });
+
+  it("o contexto de áudio suspenso não deixa o som mudo: cai no caminho simples", async () => {
+    class Suspenso extends ContextoFalso { state = "suspended"; resume() { return Promise.resolve(); } }
+    reiniciarContextoDeAudio();
+    janela.AudioContext = Suspenso;
+    expect(await tocarEfeitoRemoto({ sound_key: "bruh", volume_percent: 70 })).toBe(true);
+    const audio = AudioFalso.criados.at(-1)!;
+    expect(audio.volume).toBeCloseTo(0.7);
+    delete janela.AudioContext;
+    reiniciarContextoDeAudio();
   });
 });

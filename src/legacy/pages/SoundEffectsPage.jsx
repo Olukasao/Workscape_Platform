@@ -169,6 +169,9 @@ export default function SoundEffectsPage({ embedded = false } = {}) {
   const user = useMemo(() => lerUsuarioLocal(), []);
   const headers = useMemo(() => ({ Authorization: `Bearer ${token}` }), [token]);
   const socketRef = useRef(null);
+  // Volume ao vivo: depois de enviar um som, mexer no controle de volume muda o volume no PC do funcionário enquanto o som toca.
+  const volumeAoVivoRef = useRef({ alvoId: null, ate: 0, ultimo: 0, timer: null, pendente: null, fim: null });
+  const [aoVivoNome, setAoVivoNome] = useState("");
   const soundUploadInputRef = useRef(null);
   const soundPreviewAudioRef = useRef(null);
   const soundStatusTimeoutRef = useRef(null);
@@ -383,6 +386,28 @@ export default function SoundEffectsPage({ embedded = false } = {}) {
     const numero = Number(valor);
     const percent = Math.max(0, Math.min(maxVolumePercent, Number.isFinite(numero) ? numero : 48));
     alterarEfeitoSonoro("volume", percent / 100);
+    enviarVolumeAoVivo(percent);
+  };
+
+  // Manda o novo volume ao PC do funcionário (no máximo ~11 por segundo; o último valor sempre chega).
+  const enviarVolumeAoVivo = (percent) => {
+    const r = volumeAoVivoRef.current;
+    if (!r.alvoId || Date.now() > r.ate || !socketRef.current?.connected) return;
+    r.pendente = percent;
+    const emitir = () => {
+      const valor = r.pendente;
+      r.pendente = null;
+      r.ultimo = Date.now();
+      if (valor !== null && valor !== undefined) socketRef.current?.emit("admin:set-prank-volume", { target_user_id: r.alvoId, volume_percent: valor });
+    };
+    const espera = 90 - (Date.now() - r.ultimo);
+    if (espera <= 0) {
+      window.clearTimeout(r.timer);
+      r.timer = null;
+      emitir();
+    } else if (!r.timer) {
+      r.timer = window.setTimeout(() => { r.timer = null; emitir(); }, espera);
+    }
   };
 
   // Se o limite da pessoa for menor que o volume escolhido (ex.: a permissão carregou depois), baixa para o limite.
@@ -506,6 +531,13 @@ export default function SoundEffectsPage({ embedded = false } = {}) {
         window.clearTimeout(timeoutId);
 
         if (resposta.ok) {
+          // por 90 s, o controle de volume passa a valer ao vivo para este funcionário
+          const r = volumeAoVivoRef.current;
+          r.alvoId = Number(funcionario.id);
+          r.ate = Date.now() + 90_000;
+          setAoVivoNome(funcionario.nome);
+          window.clearTimeout(r.fim);
+          r.fim = window.setTimeout(() => setAoVivoNome(""), 90_000);
           mostrarStatusEfeitoSonoro(resposta.message || `Som enviado para ${funcionario.nome}.`, "success");
         } else {
           mostrarStatusEfeitoSonoro(resposta.error || "Não foi possível enviar o efeito sonoro.", "error");
@@ -788,6 +820,7 @@ export default function SoundEffectsPage({ embedded = false } = {}) {
                   <h2>Volume do disparo</h2>
                 </div>
                 <p className={styles.cardHint}>Ajuste o volume do som para o funcionário.</p>
+                {aoVivoNome ? <p className={styles.cardHint} role="status" data-testid="volume-ao-vivo">● Ao vivo: mexa no controle para mudar o volume em {aoVivoNome} enquanto o som toca.</p> : null}
 
                   <div className={styles.sliderBox}>
                     <input
