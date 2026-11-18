@@ -12,6 +12,8 @@ export type NavEntry = {
   label: string;
   icon: ComponentType<{ size?: number; strokeWidth?: number }>;
   badge?: number;
+  /** Efeito leve de brilho no ícone (destaque discreto de uma aba nova). */
+  suave?: boolean;
 };
 
 /**
@@ -41,7 +43,7 @@ function NavList({
         const on = active(i.path);
         return (
           <button
-            className={clsx("nav-item", on && "active")}
+            className={clsx("nav-item", on && "active", i.suave && "nav-item--suave")}
             data-tip={i.label}
             data-tour={`nav${i.path.replace(/\//g, "-")}`}
             aria-label={i.label}

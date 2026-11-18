@@ -323,6 +323,8 @@ function Shell() {
       label: "Comunicação",
       entries: [
         ...(pode("chat") ? [{ path: "/chat", label: "Chat Interno", icon: MessageSquare, badge: unread }] : []),
+        // Escritório 3D: logo abaixo do Chat Interno, só para quem o servidor liberar (ESCRITORIO_USUARIOS).
+        ...(escritorioOk ? [{ path: "/escritorio", label: "Escritório", icon: Building2, suave: true }] : []),
       ],
     },
     {
@@ -340,8 +342,6 @@ function Shell() {
         ...(pode("tools") ? [{ path: "/tools", label: "Ferramentas", icon: Wrench }] : []),
         ...(pode("atendimento") && window.desktop?.atendimentoEntrar ? [{ path: "/atendimento", label: "Atendimento", icon: Headset, badge: atdNaoLidas }] : []),
         ...(pode("terminal") && window.desktop ? [{ path: "/terminal", label: "Terminal", icon: SquareTerminal }] : []),
-        // Escritório 3D: só para quem o servidor liberar (ESCRITORIO_USUARIOS).
-        ...(escritorioOk ? [{ path: "/escritorio", label: "Escritório", icon: Building2 }] : []),
         ...(pode("navegador") ? [{ path: "/navegador", label: "Navegador", icon: Globe }] : []),
         ...(pode("suporte") && window.desktop ? [{ path: "/suporte", label: "Suporte T.I.", icon: Headset }] : []),
       ],
