@@ -8,6 +8,14 @@ export interface ChangelogEntry {
 
 export const changelog: ChangelogEntry[] = [
   {
+    versao: "0.6.65",
+    data: "2026-11-18",
+    itens: [
+      "Novo aviso: quando alguém se cadastra no Wi-Fi público e aceita receber ofertas, quem tem a área Marketing recebe \"Novo Dados de marketing obtidos por wifi-publico!\".",
+      "Administração: nova aba \"Teste de avisos\", com um botão para ver como cada aviso do Workspace aparece (só neste computador, com dados de exemplo).",
+    ],
+  },
+  {
     versao: "0.6.64",
     data: "2026-11-18",
     itens: [

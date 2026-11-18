@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Activity, Bot, CheckCircle2, FileText, Globe, Eye, Gift, History, Image as ImageIcon, LayoutDashboard, LayoutTemplate, Megaphone, MessageSquareReply, MonitorSmartphone, Search, ShieldCheck, Trash2, Upload, Users, UsersRound, X, PhoneCall, SquareTerminal } from "lucide-react";
+import { Activity, Bot, CheckCircle2, FileText, Globe, Eye, Gift, History, Image as ImageIcon, LayoutDashboard, LayoutTemplate, Megaphone, MessageSquareReply, MonitorSmartphone, Search, ShieldCheck, Trash2, Upload, Users, UsersRound, X, PhoneCall, SquareTerminal, BellRing } from "lucide-react";
 import InternalNoticeModal from "../components/InternalNoticeModal";
 import api from "../services/api";
 import { disconnectSocket } from "../services/socket";
@@ -10,6 +10,7 @@ import styles from "../styles/Admin.module.css";
 import UsandoAgora from "../../components/UsandoAgora";
 import VersoesWorkspace from "../../components/VersoesWorkspace";
 import ControleIA from "../../components/ControleIA";
+import ControleTesteAvisos from "../../components/ControleTesteAvisos";
 import ControleTelefone from "../../components/ControleTelefone";
 import ControleHistoricoChamadas from "../../components/ControleHistoricoChamadas";
 import ControleTerminal from "../../components/ControleTerminal";
@@ -36,6 +37,7 @@ const ABAS = [
   { id: "telefone", rotulo: "Telefone", Icone: PhoneCall },
   { id: "historico-chamadas", rotulo: "Histórico de chamadas", Icone: History },
   { id: "terminal", rotulo: "Terminal", Icone: SquareTerminal },
+  { id: "teste-avisos", rotulo: "Teste de avisos", Icone: BellRing },
 ];
 const ATALHOS = [
   { caminho: "/admin/avisos-internos", titulo: "Avisos internos", descricao: "Comunicados e confirmações", Icone: Megaphone },
@@ -2887,6 +2889,7 @@ export default function Admin() {
           {aba === "navegador" && <ControleNavegador />}
           {aba === "saude" && <ControleSaude />}
           {aba === "relatorio" && <ControleRelatorio />}
+          {aba === "teste-avisos" && <ControleTesteAvisos />}
 
           {aba === "retorno" && (
           <>

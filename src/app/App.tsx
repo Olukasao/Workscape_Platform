@@ -92,6 +92,7 @@ import EfeitosSonorosRemotos from "../components/EfeitosSonorosRemotos";
 import { useContratacoes, useContratacoesFeed } from "../services/contratacoes";
 import { useAvaliacoesFeed } from "../services/avaliacoes";
 import { useTrocasWifiAviso } from "../services/trocasWifi";
+import { useMarketingWifiAviso } from "../services/marketingWifi";
 const Agenda = lazy(() => import("../modules/Agenda"));
 const Profile = lazy(() => import("../modules/Profile"));
 const Notifications = lazy(() => import("../modules/Notifications"));
@@ -158,6 +159,7 @@ function Shell() {
   useContratacoesFeed();
   useAvaliacoesFeed();
   useTrocasWifiAviso();
+  useMarketingWifiAviso();
   const contratacoesPendentes = useContratacoes((s) => s.pendentes);
   const atdNaoLidas = useAtendimento((s) => totalNaoLidas(s.naoLidas));
   const user = useSession((s) => s.user),
