@@ -15,6 +15,8 @@ declare global {
       deviceInfo(): Promise<{ id: string; nome: string }>;
       checkForUpdates(): Promise<UpdateStatus>;
       installUpdate(): Promise<void>;
+      /** O que está segurando a atualização agora (ligação ou envio de arquivo); null = liberada. */
+      updateBloqueio(): Promise<{ motivo: "ligacao" | "envio" | null }>;
       onUpdateStatus(callback: (value: UpdateStatus) => void): () => void;
       getConfig(): Promise<ServerConfig>;
       saveConfig(value: ServerConfig): Promise<ServerConfig>;

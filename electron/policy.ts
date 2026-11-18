@@ -159,6 +159,10 @@ export function conversationTarget(target: string) {
     /^\/chat(?:\?(?:conversa|grupo)=\d+)?$/.test(target) ||
     target === "/contratacoes" ||
     target === "/chamados?aba=avaliacoes" ||
+    // telas que já tinham aviso e eram recusadas em silêncio: troca de senha do Wi-Fi, chamados atrasados e dados de marketing do Wi-Fi público
+    target === "/chamados" ||
+    target === "/dashboard" ||
+    target === "/marketing" ||
     target === "/" ||
     target === "/lembretes" ||
     target === "/atendimento" ||

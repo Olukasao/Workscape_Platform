@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 
 vi.mock("../src/stores/workspace", () => ({ useNotices: { getState: () => ({ add: () => undefined }) } }));
 const { AVISOS_TESTE } = await import("../src/services/avisosTeste");
+const { conversationTarget } = await import("../electron/policy");
 
 describe("catálogo do Teste de avisos", () => {
   it("cada aviso tem id único, título, texto e destino interno", () => {
@@ -16,5 +17,8 @@ describe("catálogo do Teste de avisos", () => {
   it("inclui o aviso de marketing com o texto pedido e a contratação nova", () => {
     expect(AVISOS_TESTE.find((a) => a.id === "marketing-wifi")?.titulo).toBe("Novo Dados de marketing obtidos por wifi-publico!");
     expect(AVISOS_TESTE.some((a) => a.id === "contratacao")).toBe(true);
+  });
+  it("o Windows aceita o destino de todo aviso do catálogo (senão o pop-up é recusado em silêncio)", () => {
+    for (const a of AVISOS_TESTE) expect(conversationTarget(a.alvo), `${a.id} → ${a.alvo}`).toBe(true);
   });
 });

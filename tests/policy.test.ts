@@ -160,6 +160,9 @@ describe("fronteira Electron", () => {
     expect(conversationTarget("/rede")).toBe(true);
     expect(conversationTarget("/rede?x=1")).toBe(false);
     expect(conversationTarget("/contratacoes")).toBe(true);
+    // avisos de troca de senha do Wi-Fi (/chamados), chamados atrasados (/dashboard) e marketing do Wi-Fi público (/marketing)
+    for (const t of ["/chamados", "/dashboard", "/marketing"]) expect(conversationTarget(t)).toBe(true);
+    for (const t of ["/chamados?x=1", "/marketing?x=https://evil.example", "/dashboard/", "//evil.example"]) expect(conversationTarget(t)).toBe(false);
     expect(conversationTarget("/contratacoes?x=https://evil.example")).toBe(false);
     expect(conversationTarget("https://evil.example")).toBe(false);
     expect(

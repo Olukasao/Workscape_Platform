@@ -52,14 +52,18 @@ export const AVISOS_TESTE: AvisoTeste[] = [
   { id: "atualizacao", grupo: "Sistema", rotulo: "Atualização do Workspace", titulo: "Atualização do Acessa Workspace", corpo: "A versão 9.9.9 está pronta. Reinicie o aplicativo para atualizar.", alvo: "/settings" },
 ];
 
-/** Dispara o aviso de teste: pop-up no canto da tela e item no sino, ambos marcados como teste. Devolve false se o app não é o do Windows. */
-export function dispararAvisoTeste(a: AvisoTeste): boolean {
+/** Resultado do teste: "ok", "sem-app" (fora do aplicativo do Windows: só o sino) ou o motivo da recusa do Windows. */
+export type ResultadoTeste = { estado: "ok" } | { estado: "sem-app" } | { estado: "recusado"; motivo: string };
+
+/** Dispara o aviso de teste: pop-up no canto da tela e item no sino, ambos marcados como teste. Não falha em silêncio: devolve o motivo se o Windows recusar. */
+export async function dispararAvisoTeste(a: AvisoTeste): Promise<ResultadoTeste> {
   const agora = new Date().toISOString();
   const titulo = a.titulo;
   const corpo = a.corpo;
   useNotices.getState().add({ id: `teste:${a.id}:${Date.now()}`, title: `[TESTE] ${titulo}`, body: corpo, target: a.alvo, time: agora });
-  if (!window.desktop?.notify) return false;
-  void window.desktop.notify({
+  if (!window.desktop?.notify) return { estado: "sem-app" };
+  try {
+    await window.desktop.notify({
     title: `[TESTE] ${titulo}`.slice(0, 120),
     body: corpo.slice(0, 480),
     target: a.alvo,
@@ -68,6 +72,9 @@ export function dispararAvisoTeste(a: AvisoTeste): boolean {
     ...(a.tom ? { tone: a.tom } : {}),
     ...(a.grande ? { size: "grande" as const } : {}),
     ...(a.remetente ? { sender: a.remetente } : {}),
-  });
-  return true;
+    });
+    return { estado: "ok" };
+  } catch (e) {
+    return { estado: "recusado", motivo: e instanceof Error ? e.message.replace(/^Error invoking remote method '[^']*':\s*/, "").slice(0, 200) : "erro desconhecido" };
+  }
 }

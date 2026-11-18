@@ -88,7 +88,6 @@ let tray: Tray;
 let quitting = false;
 let activeTransfers = 0;
 /** O cartão do softphone está aberto na tela (avisado pela janela principal): atualização espera ele fechar. */
-let telefoneAbertoNaTela = false;
 let lastNotification = 0;
 let lastNotificationKey = "";
 const configPath = () => path.join(app.getPath("userData"), "config.json");
@@ -976,12 +975,17 @@ async function bootstrap() {
         total ? `${total} mensagens não lidas` : "",
       );
   });
-  const updates = await startUpdates(win, () => { closeAllToasts(); }, () => activeTransfers === 0 && !phone.temChamadaAtiva() && !telefoneAbertoNaTela && !isDetachedOpen("telefone"));
-  win.webContents.on("did-start-loading", () => { telefoneAbertoNaTela = false; hideBrowser(win); }); // recarregou: a tela avisa de novo se o cartão estiver aberto
+  // Só atrapalha a atualização o que seria cortado ao reiniciar: ligação em andamento ou envio de arquivo. O cartão do telefone
+  // aberto, sem ligação, não bloqueia (antes ele travava a atualização mesmo depois da ligação acabar).
+  const bloqueioDeAtualizacao = (): "ligacao" | "envio" | null => (phone.temChamadaAtiva() ? "ligacao" : activeTransfers > 0 ? "envio" : null);
+  const updates = await startUpdates(win, () => { closeAllToasts(); }, () => bloqueioDeAtualizacao() === null);
+  win.webContents.on("did-start-loading", () => { hideBrowser(win); });
   // A tela principal recarregou ou caiu: a página nativa (Navegador/agenda web) não pode ficar solta por cima do app novo.
   win.webContents.on("render-process-gone", () => hideBrowser(win));
-  handle("phone:ui", (payload) => { telefoneAbertoNaTela = z.object({ aberto: z.boolean() }).strict().parse(payload).aberto; return { ok: true as const }; });
+  handle("phone:ui", (payload) => { z.object({ aberto: z.boolean() }).strict().parse(payload); return { ok: true as const }; }); // mantido por compatibilidade com a tela; não bloqueia mais a atualização
   handle("updates:status", () => updates.status());
+  // A tela de atualização pergunta o que está segurando a atualização para avisar e liberar o botão assim que acabar.
+  handle("updates:blocker", () => ({ motivo: bloqueioDeAtualizacao() }));
   handle("device:info", () => deviceInfo());
   handle("updates:check", () => updates.check());
   handle("updates:install", () => updates.install());

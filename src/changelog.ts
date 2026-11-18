@@ -8,6 +8,15 @@ export interface ChangelogEntry {
 
 export const changelog: ChangelogEntry[] = [
   {
+    versao: "0.6.66",
+    data: "2026-11-18",
+    itens: [
+      "Corrige os avisos no canto da tela que não apareciam: troca de senha do Wi-Fi do cliente, chamados atrasados e os dados de marketing do Wi-Fi público.",
+      "Administração > Teste de avisos agora mostra o motivo quando o Windows recusa um aviso.",
+      "Atualização: se a pessoa está em ligação, a tela explica e libera o botão sozinha quando a ligação termina. O telefone aberto sem ligação não trava mais a atualização.",
+    ],
+  },
+  {
     versao: "0.6.65",
     data: "2026-11-18",
     itens: [
