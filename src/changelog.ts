@@ -8,6 +8,13 @@ export interface ChangelogEntry {
 
 export const changelog: ChangelogEntry[] = [
   {
+    versao: "0.6.64",
+    data: "2026-11-18",
+    itens: [
+      "A aba Escritório agora fica logo abaixo do Chat Interno, em Comunicação, com um brilho leve no ícone.",
+    ],
+  },
+  {
     versao: "0.6.63",
     data: "2026-11-18",
     itens: [
