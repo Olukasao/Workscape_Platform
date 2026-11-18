@@ -8,6 +8,15 @@ export interface ChangelogEntry {
 
 export const changelog: ChangelogEntry[] = [
   {
+    versao: "0.6.62",
+    data: "2026-11-18",
+    itens: [
+      "Escritório 3D liberado para todos: a aba Escritório aparece no menu e, depois desta atualização, o Workspace abre direto nela.",
+      "Ao abrir o Escritório pela primeira vez, um passo a passo ensina a montar o seu personagem.",
+      "Quando você fica ausente, o seu personagem vai para a Sala 2 e senta num banco; ao voltar, ele volta para a sua mesa.",
+    ],
+  },
+  {
     versao: "0.6.61",
     data: "2026-11-17",
     itens: [

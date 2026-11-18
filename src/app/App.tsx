@@ -237,6 +237,17 @@ function Shell() {
       if (guardada) localStorage.setItem(CHAVE_ULTIMA_ROTA, guardada);
     } catch { /* Sem armazenamento. */ }
   }, [path, loc.search]);
+  // 0.6.62: depois desta atualização, o app abre uma vez direto no Escritório (para quem o servidor liberar).
+  useEffect(() => {
+    if (!escritorioOk) return;
+    try {
+      const chave = "workspace:abrir-escritorio:0.6.62";
+      if (localStorage.getItem(chave) === "1") return;
+      localStorage.setItem(chave, "1");
+    } catch { /* Sem armazenamento: abre no Escritório assim mesmo, só desta vez. */ }
+    navigate("/escritorio", { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [escritorioOk]);
   const { q: rede, visiveis: redeVisiveis } = useIncidentesFiltrados();
   const agendaDestacada = useDestacada("agenda"),
     chatDestacado = useDestacada("chat"),
