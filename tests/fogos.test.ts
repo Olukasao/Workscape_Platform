@@ -52,4 +52,14 @@ describe("fogos de artifício da comemoração de venda", () => {
     const grande = criarExplosao({ tipo: "anel", cor: "#fff" }, 0, 0, 1.4, semente(2))[0];
     expect(Math.hypot(grande.vx, grande.vy)).toBeGreaterThan(Math.hypot(pequena.vx, pequena.vy));
   });
+
+  it("uma comemoração maior (quantidade/duração fixas) ignora o cálculo pelas vendas", () => {
+    const roteiro = planejarFogos(0, semente(4), { quantidade: 46, duracaoLancamentos: 7.5 });
+    expect(roteiro).toHaveLength(46);
+    expect(roteiro.at(-1)!.em).toBeLessThan(7.75); // dentro da janela de lançamento + a folga de cada disparo
+    for (const l of roteiro) {
+      expect(l.x).toBeGreaterThanOrEqual(0.1);
+      expect(l.x).toBeLessThanOrEqual(0.9);
+    }
+  });
 });

@@ -5828,6 +5828,43 @@ button.lunch[data-tipo="outro"] { background: color-mix(in srgb, var(--warn) 24%
   .venda-aviso, .venda-aviso-icone { animation: none; }
 }
 
+/* Comemoração em tela cheia de uma atualização marcante: fogos por cima de tudo e um cartão central. */
+.atualizacao-camada { position: fixed; inset: 0; z-index: 10050; pointer-events: none; }
+.atualizacao-palco, .atualizacao-palco canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+.atualizacao-cartao {
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  display: grid; justify-items: center; gap: 10px;
+  width: min(560px, calc(100vw - 48px)); padding: 34px 40px 30px;
+  text-align: center; color: #fff; pointer-events: auto;
+  border-radius: 22px;
+  background: linear-gradient(160deg, rgba(23, 37, 84, 0.94), rgba(17, 24, 56, 0.96));
+  border: 1px solid rgba(147, 197, 253, 0.4);
+  box-shadow: 0 30px 80px rgba(2, 6, 23, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.05) inset, 0 0 60px rgba(58, 214, 255, 0.3);
+  backdrop-filter: blur(12px);
+  animation: atualizacao-entra 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.atualizacao-fechar {
+  position: absolute; top: 10px; right: 10px;
+  display: grid; place-items: center; width: 30px; height: 30px; border-radius: 10px;
+  border: 0; background: rgba(255, 255, 255, 0.08); color: #cbd5e1;
+  transition: background-color var(--dur-1), color var(--dur-1);
+}
+.atualizacao-fechar:hover { background: rgba(255, 255, 255, 0.16); color: #fff; }
+.atualizacao-icone {
+  display: grid; place-items: center; width: 56px; height: 56px; border-radius: 16px;
+  background: linear-gradient(160deg, #ff9a3d, #ff5e1a); box-shadow: 0 10px 26px rgba(255, 110, 30, 0.5);
+  animation: venda-icone 0.9s ease-in-out infinite alternate;
+}
+.atualizacao-cartao strong { font-size: 1.4rem; line-height: 1.3; letter-spacing: 0.01em; }
+.atualizacao-cartao small { opacity: 0.78; font-size: 0.92rem; }
+@keyframes atualizacao-entra {
+  0% { opacity: 0; transform: translate(-50%, -46%) scale(0.92); }
+  100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .atualizacao-cartao, .atualizacao-icone { animation: none; }
+}
+
 /* Administração: quem está usando o aplicativo agora. */
 .usando-agora { display: grid; gap: 12px; margin: 0 0 20px; }
 .usando-agora > header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }

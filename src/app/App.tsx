@@ -88,6 +88,7 @@ import ConviteTourIA from "../components/ConviteTourIA";
 import ConviteTourBgp from "../components/ConviteTourBgp";
 import UpdateBanner from "../components/UpdateBanner";
 import CelebracaoVenda from "../components/CelebracaoVenda";
+import CelebracaoAtualizacao from "../components/celebracao/CelebracaoAtualizacao";
 import EfeitosSonorosRemotos from "../components/EfeitosSonorosRemotos";
 import { useContratacoes, useContratacoesFeed } from "../services/contratacoes";
 import { useAvaliacoesFeed } from "../services/avaliacoes";
@@ -685,6 +686,7 @@ function SessionGate() {
       <Titlebar />
       <UpdateBanner />
       <CelebracaoVenda />
+      <CelebracaoAtualizacao />
       <EfeitosSonorosRemotos />
       {user && token && !entrando ? (
         <Shell />

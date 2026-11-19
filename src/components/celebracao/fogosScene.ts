@@ -24,15 +24,24 @@ export interface Lancamento {
 /** Quantos fogos para um certo número de vendas: poucos para 1 venda, mais para várias, com limite. */
 export const quantidadeDeFogos = (vendas: number) => Math.min(16, Math.max(6, 5 + Math.round(vendas) * 2));
 
-/** Sorteia o roteiro dos fogos. `rng` é injetável para os testes. */
-export function planejarFogos(vendas: number, rng: () => number = Math.random): Lancamento[] {
-  const n = quantidadeDeFogos(vendas);
+/**
+ * Sorteia o roteiro dos fogos. `rng` é injetável para os testes.
+ * `opcoes.quantidade` substitui o cálculo pelas vendas (comemorações maiores, como a de uma atualização);
+ * `opcoes.duracaoLancamentos` estica a janela em que eles saem, para uma quantidade grande não virar um amontoado.
+ */
+export function planejarFogos(
+  vendas: number,
+  rng: () => number = Math.random,
+  opcoes: { quantidade?: number; duracaoLancamentos?: number } = {},
+): Lancamento[] {
+  const n = opcoes.quantidade ?? quantidadeDeFogos(vendas);
+  const duracaoLancamentos = opcoes.duracaoLancamentos ?? DURACAO_LANCAMENTOS;
   const tipos: TipoFogo[] = ["peonia", "anel", "salgueiro", "estrela"];
   const lista: Lancamento[] = [];
   for (let i = 0; i < n; i++) {
     const tipo = tipos[Math.floor(rng() * tipos.length)];
     lista.push({
-      em: (i / n) * DURACAO_LANCAMENTOS + rng() * 0.25,
+      em: (i / n) * duracaoLancamentos + rng() * 0.25,
       // Espalha pela largura, evitando as bordas.
       x: 0.1 + rng() * 0.8,
       alvoY: 0.16 + rng() * 0.3,
@@ -92,7 +101,12 @@ export function criarExplosao(l: Pick<Lancamento, "tipo" | "cor">, x: number, y:
   return out;
 }
 
-export function iniciarFogos(alvo: HTMLElement, vendas: number, aoTerminar: () => void = () => undefined): () => void {
+export function iniciarFogos(
+  alvo: HTMLElement,
+  vendas: number,
+  aoTerminar: () => void = () => undefined,
+  opcoes: { quantidade?: number; duracaoLancamentos?: number; duracaoMax?: number } = {},
+): () => void {
   const canvas = document.createElement("canvas");
   canvas.setAttribute("aria-hidden", "true");
   alvo.appendChild(canvas);
@@ -117,7 +131,8 @@ export function iniciarFogos(alvo: HTMLElement, vendas: number, aoTerminar: () =
   const observador = typeof ResizeObserver !== "undefined" ? new ResizeObserver(medir) : null;
   observador?.observe(alvo);
 
-  const roteiro = planejarFogos(vendas);
+  const roteiro = planejarFogos(vendas, Math.random, opcoes);
+  const duracaoMax = opcoes.duracaoMax ?? DURACAO_MAX;
   let proximo = 0;
   const subindo: { l: Lancamento; x0: number; t: number; x: number; y: number }[] = [];
   let particulas: Particula[] = [];
@@ -200,7 +215,7 @@ export function iniciarFogos(alvo: HTMLElement, vendas: number, aoTerminar: () =
     ctx.globalAlpha = 1;
 
     const terminou = proximo >= roteiro.length && subindo.length === 0 && particulas.length === 0;
-    if (terminou || t > DURACAO_MAX) {
+    if (terminou || t > duracaoMax) {
       encerrar();
       return;
     }
