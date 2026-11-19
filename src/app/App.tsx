@@ -326,7 +326,7 @@ function Shell() {
       entries: [
         ...(pode("chat") ? [{ path: "/chat", label: "Chat Interno", icon: MessageSquare, badge: unread }] : []),
         // Escritório 3D: logo abaixo do Chat Interno, só para quem o servidor liberar (ESCRITORIO_USUARIOS).
-        ...(escritorioOk ? [{ path: "/escritorio", label: "Escritório", icon: Building2, suave: true }] : []),
+        ...(escritorioOk ? [{ path: "/escritorio", label: "Escritório", icon: Building2, suave: true, tag: "NOVO" }] : []),
       ],
     },
     {

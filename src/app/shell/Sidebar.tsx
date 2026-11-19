@@ -12,8 +12,10 @@ export type NavEntry = {
   label: string;
   icon: ComponentType<{ size?: number; strokeWidth?: number }>;
   badge?: number;
-  /** Efeito leve de brilho no ícone (destaque discreto de uma aba nova). */
+  /** Efeito de brilho na linha inteira (destaque de uma aba nova ou importante). */
   suave?: boolean;
+  /** Selo de texto curto ao lado do nome (ex.: "NOVO"). Vira um pontinho quando a barra está recolhida. */
+  tag?: string;
 };
 
 /**
@@ -54,6 +56,12 @@ function NavList({
             <span className="nav-trace" aria-hidden="true" />
             <i.icon size={18} strokeWidth={on ? 2 : 1.75} />
             <span className="nav-text">{i.label}</span>
+            {i.tag ? (
+              <b className="nav-tag" aria-hidden="true">
+                <span className="nav-tag-text">{i.tag}</span>
+                <span className="nav-tag-dot" />
+              </b>
+            ) : null}
             {i.badge ? (
               <b className="nav-badge">{i.badge > 99 ? "99+" : i.badge}</b>
             ) : null}
