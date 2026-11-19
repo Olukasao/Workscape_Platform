@@ -8,6 +8,13 @@ export interface ChangelogEntry {
 
 export const changelog: ChangelogEntry[] = [
   {
+    versao: "0.6.68",
+    data: "2026-11-19",
+    itens: [
+      "Atualização: corrige o caso em que a versão antiga era removida e a nova não era instalada. O instalador agora fecha o suporte remoto e o telefone antes de atualizar.",
+    ],
+  },
+  {
     versao: "0.6.67",
     data: "2026-11-18",
     itens: [
