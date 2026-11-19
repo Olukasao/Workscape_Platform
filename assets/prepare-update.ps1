@@ -18,6 +18,17 @@ function Get-AppProcesses {
     })
 }
 
+# Programas auxiliares (suporte remoto, motor do telefone, IA local) que o app abre e que continuam rodando
+# depois que ele fecha. Se ficarem abertos, travam a pasta: o desinstalador remove a versao antiga e a nova nao
+# consegue gravar os arquivos. Sao encerrados SOMENTE quando o executavel esta dentro desta pasta de instalacao.
+function Get-HelperProcesses {
+    @(Get-CimInstance -ClassName Win32_Process | Where-Object {
+        $_.ProcessId -ne $PID -and $_.ExecutablePath -and
+        [IO.Path]::GetFullPath($_.ExecutablePath).StartsWith($script:installPrefix, [StringComparison]::OrdinalIgnoreCase) -and
+        -not [string]::Equals([IO.Path]::GetFullPath($_.ExecutablePath), $script:appPath, [StringComparison]::OrdinalIgnoreCase)
+    })
+}
+
 function Assert-UnlockedFile([string]$Path) {
     if ([IO.File]::Exists($Path)) {
         $stream = [IO.File]::Open($Path, [IO.FileMode]::Open, [IO.FileAccess]::ReadWrite, [IO.FileShare]::None)
@@ -31,6 +42,7 @@ try {
         throw 'Escolha uma pasta exclusiva para o Acessa Workspace.'
     }
     $script:appPath = [IO.Path]::Combine($installPath, $appName)
+    $script:installPrefix = $installPath + '\'
     [IO.Directory]::CreateDirectory($installPath) | Out-Null
 
     # Fail before changing any installed file when the destination is not writable.
@@ -62,6 +74,15 @@ try {
             Start-Sleep -Milliseconds 250
         }
         if ((Get-AppProcesses).Count -gt 0) { throw 'Nao foi possivel encerrar esta instalacao do aplicativo.' }
+    }
+
+    # Encerra os auxiliares que ficaram rodando de dentro da pasta (ex.: resources\remote\rustdesk.exe).
+    foreach ($item in (Get-HelperProcesses)) {
+        Stop-Process -Id $item.ProcessId -Force -ErrorAction SilentlyContinue
+    }
+    $deadline = [DateTime]::UtcNow.AddSeconds(5)
+    while ((Get-HelperProcesses).Count -gt 0 -and [DateTime]::UtcNow -lt $deadline) {
+        Start-Sleep -Milliseconds 250
     }
 
     # Test every payload file that will be replaced before the installer copies
