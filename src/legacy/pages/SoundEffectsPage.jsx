@@ -161,6 +161,10 @@ export default function SoundEffectsPage({ embedded = false } = {}) {
   const [socketStatus, setSocketStatus] = useState("disconnected");
   const [funcionarioQuery, setFuncionarioQuery] = useState("");
   const [funcionarioDropdownAberto, setFuncionarioDropdownAberto] = useState(false);
+  // Quem gerencia os efeitos pode mandar o mesmo som para mais de uma pessoa: o 1º alvo é o de cima, os outros ficam aqui.
+  const [alvosExtras, setAlvosExtras] = useState([]);
+  const [extraQuery, setExtraQuery] = useState("");
+  const [extraDropdownAberto, setExtraDropdownAberto] = useState(false);
   const [soundSearch, setSoundSearch] = useState("");
   const [soundViewMode, setSoundViewMode] = useState("grid");
   const [soundDurations, setSoundDurations] = useState({});
@@ -305,6 +309,16 @@ export default function SoundEffectsPage({ embedded = false } = {}) {
     return usuariosOnline.filter((usuario) => normalizarBusca(usuario.nome).includes(termo));
   }, [funcionarioQuery, usuariosOnline]);
 
+  const extrasSelecionados = useMemo(() => (
+    alvosExtras.map((id) => usuarios.find((usuario) => Number(usuario.id) === Number(id))).filter(Boolean)
+  ), [alvosExtras, usuarios]);
+
+  const extrasDisponiveis = useMemo(() => {
+    const termo = normalizarBusca(extraQuery);
+    const usados = new Set([Number(soundPanel.usuarioId), ...alvosExtras.map(Number)]);
+    return usuariosOnline.filter((usuario) => !usados.has(Number(usuario.id)) && (!termo || normalizarBusca(usuario.nome).includes(termo)));
+  }, [extraQuery, usuariosOnline, soundPanel.usuarioId, alvosExtras]);
+
   const somEfeitoSelecionado = soundEffectsByKey[soundPanel.soundKey] || soundEffects[0] || DEFAULT_SOUND_EFFECTS[0];
 
   const soundsFiltrados = useMemo(() => {
@@ -375,7 +389,15 @@ export default function SoundEffectsPage({ embedded = false } = {}) {
   const limparFuncionarioSelecionado = () => {
     alterarEfeitoSonoro("usuarioId", "");
     setFuncionarioQuery("");
+    setAlvosExtras([]);
   };
+
+  const adicionarAlvoExtra = (usuario) => {
+    setAlvosExtras((atuais) => (atuais.includes(String(usuario.id)) ? atuais : [...atuais, String(usuario.id)]));
+    setExtraQuery("");
+  };
+
+  const removerAlvoExtra = (id) => setAlvosExtras((atuais) => atuais.filter((x) => x !== String(id)));
 
   const maxVolumePercent = Math.max(0, Math.min(
     SOUND_EFFECT_TETO_PERCENT,
@@ -439,6 +461,26 @@ export default function SoundEffectsPage({ embedded = false } = {}) {
       mostrarStatusEfeitoSonoro(err.response?.data?.error || "Não foi possível salvar o limite de tempo.", "error");
     } finally {
       setPermissionSavingIds((atuais) => atuais.filter((id) => id !== usuarioId));
+    }
+  };
+
+  const alterarSonsEscondidosUsuario = async (usuarioPermissao, soundKey, esconder) => {
+    const usuarioId = Number(usuarioPermissao.id);
+    if (!usuarioId) return;
+    const atuais = usuarioPermissao.hidden_sounds || [];
+    const hidden = esconder ? [...new Set([...atuais, soundKey])] : atuais.filter((k) => k !== soundKey);
+
+    try {
+      setPermissionSavingIds((ids) => [...ids, usuarioId]);
+      setPermissionUsers((lista) => lista.map((u) => (Number(u.id) === usuarioId ? { ...u, hidden_sounds: hidden } : u)));
+      const { data } = await api.put(`/sound-effects/permissions/${usuarioId}/hidden-sounds`, { hidden }, { headers });
+      setPermissionUsers(Array.isArray(data?.users) ? data.users : []);
+    } catch (err) {
+      console.error("Erro ao salvar sons escondidos:", err);
+      carregarPermissoes().catch(() => {});
+      mostrarStatusEfeitoSonoro(err.response?.data?.error || "Não foi possível salvar os sons escondidos.", "error");
+    } finally {
+      setPermissionSavingIds((ids) => ids.filter((id) => id !== usuarioId));
     }
   };
 
@@ -519,8 +561,11 @@ export default function SoundEffectsPage({ embedded = false } = {}) {
         resolve();
       }, SOUND_EFFECT_ACK_TIMEOUT_MS);
 
+      const destinatarios = [funcionario, ...extrasSelecionados].filter((u) => u.status === "online");
+      const varios = permissions.can_manage && destinatarios.length > 1;
       socketInstance.emit("admin:play-prank-sound", {
         target_user_id: Number(funcionario.id),
+        ...(varios ? { target_user_ids: destinatarios.map((u) => Number(u.id)) } : {}),
         sound_key: sound.key,
         // `volume_percent` pode passar de 100 (o servidor limita pelo seu teto); `volume` é a versão antiga, de 0 a 1.
         volume_percent: Math.min(maxVolumePercent, Math.round((Number(soundPanel.volume) || SOUND_EFFECT_DEFAULT_VOLUME) * 100)),
@@ -533,9 +578,9 @@ export default function SoundEffectsPage({ embedded = false } = {}) {
         if (resposta.ok) {
           // por 90 s, o controle de volume passa a valer ao vivo para este funcionário
           const r = volumeAoVivoRef.current;
-          r.alvoId = Number(funcionario.id);
+          r.alvoId = varios ? null : Number(funcionario.id); // o volume ao vivo vale para um destinatário só
           r.ate = Date.now() + 90_000;
-          setAoVivoNome(funcionario.nome);
+          setAoVivoNome(varios ? "" : funcionario.nome);
           window.clearTimeout(r.fim);
           r.fim = window.setTimeout(() => setAoVivoNome(""), 90_000);
           mostrarStatusEfeitoSonoro(resposta.message || `Som enviado para ${funcionario.nome}.`, "success");
@@ -738,7 +783,7 @@ export default function SoundEffectsPage({ embedded = false } = {}) {
                   </span>
                   <h2>Alvo do efeito</h2>
                 </div>
-                <p className={styles.cardHint}>Selecione o funcionário que irá receber o som.</p>
+                <p className={styles.cardHint}>{permissions.can_manage ? "Selecione quem vai receber o som (dá para adicionar mais de uma pessoa)." : "Selecione o funcionário que irá receber o som."}</p>
 
                   {funcionarioEfeitoSelecionado ? (
                     <div className={styles.targetCard}>
@@ -808,6 +853,58 @@ export default function SoundEffectsPage({ embedded = false } = {}) {
                           ))}
                         </div>
                       )}
+                    </div>
+                  )}
+
+                  {permissions.can_manage && funcionarioEfeitoSelecionado && (
+                    <div data-testid="alvos-extras" style={{ marginTop: 10 }}>
+                      {extrasSelecionados.map((usuario) => (
+                        <div key={usuario.id} className={styles.targetCard} style={{ marginBottom: 6 }}>
+                          <span className={styles.targetAvatar} aria-hidden="true">{obterIniciais(usuario.nome)}</span>
+                          <div className={styles.targetInfo}>
+                            <strong>{usuario.nome}</strong>
+                            <span>
+                              <span className={`${styles.statusDot} ${usuario.status === "online" ? styles.statusDotOnline : styles.statusDotOffline}`} />
+                              {usuario.status === "online" ? "Online agora" : "Não conectado ao Chat Interno"}
+                            </span>
+                          </div>
+                          <button type="button" className={styles.targetRemove} onClick={() => removerAlvoExtra(usuario.id)} aria-label={`Remover ${usuario.nome}`}>
+                            <X size={15} />
+                          </button>
+                        </div>
+                      ))}
+                      <div className={styles.comboBox}>
+                        <div className={styles.searchField}>
+                          <input
+                            type="text"
+                            value={extraQuery}
+                            placeholder="Adicionar mais uma pessoa..."
+                            onFocus={() => setExtraDropdownAberto(true)}
+                            onBlur={() => window.setTimeout(() => setExtraDropdownAberto(false), 150)}
+                            onChange={(event) => setExtraQuery(event.target.value)}
+                          />
+                          <ChevronDown size={15} className={styles.comboChevron} />
+                        </div>
+                        {extraDropdownAberto && (
+                          <div className={styles.comboDropdown}>
+                            {!extrasDisponiveis.length && <div className={styles.comboEmpty}>Ninguém mais online.</div>}
+                            {extrasDisponiveis.map((usuario) => (
+                              <button
+                                key={usuario.id}
+                                type="button"
+                                className={styles.comboOption}
+                                onMouseDown={(event) => {
+                                  event.preventDefault();
+                                  adicionarAlvoExtra(usuario);
+                                }}
+                              >
+                                <span className={styles.comboOptionAvatar}>{obterIniciais(usuario.nome)}</span>
+                                {usuario.nome}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   )}
               </section>
@@ -1183,6 +1280,28 @@ export default function SoundEffectsPage({ embedded = false } = {}) {
                               onChange={(event) => alterarSemLimiteTempoUsuario(usuarioPermissao, event.target.checked)}
                             />
                             Sem limite de tempo
+                          </span>
+                        )}
+                        {usuarioPermissao.can_use && !usuarioPermissao.can_manage && (
+                          <span className={`${styles.permissionVolume} ${styles.permissionTempo}`} onClick={bloquearCliqueNoTexto} data-testid={`sons-escondidos-${usuarioPermissao.id}`}>
+                            <details>
+                              <summary title="Sons que esta pessoa não vê nem consegue enviar">
+                                Sons escondidos{(usuarioPermissao.hidden_sounds || []).length ? `: ${(usuarioPermissao.hidden_sounds || []).length}` : ""}
+                              </summary>
+                              <span style={{ display: "grid", gap: 2, marginTop: 4 }}>
+                                {soundEffects.map((som) => (
+                                  <label key={som.key} style={{ display: "flex", gap: 6, alignItems: "center", fontWeight: 400 }}>
+                                    <input
+                                      type="checkbox"
+                                      checked={(usuarioPermissao.hidden_sounds || []).includes(som.key)}
+                                      disabled={salvando}
+                                      onChange={(event) => alterarSonsEscondidosUsuario(usuarioPermissao, som.key, event.target.checked)}
+                                    />
+                                    {som.label}
+                                  </label>
+                                ))}
+                              </span>
+                            </details>
                           </span>
                         )}
                       </span>
