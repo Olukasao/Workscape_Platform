@@ -4,6 +4,9 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 exports.default = async function afterPack(context) {
+  // Inventário dos arquivos que o instalador confere antes de desinstalar a versão antiga. Precisa ser refeito a CADA build:
+  // sem isso o instalador usava uma lista velha (sem o suporte remoto, o telefone e a IA) e não percebia arquivos travados.
+  await require('./installer-inventory.cjs')(context);
   if (process.platform === 'win32' || context.electronPlatformName !== 'win32') return;
   const ResEdit = (await import('resedit')).default || (await import('resedit'));
   const exePath = path.join(context.appOutDir, `${context.packager.appInfo.productFilename}.exe`);
