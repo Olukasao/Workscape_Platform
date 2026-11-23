@@ -26,7 +26,7 @@ export const changelog: ChangelogEntry[] = [
     versao: "0.6.67",
     data: "2026-11-18",
     itens: [
-      "Efeitos sonoros: depois de enviar um som, mexer no controle de volume muda o volume ao vivo, enquanto o som toca no computador do funcionário.",
+      "Tentativa de correção de áudio.",
     ],
   },
   {
