@@ -8,6 +8,14 @@ export interface ChangelogEntry {
 
 export const changelog: ChangelogEntry[] = [
   {
+    versao: "0.6.72",
+    data: "2026-11-23",
+    itens: [
+      "Tentativa de correção do som no computador da Maria Helena.",
+      "Escritório: o quadro branco agora mostra quem está de plantão. Clique nele para ver a escala completa e falar com o plantonista.",
+    ],
+  },
+  {
     versao: "0.6.68",
     data: "2026-11-19",
     itens: [
