@@ -222,6 +222,15 @@ export function useRealtime() {
         );
     };
     // Pedido de ligação vindo do mapa do Escritório (botão "Ligar" no cartão da pessoa): discamos pelo nosso telefone.
+    // Aviso do Escritório (ex.: proposta de troca de monstrinho): notificação do sistema que leva à aba Escritório.
+    const avisoEscritorio = (e: { titulo?: string; texto?: string; alvo?: string }) => {
+      const titulo = String(e?.titulo ?? "").slice(0, 120);
+      if (!titulo) return;
+      const body = String(e?.texto ?? "").slice(0, 480);
+      const target = "/escritorio";
+      useNotices.getState().add({ id: `escritorio:${Date.now()}`, title: titulo, body, target, time: new Date().toISOString() });
+      void window.desktop?.notify({ title: titulo, body, target, context: "Escritório", kind: "system", tone: "info" });
+    };
     const ligarDoMapa = async (e: { numero?: string; nome?: string }) => {
       const numero = String(e?.numero ?? "").replace(/\D/g, "");
       if (!numero) return;
@@ -242,7 +251,8 @@ export function useRealtime() {
       .on("olt_incidente_normalizado", incidenteNormalizado)
       .on("olt_onu_nao_autorizada", onuNaoAutorizada)
       .on("olt_evento_massa", eventoMassa)
-      .on("escritorio_ligar", ligarDoMapa);
+      .on("escritorio_ligar", ligarDoMapa)
+      .on("escritorio_aviso", avisoEscritorio);
     const events = [
       "user_status_changed",
       "direct_message_status",
@@ -275,7 +285,8 @@ export function useRealtime() {
         .off("olt_incidente_normalizado", incidenteNormalizado)
         .off("olt_onu_nao_autorizada", onuNaoAutorizada)
         .off("olt_evento_massa", eventoMassa)
-        .off("escritorio_ligar", ligarDoMapa);
+        .off("escritorio_ligar", ligarDoMapa)
+        .off("escritorio_aviso", avisoEscritorio);
       events.forEach((e) => socket.off(e, invalidate));
       window.removeEventListener("online", online);
       window.removeEventListener("offline", onDisconnect);
