@@ -56,6 +56,7 @@ import { updateOrigin } from "./updateDeployment";
 import { ambienteTeste, nomeDoApp } from "./ambiente";
 import { abrirAssinaturas, tokenValido } from "./assinaturasJanela";
 import { abrirFicha, fecharFicha, fichaContents, fimDaLigacao } from "./fichaClienteJanela";
+import { abrirPainelRoteador, fecharPaineisRoteador } from "./roteadorPainel";
 import log from "electron-log/main";
 import { criarAtendimento } from "./atendimento";
 import { atendimentoApiOrigin, atendimentoRedirectUri } from "./atendimentoDeployment";
@@ -706,6 +707,13 @@ async function bootstrap() {
   handle("postit:fixar", (payload, e) => { const v = z.object({ ligado: z.boolean() }).strict().parse(payload); postitDe(e.sender)?.setAlwaysOnTop(v.ligado, v.ligado ? "floating" : "normal"); });
   handle("postit:fechar", (_p, e) => { postitDe(e.sender)?.close(); });
   app.on("before-quit", () => fecharPostits());
+  // Roteador do cliente: abre a janela do painel já logado (o endereço vem do servidor e é conferido em roteadorPainel.ts).
+  handle("roteador:abrir-painel", async (payload) => {
+    const v = z.object({ url: z.string().max(200), titulo: z.string().max(120) }).strict().parse(payload);
+    await abrirPainelRoteador(v.url, v.titulo, path.join(app.getAppPath(), process.platform === "win32" ? "assets/icon.ico" : "assets/icon.png"));
+    return { ok: true as const };
+  });
+  app.on("before-quit", () => fecharPaineisRoteador());
   handle("ficha:fim", () => { fimDaLigacao(); return { ok: true as const }; });
   handle("ficha:fechar", () => { fecharFicha(); return { ok: true as const }; });
   app.on("before-quit", () => fecharFicha());

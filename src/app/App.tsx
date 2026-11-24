@@ -63,6 +63,7 @@ const Contratacoes = lazy(() => import("../modules/Contratacoes"));
 const Changelog = lazy(() => import("../modules/Changelog"));
 const Lembretes = lazy(() => import("../modules/Lembretes"));
 const SuporteRemoto = lazy(() => import("../modules/SuporteRemoto"));
+const RoteadorCliente = lazy(() => import("../modules/RoteadorCliente"));
 const Marketing = lazy(() => import("../modules/Marketing"));
 const Escritorio3D = lazy(() => import("../modules/escritorio/Escritorio3D"));
 const Cursos = lazy(() => import("../modules/cursos/Cursos"));
@@ -105,7 +106,7 @@ import { useSobreposicao } from "../services/sobreposicao";
 import { JANELA_FICHA, JANELA_POSTIT, JANELA_DESTACADA, MINIAPPS, useDestacada, useSincronizacaoAgenda, useSincronizacaoGeral, usePresencaChat, destacar, reintegrar, trazerDeVolta, fixarSobre, type JanelaKind } from "../services/janelaDestacada";
 import ModuleLinkBoundary from "../components/ModuleLinkBoundary";
 import { Titlebar } from "./shell/Titlebar";
-import { Headset, SquareTerminal, ExternalLink, PanelTopOpen, PanelTopClose, Pin, PinOff, Maximize2, Minimize2 } from "lucide-react";
+import { Router as RouterIcon, Headset, SquareTerminal, ExternalLink, PanelTopOpen, PanelTopClose, Pin, PinOff, Maximize2, Minimize2 } from "lucide-react";
 import { Sidebar, type NavEntry, type NavGroup } from "./shell/Sidebar";
 import { Topbar } from "./shell/Topbar";
 import { CommandPalette } from "./shell/CommandPalette";
@@ -347,6 +348,7 @@ function Shell() {
         ...(pode("terminal") && window.desktop ? [{ path: "/terminal", label: "Terminal", icon: SquareTerminal }] : []),
         ...(pode("navegador") ? [{ path: "/navegador", label: "Navegador", icon: Globe }] : []),
         ...(pode("suporte") && window.desktop ? [{ path: "/suporte", label: "Suporte T.I.", icon: Headset }] : []),
+        ...(pode("roteador") && window.desktop?.roteadorAbrirPainel ? [{ path: "/roteador", label: "Roteador do cliente", icon: RouterIcon }] : []),
       ],
     },
     {
@@ -367,7 +369,7 @@ function Shell() {
     },
   ];
   // Função do setor: quem não tem o módulo liberado volta ao Início se abrir o endereço na mão ou por um atalho.
-  const moduloDaRota = ["resumo", "dashboard", "assistente", "lembretes", "chat", "agenda", "contratacoes", "chamados", "rede", "tools", "terminal", "atendimento", "navegador", "suporte", "cursos", "marketing"].find((m) => path === `/${m}` || path.startsWith(`/${m}/`));
+  const moduloDaRota = ["resumo", "dashboard", "assistente", "lembretes", "chat", "agenda", "contratacoes", "chamados", "rede", "tools", "terminal", "atendimento", "navegador", "suporte", "roteador", "cursos", "marketing"].find((m) => path === `/${m}` || path.startsWith(`/${m}/`));
   const rotaBloqueada = !!moduloDaRota && !pode(moduloDaRota);
   useEffect(() => {
     if (rotaBloqueada) navigate("/", { replace: true });
@@ -520,6 +522,7 @@ function Shell() {
                     <Route path="/changelog" element={<Changelog />} />
                     <Route path="/lembretes" element={<Lembretes />} />
                     <Route path="/suporte" element={<SuporteRemoto />} />
+                    <Route path="/roteador" element={<RoteadorCliente />} />
                     <Route path="/settings" element={<Settings />} />
                     <Route path="/profile" element={<Profile />} />
                     <Route path="/notifications" element={<Notifications />} />

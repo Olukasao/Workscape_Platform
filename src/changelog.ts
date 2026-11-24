@@ -8,6 +8,14 @@ export interface ChangelogEntry {
 
 export const changelog: ChangelogEntry[] = [
   {
+    versao: "0.6.74",
+    data: "2026-11-24",
+    itens: [
+      "Novo: Roteador do cliente. Procure por nome, CPF ou contrato e clique para abrir o painel do roteador dele já logado, sem digitar usuário e senha. Fica escondido até o administrador liberar para o setor (Administração > Funções).",
+      "Cada abertura fica registrada com o seu nome e o contrato.",
+    ],
+  },
+  {
     versao: "0.6.72",
     data: "2026-11-23",
     itens: [

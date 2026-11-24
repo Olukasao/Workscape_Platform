@@ -15,6 +15,7 @@ export function useFuncoes() {
   const admin = user?.perfil === "admin";
   return {
     /** Enquanto carrega ou se der erro, não esconde nada (o servidor continua barrando o que for sensível). */
-    pode: (id: string) => admin || lista === null || lista.includes(id),
+    // "roteador" é fechado: só administrador ou setor em que foi marcado (nem enquanto carrega)
+    pode: (id: string) => admin || (id === "roteador" ? !!lista?.includes(id) : lista === null || lista.includes(id)),
   };
 }

@@ -6,7 +6,7 @@ import { api, errorMessage } from "../services/api";
 
 // Funções: marca, para cada setor, quais áreas do Workspace aparecem. Setor sem marcação salva vê tudo (padrão).
 // Administradores sempre veem tudo.
-interface Modulo { id: string; rotulo: string; grupo: string }
+interface Modulo { id: string; rotulo: string; grupo: string; fechado?: boolean }
 interface Setor { id: number; nome: string; pessoas: number; modulos: string[] | null }
 interface Resposta { modulos: Modulo[]; setores: Setor[] }
 const msgDe = (e: unknown) => (isAxiosError(e) && e.response?.data?.error ? String(e.response.data.error) : errorMessage(e));
@@ -25,7 +25,7 @@ export default function ControleFuncoes() {
   }, [dados.data, setorId]);
   useEffect(() => {
     if (!dados.data || !setor) return;
-    setMarcados(new Set(setor.modulos ?? dados.data.modulos.map((m) => m.id)));
+    setMarcados(new Set(setor.modulos ?? dados.data.modulos.filter((m) => !m.fechado).map((m) => m.id)));
     setAviso(""); setErro("");
   }, [setor?.id, setor?.modulos, dados.data]);
 
@@ -55,7 +55,7 @@ export default function ControleFuncoes() {
       <header>
         <h2 style={{ margin: 0 }}>Funções</h2>
         <p style={{ margin: "4px 0 0", opacity: 0.75 }}>
-          Escolha o que cada setor enxerga no Workspace. Quem é administrador sempre vê tudo. Setor sem função salva vê tudo.
+          Escolha o que cada setor enxerga no Workspace. Quem é administrador sempre vê tudo. Setor sem função salva vê tudo, menos os módulos marcados como “só quando liberado” (como o Roteador do cliente).
         </p>
       </header>
 
@@ -79,7 +79,7 @@ export default function ControleFuncoes() {
                 {todos.filter((m) => m.grupo === g).map((m) => (
                   <label key={m.id} style={{ display: "flex", gap: 8, alignItems: "center" }}>
                     <input type="checkbox" checked={marcados.has(m.id)} onChange={() => alternar(m.id)} />
-                    {m.rotulo}
+                    {m.rotulo}{m.fechado ? <small style={{ opacity: 0.6 }}> (só quando liberado)</small> : null}
                   </label>
                 ))}
               </div>

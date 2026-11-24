@@ -108,6 +108,7 @@ declare global {
       dashboardRefresh(): Promise<void>;
       onDashboardEvent(callback: (channel: string, payload: unknown) => void): () => void;
       onNavigate(callback: (path: string) => void): () => void;
+      roteadorAbrirPainel?(url: string, titulo: string): Promise<{ ok: true }>;
       sgpListarChamados(key: SgpReportKey): Promise<SgpChamadosResultado>;
       openSgpLink(url: string): Promise<void>;
       browserOpenSgp(url: string): Promise<void>;
