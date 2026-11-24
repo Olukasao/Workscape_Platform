@@ -8,6 +8,13 @@ export interface ChangelogEntry {
 
 export const changelog: ChangelogEntry[] = [
   {
+    versao: "0.6.76",
+    data: "2026-11-24",
+    itens: [
+      "Chat interno: quando um colega está em ligação, o nome dele não some mais da lista de conversas.",
+    ],
+  },
+  {
     versao: "0.6.75",
     data: "2026-11-24",
     itens: [
