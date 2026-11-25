@@ -7888,7 +7888,7 @@ button.tool-card {
 @keyframes novidades-entra { from { opacity: 0; transform: translateY(16px); } }
 @media (prefers-reduced-motion: reduce) { .novidades-versao { animation: none; } }
 /* Comemoração de versão (janela no centro com confete, uma vez só) */
-.comemoracao-fundo { position: fixed; inset: 0; z-index: 400; display: grid; place-items: center; padding: 16px; background: rgba(4, 10, 24, 0.55); overflow: hidden; animation: comemoracao-fade 300ms ease-out both; }
+.comemoracao-fundo { position: fixed; inset: 0; z-index: 400; display: grid; place-items: center; padding: 130px 16px 16px; background: rgba(4, 10, 24, 0.55); overflow: hidden; animation: comemoracao-fade 300ms ease-out both; }
 .comemoracao-confete { position: absolute; inset: 0; pointer-events: none; }
 .comemoracao-confete span { position: absolute; top: -16px; width: 9px; height: 14px; border-radius: 2px; opacity: 0.95; animation: comemoracao-cai linear infinite; }
 .comemoracao-confete span:nth-child(3n) { width: 7px; height: 7px; border-radius: 50%; }
@@ -7902,6 +7902,26 @@ button.tool-card {
 @keyframes comemoracao-pula { from { opacity: 0; transform: scale(0.8); } }
 @keyframes comemoracao-fade { from { opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .comemoracao-fundo, .comemoracao-cartao { animation: none; } .comemoracao-confete { display: none; } }
+.comemoracao-fogos, .comemoracao-fogos canvas { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+/* Leo de caminhão: atravessa a parte de baixo da tela, balançando e soltando fumaça */
+.comemoracao-leo { position: absolute; left: 0; bottom: 6vh; width: 128px; height: 150px; pointer-events: none; animation: comemoracao-leo-passa 11s linear infinite; }
+.comemoracao-leo img { width: 128px; height: 150px; image-rendering: pixelated; animation: comemoracao-leo-balanca 0.28s steps(2) infinite; }
+.comemoracao-fumaca { position: absolute; left: 30px; top: 92px; width: 10px; height: 10px; border-radius: 50%; background: rgba(150, 156, 170, 0.6); animation: comemoracao-fumaca 1.1s ease-out infinite; }
+.comemoracao-fumaca:nth-child(2) { animation-delay: 0.37s; }
+.comemoracao-fumaca:nth-child(3) { animation-delay: 0.74s; }
+/* Carlinhos: anda de um lado para o outro em cima do aviso, com o balão */
+.comemoracao-carlinhos { position: absolute; left: 0; right: 0; top: -112px; height: 128px; pointer-events: none; }
+.comemoracao-carlinhos-corpo { position: absolute; left: 0; top: 0; width: 128px; height: 128px; animation: comemoracao-carlinhos-anda 9s linear infinite; }
+.comemoracao-carlinhos-sprite { position: absolute; inset: 0; background-repeat: no-repeat; background-size: 1024px 128px; image-rendering: pixelated; animation: comemoracao-carlinhos-passos 0.8s steps(8) infinite, comemoracao-carlinhos-vira 9s steps(1) infinite; }
+.comemoracao-balao { position: absolute; left: 50%; bottom: 112px; transform: translateX(-50%); white-space: nowrap; padding: 5px 10px; border-radius: 12px; background: #fff; color: #10172a; font-weight: 700; font-size: 13px; box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3); }
+.comemoracao-balao::after { content: ""; position: absolute; left: 50%; bottom: -6px; margin-left: -6px; border: 6px solid transparent; border-bottom: 0; border-top-color: #fff; }
+@keyframes comemoracao-leo-passa { from { transform: translateX(-160px); } to { transform: translateX(calc(100vw + 40px)); } }
+@keyframes comemoracao-leo-balanca { 50% { transform: translateY(-2px); } }
+@keyframes comemoracao-fumaca { from { opacity: 0.8; transform: translate(0, 0) scale(0.6); } to { opacity: 0; transform: translate(-34px, -22px) scale(2.2); } }
+@keyframes comemoracao-carlinhos-passos { from { background-position: 0 0; } to { background-position: -1024px 0; } }
+@keyframes comemoracao-carlinhos-anda { 0% { left: 0; } 50% { left: calc(100% - 128px); } 100% { left: 0; } }
+@keyframes comemoracao-carlinhos-vira { 0% { transform: scaleX(1); } 50% { transform: scaleX(-1); } }
+@media (prefers-reduced-motion: reduce) { .comemoracao-leo, .comemoracao-leo img, .comemoracao-fumaca, .comemoracao-carlinhos-corpo, .comemoracao-carlinhos-sprite { animation: none; } .comemoracao-fumaca { display: none; } }
 .versoes-ignorar.ativo { border-color: var(--warn); background: var(--warn-soft); }
 .versoes-ignorar.ativo small { color: var(--ink-2); }
 

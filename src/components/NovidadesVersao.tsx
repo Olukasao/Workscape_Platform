@@ -1,15 +1,39 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { PartyPopper, Sparkles, X } from "lucide-react";
 import { Button } from "./ui/button";
 import { useSession } from "../stores/workspace";
 import type { ChangelogEntry } from "../changelog";
 import { novidadesDesde } from "../services/novidades";
+import leoCaminhao from "../assets/comemoracao/leo-caminhao.png";
+import carlinhosAndando from "../assets/comemoracao/carlinhos-andando.png";
 
 // Depois que o app atualiza, mostra uma vez (por pessoa, neste computador) o que mudou. Não bloqueia a tela.
 const chave = (id: number) => `workspace:novidades:ultima-versao:${id}`;
 const ler = (id: number) => { try { return localStorage.getItem(chave(id)); } catch { return null; } };
 const gravar = (id: number, v: string) => { try { localStorage.setItem(chave(id), v); } catch { /* vale só até fechar o app */ } };
+
+const semMovimento = () => window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+
+/** Fogos de artifício sem parar atrás da janela de comemoração (os mesmos da comemoração de venda). */
+function Fogos() {
+  const palco = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (semMovimento() || !palco.current) return;
+    const alvo = palco.current;
+    let desmontar: (() => void) | undefined;
+    let vivo = true;
+    void import("./celebracao/fogosScene").then(({ iniciarFogos }) => {
+      const rodada = () => {
+        if (!vivo) return;
+        desmontar = iniciarFogos(alvo, 6, () => setTimeout(rodada, 200), { quantidade: 18, duracaoLancamentos: 7, duracaoMax: 10 });
+      };
+      rodada();
+    }).catch(() => undefined);
+    return () => { vivo = false; desmontar?.(); };
+  }, []);
+  return <div ref={palco} className="comemoracao-fogos" aria-hidden="true" />;
+}
 
 const CORES = ["#22d3ee", "#facc15", "#f472b6", "#4ade80", "#a78bfa", "#fb923c"];
 
@@ -39,10 +63,23 @@ export default function NovidadesVersao() {
     // versão com comemoração: janela no centro com confete, uma vez só
     return (
       <div className="comemoracao-fundo" role="dialog" aria-modal="true" aria-labelledby="comemoracao-titulo" onClick={fechar}>
+        <Fogos />
         <div className="comemoracao-confete" aria-hidden="true">
           {Array.from({ length: 60 }, (_, i) => <span key={i} style={{ left: `${(i * 37) % 100}%`, animationDelay: `${(i % 12) * 0.18}s`, animationDuration: `${2.6 + (i % 5) * 0.45}s`, background: CORES[i % CORES.length] }} />)}
         </div>
+        {/* Leo do Escritório 2D passeando de caminhão pela tela */}
+        <div className="comemoracao-leo" aria-hidden="true">
+          <span className="comemoracao-fumaca" /><span className="comemoracao-fumaca" /><span className="comemoracao-fumaca" />
+          <img src={leoCaminhao} alt="" />
+        </div>
         <section className="comemoracao-cartao" onClick={(e) => e.stopPropagation()}>
+          {/* Carlinhos do Escritório 2D andando em cima do aviso */}
+          <div className="comemoracao-carlinhos" aria-hidden="true">
+            <div className="comemoracao-carlinhos-corpo">
+              <span className="comemoracao-balao">Peguei a cobra! 🐍</span>
+              <span className="comemoracao-carlinhos-sprite" style={{ backgroundImage: `url(${carlinhosAndando})` }} />
+            </div>
+          </div>
           <span className="comemoracao-icone" aria-hidden="true"><PartyPopper size={34} /></span>
           <h2 id="comemoracao-titulo">{festa.titulo}</h2>
           <p>{festa.texto}</p>
