@@ -29,6 +29,7 @@ import {
   Volume2,
   Waves,
   X,
+  Trash2,
 } from "lucide-react";
 import api from "../services/api";
 import { connectSocket, syncSocketUser } from "../services/socket";
@@ -520,6 +521,20 @@ export default function SoundEffectsPage({ embedded = false } = {}) {
     } catch (err) {
       console.error("Erro ao testar efeito sonoro:", err);
       mostrarStatusEfeitoSonoro("O navegador bloqueou o áudio. Clique novamente para liberar o teste.", "error");
+    }
+  };
+
+  // Só o dono dos efeitos (o Lucas) apaga áudios; o servidor confere de novo.
+  const apagarEfeitoSonoro = async (sound) => {
+    if (!permissions.can_delete) return;
+    if (!window.confirm(`Apagar o áudio "${sound.label}"? Ele some da lista para todo mundo.`)) return;
+    try {
+      const { data } = await api.delete(`/sound-effects/${encodeURIComponent(sound.key)}`, { headers });
+      if (Array.isArray(data?.sounds)) setSoundEffects(data.sounds);
+      if (soundPanel.soundKey === sound.key) alterarEfeitoSonoro("soundKey", "");
+      mostrarStatusEfeitoSonoro(`Áudio "${sound.label}" apagado.`, "success");
+    } catch (err) {
+      mostrarStatusEfeitoSonoro(err.response?.data?.error || "Não foi possível apagar o áudio.", "error");
     }
   };
 
@@ -1047,6 +1062,21 @@ export default function SoundEffectsPage({ embedded = false } = {}) {
                           >
                             <Play size={13} />
                           </span>
+                          {permissions.can_delete && (
+                            <span
+                              className={`${styles.soundTilePlay} ${styles.soundTileDelete}`}
+                              role="button"
+                              tabIndex={-1}
+                              title="Apagar áudio"
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                apagarEfeitoSonoro(sound);
+                              }}
+                              aria-label={`Apagar ${sound.label}`}
+                            >
+                              <Trash2 size={13} />
+                            </span>
+                          )}
                         </button>
                       );
                     })}
@@ -1083,6 +1113,7 @@ export default function SoundEffectsPage({ embedded = false } = {}) {
                           <span>{duracao || "—"}</span>
                           <span>{categoria}</span>
                           <span>{sound.custom ? "Upload" : "Sistema"}</span>
+                          <span className={styles.soundsListActions}>
                           <span
                             className={styles.soundTilePlay}
                             role="button"
@@ -1095,6 +1126,22 @@ export default function SoundEffectsPage({ embedded = false } = {}) {
                             aria-label={`Testar ${sound.label}`}
                           >
                             <Play size={13} />
+                          </span>
+                          {permissions.can_delete && (
+                            <span
+                              className={`${styles.soundTilePlay} ${styles.soundTileDelete}`}
+                              role="button"
+                              tabIndex={-1}
+                              title="Apagar áudio"
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                apagarEfeitoSonoro(sound);
+                              }}
+                              aria-label={`Apagar ${sound.label}`}
+                            >
+                              <Trash2 size={13} />
+                            </span>
+                          )}
                           </span>
                         </button>
                       );

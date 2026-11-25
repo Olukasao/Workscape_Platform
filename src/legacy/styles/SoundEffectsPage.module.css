@@ -881,6 +881,23 @@
   color: #06231f;
 }
 
+.soundTileDelete,
+.soundTileActive .soundTileDelete {
+  margin-left: 6px;
+  background: rgba(239, 68, 68, 0.16);
+  color: #fca5a5;
+}
+
+.soundsListActions {
+  display: inline-flex;
+  align-items: center;
+}
+
+.soundTileDelete:hover {
+  background: #ef4444;
+  color: #ffffff;
+}
+
 /* Sound list */
 
 .soundsList {
