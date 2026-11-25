@@ -8,6 +8,13 @@ export interface ChangelogEntry {
 
 export const changelog: ChangelogEntry[] = [
   {
+    versao: "0.6.77",
+    data: "2026-11-25",
+    itens: [
+      "Feita a recuperação do sistema anterior, tentando manter o máximo possível de dados.",
+    ],
+  },
+  {
     versao: "0.6.76",
     data: "2026-11-24",
     itens: [
