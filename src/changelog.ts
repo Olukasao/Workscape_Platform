@@ -4,6 +4,8 @@ export interface ChangelogEntry {
   versao: string;
   data: string; // AAAA-MM-DD
   itens: string[];
+  /** Janela de comemoração (com confete) mostrada uma vez no lugar do aviso comum, logo depois de atualizar para esta versão. */
+  comemoracao?: { titulo: string; texto: string };
 }
 
 export const changelog: ChangelogEntry[] = [
@@ -13,6 +15,10 @@ export const changelog: ChangelogEntry[] = [
     itens: [
       "Feita a recuperação do sistema anterior, tentando manter o máximo possível de dados.",
     ],
+    comemoracao: {
+      titulo: "Problema resolvido! 🎉",
+      texto: "O sistema foi recuperado e o erro foi corrigido. Fizemos de tudo para manter o máximo possível dos seus dados. Obrigado pela paciência!",
+    },
   },
   {
     versao: "0.6.76",
