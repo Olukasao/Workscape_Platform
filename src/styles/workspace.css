@@ -7897,6 +7897,7 @@ button.tool-card {
 .comemoracao-cartao h2 { margin: 4px 0 0; font-family: var(--font-display); font-size: 24px; font-weight: 700; }
 .comemoracao-cartao p { margin: 0; font-size: var(--fs-md); line-height: 1.55; color: var(--ink-2); }
 .comemoracao-cartao small { color: var(--ink-3); font-size: var(--fs-sm); }
+.comemoracao-destaque { padding: 6px 14px; border-radius: 999px; background: rgba(34, 211, 238, 0.14); border: 1px solid rgba(34, 211, 238, 0.4); color: var(--ink); font-size: var(--fs-md); font-weight: 700; }
 .comemoracao-cartao footer { display: flex; gap: 8px; margin-top: 8px; }
 @keyframes comemoracao-cai { 0% { transform: translateY(0) rotate(0deg); } 100% { transform: translateY(110vh) rotate(720deg); } }
 @keyframes comemoracao-pula { from { opacity: 0; transform: scale(0.8); } }

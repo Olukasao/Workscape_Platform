@@ -83,6 +83,7 @@ export default function NovidadesVersao() {
           <span className="comemoracao-icone" aria-hidden="true"><PartyPopper size={34} /></span>
           <h2 id="comemoracao-titulo">{festa.titulo}</h2>
           <p>{festa.texto}</p>
+          {festa.destaque ? <strong className="comemoracao-destaque">{festa.destaque}</strong> : null}
           <small>Workspace atualizado para a versão {versao}</small>
           <footer>
             <Button size="sm" variant="ghost" onClick={abrir}>Ver o histórico</Button>

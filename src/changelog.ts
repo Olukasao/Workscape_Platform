@@ -5,7 +5,7 @@ export interface ChangelogEntry {
   data: string; // AAAA-MM-DD
   itens: string[];
   /** Janela de comemoração (com confete) mostrada uma vez no lugar do aviso comum, logo depois de atualizar para esta versão. */
-  comemoracao?: { titulo: string; texto: string };
+  comemoracao?: { titulo: string; texto: string; destaque?: string };
 }
 
 export const changelog: ChangelogEntry[] = [
@@ -14,10 +14,12 @@ export const changelog: ChangelogEntry[] = [
     data: "2026-11-25",
     itens: [
       "Feita a recuperação do sistema anterior, tentando manter o máximo possível de dados.",
+      "Podem reativar o som.",
     ],
     comemoracao: {
       titulo: "Problema resolvido! 🎉",
       texto: "O sistema foi recuperado e o erro foi corrigido. Fizemos de tudo para manter o máximo possível dos seus dados. Obrigado pela paciência!",
+      destaque: "🔊 Podem reativar o som!",
     },
   },
   {
