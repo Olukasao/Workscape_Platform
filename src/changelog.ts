@@ -10,6 +10,13 @@ export interface ChangelogEntry {
 
 export const changelog: ChangelogEntry[] = [
   {
+    versao: "0.6.79",
+    data: "2026-11-26",
+    itens: [
+      "Corrigido: o telefone, o suporte remoto e a IA local voltaram a funcionar. Eles tinham ficado de fora da versão anterior.",
+    ],
+  },
+  {
     versao: "0.6.78",
     data: "2026-11-26",
     itens: [

@@ -1,6 +1,7 @@
 import { spawn } from "node:child_process";
 import { createRequire } from "node:module";
 import { mkdtemp, mkdir, writeFile, readFile, copyFile, rm } from "node:fs/promises";
+import { existsSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 const require = createRequire(import.meta.url);
@@ -8,6 +9,11 @@ const args = [require.resolve("electron-builder/cli.js"), "--config", "electron-
 const release = process.argv.includes("--release");
 const saida = process.env.WORKSPACE_AMBIENTE === "teste" ? "release-teste" : "release";
 if (release && process.platform !== "win32") throw new Error("Gere releases assinadas no runner Windows.");
+// Os motores do telefone, da IA local e do suporte remoto ficam em resources/ (fora do git). Sem eles o instalador sai
+// sem erro, mas o telefone, a IA e o acesso remoto param nos PCs (aconteceu na 0.6.78). Então não gera sem os três.
+const motores = ["resources/phone-win-x64/workscape-phone-engine.exe", "resources/llama-win-x64/llama-server.exe", "resources/remote-win-x64/rustdesk.exe"];
+const faltando = motores.filter((f) => !existsSync(f));
+if (faltando.length && !process.env.WORKSPACE_SEM_MOTORES) throw new Error(`Faltam motores em resources/ (copie da pasta principal do projeto): ${faltando.join(", ")}`);
 const env = { ...process.env, WORKSPACE_RELEASE: release ? "1" : "0", ELECTRON_BUILDER_COMPRESSION_LEVEL: process.env.ELECTRON_BUILDER_COMPRESSION_LEVEL || "5" };
 let tools;
 if (process.platform !== "win32") {
