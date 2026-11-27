@@ -10,6 +10,13 @@ export interface ChangelogEntry {
 
 export const changelog: ChangelogEntry[] = [
   {
+    versao: "0.6.81",
+    data: "2026-11-27",
+    itens: [
+      "A Agenda Financeira agora aparece logo que o Workspace abre depois de atualizar: um aviso na tela com atalho direto para ela. Quem é do financeiro já cai direto na agenda, com o passo a passo.",
+    ],
+  },
+  {
     versao: "0.6.80",
     data: "2026-11-27",
     itens: [
