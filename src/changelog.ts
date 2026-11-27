@@ -10,6 +10,13 @@ export interface ChangelogEntry {
 
 export const changelog: ChangelogEntry[] = [
   {
+    versao: "0.6.83",
+    data: "2026-11-27",
+    itens: [
+      "Correção no passo a passo da Rede (OLT): as abas de análise agora abrem já com os dados durante o tour, sem ficar só na tela de espera.",
+    ],
+  },
+  {
     versao: "0.6.82",
     data: "2026-11-27",
     itens: [
