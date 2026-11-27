@@ -56,6 +56,7 @@ function abrirNoSgp(url: string) {
 type Pendente = { destino: string | null; indice: number | null };
 type Modo = "quadro" | "agenda";
 const CHAVE_MODO = "agenda-financeira:modo";
+const CHAVE_PERIODO = "agenda-financeira:periodo";
 const modoSalvo = (): Modo => {
   try { return localStorage.getItem(CHAVE_MODO) === "agenda" ? "agenda" : "quadro"; } catch { return "quadro"; }
 };
@@ -63,6 +64,14 @@ const modoSalvo = (): Modo => {
 export default function AgendaFinanceira({ active }: { active: boolean }) {
   const [data, setData] = useState(today);
   const [modo, setModoEstado] = useState<Modo>(modoSalvo);
+  const [periodo, setPeriodoEstado] = useState<"dia" | "semana">(() => {
+    try { return localStorage.getItem(CHAVE_PERIODO) === "semana" ? "semana" : "dia"; } catch { return "dia"; }
+  });
+  const setPeriodo = (p: "dia" | "semana") => {
+    setPeriodoEstado(p);
+    setData(p === "semana" ? addDays(today(), -6) : today()); // a semana termina hoje (o que importa é o que já abriu)
+    try { localStorage.setItem(CHAVE_PERIODO, p); } catch { /* sem armazenamento */ }
+  };
   const setModo = (m: Modo) => {
     setModoEstado(m);
     try { localStorage.setItem(CHAVE_MODO, m); } catch { /* sem armazenamento */ }
@@ -74,7 +83,7 @@ export default function AgendaFinanceira({ active }: { active: boolean }) {
   const [detalhe, setDetalhe] = useState<Ocorrencia | null>(null);
   const [historicoAberto, setHistoricoAberto] = useState(false);
   const [alvoDrop, setAlvoDrop] = useState<{ coluna: string; indice: number } | null>(null);
-  const { agenda, carregando, atualizando, erro, recarregar } = useAgendaFinanceira(data, active);
+  const { agenda, carregando, atualizando, erro, recarregar } = useAgendaFinanceira(data, active, modo === "agenda" && periodo === "semana" ? 7 : 1);
   const busca = useBuscaFinanceira(filtros.busca, active && !!agenda);
 
   const podeDistribuir = !!agenda?.podeDistribuir;
@@ -181,23 +190,25 @@ export default function AgendaFinanceira({ active }: { active: boolean }) {
   }
 
   const dia = data;
-  const ehHoje = agenda ? data === agenda.hoje : data === today();
+  const passo = modo === "agenda" && periodo === "semana" ? 7 : 1;
+  const ehHoje = data === (passo > 1 ? addDays(today(), -6) : today());
 
   return (
     <section className="fin" aria-label="Agenda Financeira">
       <div className="toolbar agenda-toolbar">
         <div className="date-stepper" title="Escolhe o dia das ocorrências finalizadas; a fila de abertas é sempre a de agora">
-          <Button variant="outline" size="icon" aria-label="Dia anterior" onClick={() => setData(addDays(dia, -1))}>
+          <Button variant="outline" size="icon" aria-label="Dia anterior" onClick={() => setData(addDays(dia, -passo))}>
             <ChevronLeft size={17} />
           </Button>
-          <Button variant={ehHoje ? "soft" : "ghost"} size="sm" onClick={() => setData(today())}>
+          <Button variant={ehHoje ? "soft" : "ghost"} size="sm" onClick={() => setData(passo > 1 ? addDays(today(), -6) : today())}>
             Hoje
           </Button>
-          <Button variant="outline" size="icon" aria-label="Próximo dia" onClick={() => setData(addDays(dia, 1))}>
+          <Button variant="outline" size="icon" aria-label="Próximo dia" onClick={() => setData(addDays(dia, passo))}>
             <ChevronRight size={17} />
           </Button>
           <span className="fin-dia">
-            <CalendarDays size={14} /> Finalizadas em {dataLonga(dia)}
+            <CalendarDays size={14} />{" "}
+            {modo === "agenda" ? (periodo === "semana" ? `Semana de ${fmtDia.format(new Date(`${dia}T12:00:00Z`))} a ${fmtDia.format(new Date(`${addDays(dia, 6)}T12:00:00Z`))}` : dataLonga(dia)) : `Finalizadas em ${dataLonga(dia)}`}
           </span>
         </div>
         <Segmented
@@ -209,6 +220,17 @@ export default function AgendaFinanceira({ active }: { active: boolean }) {
           ]}
           onChange={setModo}
         />
+        {modo === "agenda" ? (
+          <Segmented
+            label="Período"
+            value={periodo}
+            options={[
+              ["dia", "Dia"],
+              ["semana", "7 dias"],
+            ]}
+            onChange={setPeriodo}
+          />
+        ) : null}
         <label className="search-box">
           <Search size={16} />
           <input aria-label="Pesquisar ocorrências" placeholder="Cliente, CPF, contrato ou nº da ocorrência" value={filtros.busca} onChange={(e) => setFiltros({ ...filtros, busca: e.target.value })} />
@@ -296,7 +318,7 @@ export default function AgendaFinanceira({ active }: { active: boolean }) {
 
       {agenda && quadro ? (
         <>
-          <Indicadores ind={agenda.indicadores} atualizadoEm={agenda.atualizadoEm} />
+          <Indicadores ind={agenda.indicadores} atualizadoEm={agenda.atualizadoEm} semana={agenda.dias > 1} />
 
           {podeDistribuir && selecionados.size > 0 ? (
             <div className="fin-lote" role="region" aria-label="Distribuição em lote">
@@ -319,7 +341,8 @@ export default function AgendaFinanceira({ active }: { active: boolean }) {
           {modo === "agenda" ? (
             <GradeAgenda
               agenda={agenda}
-              data={dia}
+              data={agenda.data}
+              dias={agenda.dias}
               colunas={Object.fromEntries(Object.entries(quadro).map(([k, v]) => [k, visiveis(v, k)]))}
               finalizadas={visiveis(agenda.finalizadas, null)}
               podeDistribuir={podeDistribuir}
@@ -399,13 +422,15 @@ export default function AgendaFinanceira({ active }: { active: boolean }) {
   );
 }
 
-function Indicadores({ ind, atualizadoEm }: { ind: Indicadores; atualizadoEm: string }) {
+function Indicadores({ ind, atualizadoEm, semana }: { ind: Indicadores; atualizadoEm: string; semana: boolean }) {
   const itens: Array<[string, string, string?, Tone?]> = [
     ["Na fila", String(ind.total), "Ocorrências de ativação abertas, pendentes ou em atendimento no SGP"],
     ["Sem responsável", String(ind.semResponsavel), "Sem ninguém no SGP e sem distribuição na agenda", ind.semResponsavel ? "warn" : undefined],
     ["Distribuídas", String(ind.distribuidas), "Com uma das colaboradoras do financeiro"],
     ["Em atendimento", String(ind.emAtendimento), "Status “Em execução” no SGP"],
-    ["Finalizadas no dia", String(ind.finalizadasNoDia), "Finalizadas na data escolhida", "ok"],
+    semana
+      ? ["Finalizadas na semana", String(ind.finalizadasNoPeriodo ?? 0), "Finalizadas nos 7 dias mostrados", "ok"]
+      : ["Finalizadas no dia", String(ind.finalizadasNoDia), "Finalizadas na data escolhida", "ok"],
     ["Espera média", formatarEspera(ind.esperaMediaMin), `Média do tempo desde a abertura das ocorrências ainda abertas (sem atendimento). Mediana: ${formatarEspera(ind.esperaMedianaMin)}.`, ind.urgentes ? "warn" : undefined],
     [
       "Atendimento médio",
@@ -667,13 +692,19 @@ function quandoAbriu(o: Ocorrencia): { dia: string; hora: number | null } {
   return { dia: fmtDiaIso.format(d), hora: o.aberturaComHora ? Number(fmtHoraNum.format(d)) % 24 : null };
 }
 
+/** Rótulos do tipo sem o prefixo "Ativação de". */
+const tipoCurto = (t: string) => t.replace(/^ATIVA[ÇC][AÃ]O DE /i, "").toLowerCase().replace(/^./, (c) => c.toUpperCase());
+const rotuloDia = (d: string) => new Intl.DateTimeFormat("pt-BR", { weekday: "short", day: "numeric", month: "short", timeZone: "UTC" }).format(new Date(`${d}T12:00:00Z`));
+
 /**
- * Modo "Agenda": a mesma grade da Agenda dos Técnicos, simplificada. Colunas = fila + as colaboradoras; linhas = hora de abertura do dia escolhido,
- * com "Dias anteriores" (ainda abertas de antes) em cima e "Finalizadas" embaixo. Arrastar um card para outra coluna distribui.
+ * Modo "Agenda": a grade da Agenda dos Técnicos, mais simples e mais espaçada. Colunas = fila + colaboradoras. Em "Dia" há uma grade com as horas de
+ * abertura; em "7 dias" há uma grade por dia (só com as horas que têm ocorrência). Em cima, o que continua aberto de dias anteriores; no fim de cada
+ * dia, as concluídas (verdes), na coluna de quem finalizou.
  */
-function GradeAgenda({ agenda, data, colunas, finalizadas, podeDistribuir, selecionados, pendentes, onSelecionar, onAbrir, onIniciarArraste, onSoltar }: {
+function GradeAgenda({ agenda, data, dias, colunas, finalizadas, podeDistribuir, selecionados, pendentes, onSelecionar, onAbrir, onIniciarArraste, onSoltar }: {
   agenda: AgendaFinanceiraDados;
   data: string;
+  dias: number;
   colunas: Record<string, Ocorrencia[]>;
   finalizadas: Ocorrencia[];
   podeDistribuir: boolean;
@@ -684,18 +715,17 @@ function GradeAgenda({ agenda, data, colunas, finalizadas, podeDistribuir, selec
   onIniciarArraste: (e: React.DragEvent, o: Ocorrencia) => void;
   onSoltar: (ids: string[], destino: string) => void;
 }) {
+  const semana = dias > 1;
   const chaves = [COLUNA_FILA, ...agenda.colaboradoras.map((c) => c.id)];
-  const titulo = (id: string) => (id === COLUNA_FILA ? "Sem responsável" : agenda.colaboradoras.find((c) => c.id === id)?.nome ?? id);
+  const titulo = (id: string) => (id === COLUNA_FILA ? "Fila (sem responsável)" : agenda.colaboradoras.find((c) => c.id === id)?.nome ?? id);
+  const listaDias = Array.from({ length: dias }, (_, i) => addDays(data, i));
   const todas = chaves.flatMap((k) => colunas[k] ?? []);
   const quando = new Map(todas.map((o) => [o.id, quandoAbriu(o)]));
+  const abertasEm = (k: string, d: string) => (colunas[k] ?? []).filter((o) => quando.get(o.id)?.dia === d);
   const anteriores = (k: string) => (colunas[k] ?? []).filter((o) => (quando.get(o.id)?.dia ?? "") < data);
-  const semHora = (k: string) => (colunas[k] ?? []).filter((o) => quando.get(o.id)?.dia === data && quando.get(o.id)?.hora === null);
-  const posteriores = (k: string) => (colunas[k] ?? []).filter((o) => (quando.get(o.id)?.dia ?? "") > data);
-  const naHora = (k: string, h: number) => (colunas[k] ?? []).filter((o) => quando.get(o.id)?.dia === data && quando.get(o.id)?.hora === h).sort((a, b) => (a.abertoEm || "").localeCompare(b.abertoEm || ""));
-  const horasDoDia = todas.map((o) => quando.get(o.id)).filter((q) => q?.dia === data && q.hora !== null).map((q) => q!.hora as number);
-  const ini = Math.min(8, ...horasDoDia), fim = Math.max(20, ...horasDoDia);
-  const horas = Array.from({ length: fim - ini + 1 }, (_, i) => ini + i);
-  const haPosteriores = chaves.some((k) => posteriores(k).length);
+  const colunaDeQuemFechou = (o: Ocorrencia) => agenda.colaboradoras.find((c) => c.usuarioSgp === o.usuarioFinalizacao || (!o.usuarioFinalizacao && c.usuarioSgp === o.responsavelSgp))?.id ?? COLUNA_FILA;
+  const totalAnteriores = chaves.reduce((n, k) => n + anteriores(k).length, 0);
+  const propsChip = { podeDistribuir, selecionados, pendentes, onSelecionar, onAbrir, onIniciarArraste };
 
   const celula = (k: string, itens: Ocorrencia[], extra = "") => (
     <div
@@ -715,47 +745,88 @@ function GradeAgenda({ agenda, data, colunas, finalizadas, podeDistribuir, selec
         } catch { /* arraste de outra origem */ }
       }}
     >
-      {itens.map((o) => <Chip key={o.id} o={o} podeDistribuir={podeDistribuir} selecionado={selecionados.has(o.id)} pendente={!!pendentes[o.id]} onSelecionar={onSelecionar} onAbrir={onAbrir} onIniciarArraste={onIniciarArraste} />)}
+      {itens.map((o) => <Chip key={o.id} o={o} {...propsChip} selecionado={selecionados.has(o.id)} pendente={!!pendentes[o.id]} />)}
     </div>
   );
-  return (
-    <div className="tg-scroll fin-grade">
+  const cabecalho = (
+    <>
+      <div className="tg-corner" />
+      {chaves.map((k) => (
+        <div key={k} className="tg-head">
+          <strong title={titulo(k)}>{titulo(k)}</strong>
+          <span className="tg-tag" data-kind="carga" title={`${(colunas[k] ?? []).length} ocorrência(s) abertas`}>Carga {(colunas[k] ?? []).length}</span>
+        </div>
+      ))}
+    </>
+  );
+  const bloco = (chave: string, linhas: React.ReactNode) => (
+    <div className="tg-scroll" key={chave}>
       <div className="tg" style={{ "--cols": chaves.length } as React.CSSProperties}>
-        <div className="tg-corner" />
-        {chaves.map((k) => (
-          <div key={k} className="tg-head">
-            <strong title={titulo(k)}>{titulo(k)}</strong>
-            <span className="tg-tag" data-kind="carga" title={`${(colunas[k] ?? []).length} ocorrência(s) abertas`}>Carga {(colunas[k] ?? []).length}</span>
-          </div>
-        ))}
-        <div className="tg-hour is-sem">Dias anteriores</div>
-        {chaves.map((k) => celula(k, anteriores(k), "is-sem"))}
-        <div className="tg-hour is-sem">Sem horário</div>
-        {chaves.map((k) => celula(k, semHora(k), "is-sem"))}
-        {horas.map((h) => (
-          <Fragment key={h}>
-            <div className="tg-hour">{String(h).padStart(2, "0")}:00</div>
-            {chaves.map((k) => celula(k, naHora(k, h)))}
-          </Fragment>
-        ))}
-        {haPosteriores ? (
-          <>
-            <div className="tg-hour is-sem">Dias seguintes</div>
-            {chaves.map((k) => celula(k, posteriores(k), "is-sem"))}
-          </>
-        ) : null}
-        <div className="tg-hour is-sem">Finalizadas</div>
-        {chaves.map((k) => (
-          <div key={k} className="tg-cell is-sem">
-            {k === COLUNA_FILA ? finalizadas.map((o) => <Chip key={o.id} o={o} podeDistribuir={false} selecionado={false} pendente={false} onSelecionar={() => undefined} onAbrir={onAbrir} onIniciarArraste={() => undefined} />) : null}
-          </div>
-        ))}
+        {cabecalho}
+        {linhas}
       </div>
+    </div>
+  );
+  const linha = (rotulo: string, itensPor: (k: string) => Ocorrencia[], extra = "") => (
+    <Fragment key={rotulo}>
+      <div className={`tg-hour ${extra.includes("is-sem") ? "is-sem" : ""}`}>{rotulo}</div>
+      {chaves.map((k) => celula(k, itensPor(k), extra))}
+    </Fragment>
+  );
+
+  return (
+    <div className={`fin-grade${semana ? " is-semana" : ""}`}>
+      <div className="agenda-legend fin-legenda" aria-label="Legenda das cores">
+        <span><i className="is-0" /> Aberta</span>
+        <span><i className="is-2" /> Em atendimento</span>
+        <span><i className="is-3" /> Aguardando retorno</span>
+        <span><i className="is-1" /> Concluída</span>
+        <span className="fin-legenda-borda"><i className="is-urg" /> Urgente (borda vermelha)</span>
+        <span className="fin-legenda-borda"><i className="is-atn" /> Atenção (borda amarela)</span>
+      </div>
+      {totalAnteriores ? (
+        <div className="schedule-day">
+          <div className="schedule-date">
+            <span className="schedule-date-main"><strong>Ainda abertas de dias anteriores</strong><small>abertas antes de {fmtDia.format(new Date(`${data}T12:00:00Z`))}</small></span>
+            <span className="schedule-date-count">{totalAnteriores} ocorrência{totalAnteriores === 1 ? "" : "s"}</span>
+          </div>
+          {bloco("anteriores", linha("Anteriores", anteriores, "is-sem"))}
+        </div>
+      ) : null}
+      {listaDias.map((d) => {
+        const doDia = chaves.flatMap((k) => abertasEm(k, d));
+        const concluidasDia = finalizadas.filter((o) => o.dataFinalizacao === d);
+        const horasComItem = [...new Set(doDia.map((o) => quando.get(o.id)?.hora).filter((h): h is number => h !== null && h !== undefined))].sort((a, b) => a - b);
+        // dia: grade inteira (8h às 20h, ampliada se preciso); semana: só as horas com ocorrência, para não ficar enorme
+        const horas = semana ? horasComItem : Array.from({ length: Math.max(20, ...horasComItem) - Math.min(8, ...horasComItem) + 1 }, (_, i) => Math.min(8, ...horasComItem) + i);
+        const semHora = chaves.some((k) => abertasEm(k, d).some((o) => quando.get(o.id)?.hora === null));
+        return (
+          <div className="schedule-day" key={d}>
+            {semana ? (
+              <div className="schedule-date">
+                <span className="schedule-date-main"><strong>{rotuloDia(d)}</strong></span>
+                {d === agenda.hoje ? <Badge tone="live" dot>Hoje</Badge> : null}
+                <span className="schedule-date-count">{doDia.length} aberta{doDia.length === 1 ? "" : "s"} · {concluidasDia.length} concluída{concluidasDia.length === 1 ? "" : "s"}</span>
+              </div>
+            ) : null}
+            {semana && doDia.length === 0 && concluidasDia.length === 0 ? (
+              <p className="fin-dia-vazio">Nenhuma ocorrência neste dia.</p>
+            ) : bloco(
+              d,
+              <>
+                {semHora || !semana ? linha("Sem horário", (k) => abertasEm(k, d).filter((o) => quando.get(o.id)?.hora === null), "is-sem") : null}
+                {horas.map((h) => linha(`${String(h).padStart(2, "0")}:00`, (k) => abertasEm(k, d).filter((o) => quando.get(o.id)?.hora === h).sort((a, b) => (a.abertoEm || "").localeCompare(b.abertoEm || ""))))}
+                {linha("Concluídas", (k) => concluidasDia.filter((o) => colunaDeQuemFechou(o) === k), "is-sem is-concluidas")}
+              </>,
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }
 
-/** Ficha curta do modo Agenda (igual ao chip da Agenda dos Técnicos): cor pelo status do SGP, borda pela prioridade. */
+/** Ficha da grade: cor pelo status do SGP (verde = concluída), borda pela prioridade; nome em cima e tipo + espera embaixo. */
 function Chip({ o, podeDistribuir, selecionado, pendente, onSelecionar, onAbrir, onIniciarArraste }: {
   o: Ocorrencia;
   podeDistribuir: boolean;
@@ -776,11 +847,17 @@ function Chip({ o, podeDistribuir, selecionado, pendente, onSelecionar, onAbrir,
         if (podeDistribuir && aberta && (e.ctrlKey || e.metaKey || e.shiftKey)) onSelecionar(o.id);
         else onAbrir(o);
       }}
-      title={[`Ocorrência ${o.numero}`, o.cliente, `Contrato ${o.contrato ?? "—"}`, o.tipo, `${o.statusRotulo}${aberta ? ` · aguardando ${formatarEspera(o.aguardandoMin)}` : ""}`, o.naoGravadoNoSgp ? "Não gravado no SGP" : "", o.responsavelSgp ? `SGP: ${o.responsavelSgp}` : ""].filter(Boolean).join("\n")}
+      title={[`Ocorrência ${o.numero}`, o.cliente, `Contrato ${o.contrato ?? "—"}`, o.tipo, `${o.statusRotulo}${aberta ? ` · aguardando ${formatarEspera(o.aguardandoMin)}` : o.usuarioFinalizacao ? ` por ${o.usuarioFinalizacao}` : ""}`, o.naoGravadoNoSgp ? "Não gravado no SGP" : "", o.responsavelSgp ? `SGP: ${o.responsavelSgp}` : ""].filter(Boolean).join("\n")}
     >
-      <span className="tg-cliente">{o.cliente || "Cliente sem nome"}</span>
-      {aberta && o.prioridade !== "normal" ? <span className="fin-chip-prio" aria-label={ROTULO_PRIORIDADE[o.prioridade]}>{o.prioridade === "urgente" ? "!!" : "!"}</span> : null}
-      {o.naoGravadoNoSgp ? <span className="fin-chip-local" aria-hidden="true">•</span> : null}
+      <span className="fin-chip-linha">
+        <span className="tg-cliente">{o.cliente || "Cliente sem nome"}</span>
+        {aberta && o.prioridade !== "normal" ? <span className="fin-chip-prio" aria-label={ROTULO_PRIORIDADE[o.prioridade]}>{o.prioridade === "urgente" ? "!!" : "!"}</span> : null}
+        {o.naoGravadoNoSgp ? <span className="fin-chip-local" aria-hidden="true">•</span> : null}
+      </span>
+      <span className="fin-chip-sub">
+        {tipoCurto(o.tipo)}
+        {aberta ? ` · ${formatarEspera(o.aguardandoMin)}` : o.usuarioFinalizacao ? ` · ${o.usuarioFinalizacao}` : ""}
+      </span>
     </button>
   );
 }

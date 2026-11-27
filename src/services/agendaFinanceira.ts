@@ -78,11 +78,16 @@ export interface Indicadores {
   esperaMedianaMin: number | null;
   atendimento: MediaAtendimento;
   urgentes: number;
+  /** finalizadas em todo o período pedido (com semana); `finalizadasNoDia` é só do primeiro dia */
+  finalizadasNoPeriodo?: number;
   calculadoEm: string;
   porColaboradora: Record<string, IndicadoresColaboradora>;
 }
 export interface AgendaFinanceira {
   data: string;
+  /** último dia do período pedido (igual a `data` no modo dia) */
+  ate: string;
+  dias: number;
   hoje: string;
   atualizadoEm: string;
   revisao: number;
@@ -124,19 +129,19 @@ export interface MovimentoHistorico {
   detalhe: string;
 }
 
-const chave = (data: string) => ["agenda", "financeira", "feed", data] as const;
+const chave = (data: string, dias: number) => ["agenda", "financeira", "feed", data, dias] as const;
 
 /** Fila do dia (atualiza sozinha: tempo real do servidor + conferência a cada minuto). */
-export function useAgendaFinanceira(data: string, active: boolean) {
+export function useAgendaFinanceira(data: string, active: boolean, dias = 1) {
   const origin = useServers((s) => s.config.agenda);
   const user = useSession((s) => s.user);
   const token = useSession((s) => s.token);
   const queryClient = useQueryClient();
   const query = useQuery({
-    queryKey: chave(data),
+    queryKey: chave(data, dias),
     enabled: active && !!origin && !!user,
     queryFn: async () => {
-      const { data: corpo } = await clients.agenda.get<AgendaFinanceira>("/agenda-financeira/agenda", { params: { data }, timeout: 60000 });
+      const { data: corpo } = await clients.agenda.get<AgendaFinanceira>("/agenda-financeira/agenda", { params: { data, dias }, timeout: 60000 });
       if (!corpo || !Array.isArray(corpo.fila) || !corpo.colunas) throw new Error("Resposta inválida da Agenda Financeira.");
       return corpo;
     },

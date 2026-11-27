@@ -100,14 +100,35 @@
   .fin-quadro { grid-template-columns: repeat(5, 260px); }
 }
 
-/* Modo "Agenda": reaproveita a grade da Agenda dos Técnicos (.tg) com chips curtos */
-.fin-grade .tg-head { flex-direction: column; align-items: flex-start; gap: 4px; }
-.fin-grade .tg-hour { font-size: var(--fs-xs); }
-.fin-chip { cursor: pointer; }
+/* Modo "Agenda": reaproveita a grade da Agenda dos Técnicos (.tg), mas com mais espaço e fichas de duas linhas */
+.fin-grade { display: block; }
+.fin-grade .tg-scroll { max-height: none; min-height: 0; }
+.fin-grade:not(.is-semana) .tg-scroll { max-height: calc(var(--workspace-viewport-height, 100dvh) - 360px); }
+.fin-dia-vazio { margin: 0 0 4px; padding: 10px 14px; border: 1px dashed var(--line); border-radius: var(--r-md); color: var(--ink-4); font-size: var(--fs-sm); }
+.fin-grade .tg { min-width: calc(76px + var(--cols) * 210px); grid-template-columns: 76px repeat(var(--cols), minmax(0, 1fr)); }
+.fin-grade .tg-head { padding: 12px 10px; gap: 6px; }
+.fin-grade .tg-head strong { font-size: var(--fs-md); }
+.fin-grade .tg-hour { padding-top: 12px; font-size: var(--fs-sm); }
+.fin-grade .tg-hour.is-sem { padding: 0 6px; font-size: 11px; line-height: 1.2; }
+.fin-grade .tg-cell { gap: 8px; padding: 8px; min-height: 64px; }
+.fin-grade .tg-cell.is-sem { min-height: 46px; }
+.fin-grade .tg-cell.is-concluidas { background: color-mix(in srgb, var(--st-done) 8%, var(--surface-sunken)); }
+.fin-grade .schedule-day + .schedule-day, .fin-grade .schedule-day + .schedule-day { margin-top: 26px; }
+.fin-grade .schedule-day { margin-bottom: 0; }
+.fin-grade .schedule-date { margin-bottom: 8px; }
+.fin-legenda { margin: 0 0 12px; padding: 8px 12px; border: 1px solid var(--line); border-radius: var(--r-md); background: var(--surface); flex-wrap: wrap; gap: 6px 16px; }
+.fin-legenda i.is-3 { background: var(--st-sched); }
+.fin-legenda i.is-urg, .fin-legenda i.is-atn { background: transparent; box-shadow: inset 0 0 0 2px var(--crit); }
+.fin-legenda i.is-atn { box-shadow: inset 0 0 0 2px var(--warn); }
+
+.fin-chip.tg-event.work-order { display: flex; flex-direction: column; align-items: stretch; justify-content: center; gap: 3px; height: auto; min-height: 42px; padding: 7px 10px; border-radius: 8px; text-align: left; font-size: 12.5px; line-height: 1.2; cursor: pointer; }
 .fin-chip[draggable="true"] { cursor: grab; }
-.fin-chip.is-urgente { box-shadow: inset 0 0 0 2px var(--crit); }
-.fin-chip.is-atencao { box-shadow: inset 0 0 0 2px var(--warn); }
-.fin-chip.is-sel { outline: 2px solid var(--primary); outline-offset: 1px; }
+.fin-chip-linha { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.fin-chip .tg-cliente { flex: 1; font-weight: 700; }
+.fin-chip-sub { font-size: 11px; font-weight: 500; opacity: 0.9; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fin-chip.is-urgente { box-shadow: inset 0 0 0 3px var(--crit); }
+.fin-chip.is-atencao { box-shadow: inset 0 0 0 3px var(--warn); }
+.fin-chip.is-sel { outline: 3px solid var(--primary); outline-offset: 2px; }
 .fin-chip.is-pendente { opacity: 0.5; pointer-events: none; }
-.fin-chip-prio { flex: none; font-size: 10px; font-weight: 800; letter-spacing: -0.5px; }
-.fin-chip-local { flex: none; font-size: 14px; line-height: 1; opacity: 0.9; }
+.fin-chip-prio { flex: none; font-size: 11px; font-weight: 800; letter-spacing: -0.5px; padding: 0 5px; border-radius: 6px; background: rgba(0, 0, 0, 0.3); }
+.fin-chip-local { flex: none; font-size: 16px; line-height: 1; opacity: 0.95; }

@@ -14,7 +14,7 @@ export const changelog: ChangelogEntry[] = [
     data: "2026-11-27",
     itens: [
       "Novo: Agenda Financeira, na aba da Agenda ao lado da Agenda Instalação. Mostra a fila de ativação de contratos do SGP e permite arrastar cada ocorrência para a Carina, a Helena, a Monique ou a Patrícia.",
-      "A Agenda Financeira tem dois modos de ver: o Quadro (fila e uma coluna por pessoa) e a Agenda, uma grade por horário igual à Agenda dos Técnicos, só que mais simples.",
+      "A Agenda Financeira tem dois modos de ver: o Quadro (fila e uma coluna por pessoa) e a Agenda, uma grade por horário parecida com a Agenda dos Técnicos, mais simples e com mais espaço. Dá para ver por dia ou pelos últimos 7 dias, e o verde é o que já foi concluído.",
       "Tem indicadores da fila (quantas estão sem responsável, em atendimento, finalizadas no dia e o tempo de espera), filtros, pesquisa por cliente, CPF, contrato ou número, e histórico de quem moveu cada ocorrência.",
     ],
   },
