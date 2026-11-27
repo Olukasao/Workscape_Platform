@@ -76,7 +76,7 @@ export function vizinho(passos: PassoTour[], atual: number, direcao: 1 | -1, exi
 }
 
 /** Tours que nunca são obrigatórios: quem quiser pode pular desde a primeira vez. */
-export const TOURS_PULAVEIS = new Set(["bgp-v1", "agenda-financeira-v1"]);
+export const TOURS_PULAVEIS = new Set(["bgp-v1", "agenda-financeira-v1", "rede-olt-v1"]);
 
 const chave = (tour: string, usuario: string | number, tipo: "visto" | "convite") => `workspace-tour:${tour}:${tipo}:${usuario}`;
 export const jaViu = (tour: string, usuario: string | number, tipo: "visto" | "convite" = "visto") => {

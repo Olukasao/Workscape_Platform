@@ -302,5 +302,5 @@ function PainelAutorizar() {
 }
 
 export default function Analises({ aba }: { aba: Exclude<AbaRede, "incidentes"> }) {
-  return aba === "sinal" ? <PainelSinal /> : aba === "instaveis" ? <PainelInstaveis /> : aba === "autorizar" ? <PainelAutorizar /> : <PainelPons />;
+  return <div data-tour="rede-analise">{aba === "sinal" ? <PainelSinal /> : aba === "instaveis" ? <PainelInstaveis /> : aba === "autorizar" ? <PainelAutorizar /> : <PainelPons />}</div>;
 }

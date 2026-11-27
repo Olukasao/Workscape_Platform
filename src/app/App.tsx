@@ -89,6 +89,7 @@ import TourGuiado from "../components/TourGuiado";
 import ConviteTourIA from "../components/ConviteTourIA";
 import ConviteTourBgp from "../components/ConviteTourBgp";
 import BoasVindasAgendaFinanceira from "../components/BoasVindasAgendaFinanceira";
+import BoasVindasRede from "../components/BoasVindasRede";
 import UpdateBanner from "../components/UpdateBanner";
 import CelebracaoVenda from "../components/CelebracaoVenda";
 import CelebracaoAtualizacao from "../components/celebracao/CelebracaoAtualizacao";
@@ -410,6 +411,7 @@ function Shell() {
       <ConviteTourIA />
       <ConviteTourBgp ativo={!!rede.data && !rede.data.negado} />
       <BoasVindasAgendaFinanceira ativo={agendaAllowed} />
+      <BoasVindasRede ativo={!!rede.data && !rede.data.negado && !!rede.data.configurada} aguardarAgenda={agendaAllowed} />
       <AvisosInternos />
       <TourGuiado />
       <div

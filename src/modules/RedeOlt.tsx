@@ -1,12 +1,15 @@
 import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Activity, ChevronDown, Clipboard, EyeOff, Eye, MessageSquareText, RadioTower, RefreshCw, ShieldAlert, Users } from "lucide-react";
+import { Activity, ChevronDown, Clipboard, EyeOff, Eye, MessageSquareText, RadioTower, RefreshCw, ShieldAlert, Sparkles, Users } from "lucide-react";
 import { clsx } from "clsx";
 import { Button } from "../components/ui/button";
 import { Badge, EmptyState, PageHeader, Segmented, Skeleton, type Tone } from "../components/ui/primitives";
 import Analises, { ABAS_REDE, type AbaRede } from "./rede/Analises";
 import MapaQueda from "./rede/MapaQueda";
 import { errorMessage } from "../services/api";
+import { useSession } from "../stores/workspace";
+import { marcarVisto, useTour } from "../tour/tour";
+import { passosTourRede, TOUR_REDE } from "../tour/passosRede";
 import BotaoDestacar from "../components/BotaoDestacar";
 import { textoParaAtendimento } from "./rede/explicacao";
 import {
@@ -138,7 +141,7 @@ function Panorama({ p }: { p: PanoramaRede }) {
   const pct = p.total ? ((afetados / p.total) * 100).toFixed(1).replace(".", ",") : "0";
   const maior = Math.max(1, ...(p.porOlt || []).map((o) => o.semEnergia + o.loss));
   return (
-    <section className="panel rede-panorama" aria-labelledby="rede-panorama-titulo">
+    <section className="panel rede-panorama" data-tour="rede-panorama" aria-labelledby="rede-panorama-titulo">
       <div className="rede-panorama-topo">
         <h2 id="rede-panorama-titulo">Panorama da rede agora</h2>
         <span className="muted">{milhar(afetados)} de {milhar(p.total)} clientes afetados ({pct}%)</span>
@@ -194,6 +197,20 @@ export default function RedeOlt() {
   const [explicando, setExplicando] = useState<string | null>(null);
   const [copiadoTexto, setCopiadoTexto] = useState(false);
   const [agora, setAgora] = useState(Date.now());
+  const usuario = useSession((st) => st.user);
+  const iniciarTour = useTour((st) => st.iniciar);
+  const passoAtual = useTour((st) => (st.ativo?.id === TOUR_REDE ? st.ativo.passos[st.passo]?.id : undefined));
+  // Durante o tour, a aba acompanha o passo (os passos "rede-ab-*" são das abas de análise).
+  useEffect(() => {
+    if (!passoAtual) return;
+    const ab = passoAtual.startsWith("rede-ab-") ? (passoAtual.slice(8) as AbaRede) : "incidentes";
+    setAba(ab);
+  }, [passoAtual]);
+  const comecarTour = () => {
+    if (usuario) marcarVisto(TOUR_REDE, usuario.id, "convite");
+    setAba("incidentes");
+    iniciarTour(TOUR_REDE, passosTourRede);
+  };
   useEffect(() => {
     const t = setInterval(() => setAgora(Date.now()), 30000);
     return () => clearInterval(t);
@@ -212,6 +229,9 @@ export default function RedeOlt() {
         meta={dados?.atualizadoEm ? <span className="heading-meta">Atualizado às {horaCurta(dados.atualizadoEm)}</span> : undefined}
         actions={
           <>
+          <Button data-tour="rede-btn-tour" variant="ghost" size="sm" onClick={comecarTour} title="Veja o passo a passo desta tela">
+            <Sparkles size={15} /> Ver o tour
+          </Button>
           <BotaoDestacar kind="rede" />
           {window.desktop ? (
             <Button
@@ -229,7 +249,7 @@ export default function RedeOlt() {
           </>
         }
       />
-      <div className="rede-abas">
+      <div className="rede-abas" data-tour="rede-abas">
         <Segmented label="Análises da rede" value={aba} options={ABAS_REDE} onChange={setAba} />
       </div>
       {aba !== "incidentes" ? (
@@ -252,7 +272,7 @@ export default function RedeOlt() {
         <>
           {panorama.data?.configurada ? <Panorama p={panorama.data} /> : null}
           <h2 className="rede-secao">Alertas ativos da OLT Cloud</h2>
-          <div className="rede-resumo" aria-label="Resumo">
+          <div className="rede-resumo" data-tour="rede-resumo" aria-label="Resumo">
             <div><span>Incidentes ativos</span><strong>{visiveis.length}</strong></div>
             <div data-tone="crit"><span>Quedas de PON</span><strong>{por("pon_loss") + por("pon_down")}</strong></div>
             <div data-tone="warn"><span>Quedas de CTO</span><strong>{por("cto_loss")}</strong></div>
@@ -279,10 +299,11 @@ export default function RedeOlt() {
             )
           ) : (
             <ul className="rede-lista">
-              {incidentes.map((i) => {
+              {incidentes.map((i, n) => {
                 const aberta = aberto === i.id;
+                const t = (nome: string) => (n === 0 ? nome : undefined); // o tour mostra o primeiro cartão
                 return (
-                  <li key={i.id} className={clsx("panel rede-card", `rede-${TOM[i.tipo] || "info"}`)}>
+                  <li key={i.id} data-tour={t("rede-card")} className={clsx("panel rede-card", `rede-${TOM[i.tipo] || "info"}`)}>
                     <div className="rede-card-topo">
                       <Badge tone={TOM[i.tipo] || "neutral"} dot>{tipoRotulo(i.tipo)}</Badge>
                       <span className="rede-quando" title={dataHora(i.inicio)}>{haQuanto(i.inicio, agora)}</span>
@@ -290,14 +311,14 @@ export default function RedeOlt() {
                     <h2><Local i={i} /></h2>
                     {i.descricao ? <p className="rede-desc">{i.descricao}</p> : null}
                     <div className="rede-card-base">
-                      <Afetados i={i} />
+                      <div data-tour={t("rede-afetados")}><Afetados i={i} /></div>
                       <div className="rede-card-acoes">
                       {i.pon ? (
-                        <Button variant={aberta ? "soft" : "outline"} size="sm" aria-expanded={aberta} onClick={() => setAberto(aberta ? null : i.id)}>
+                        <Button data-tour={t("rede-btn-clientes")} variant={aberta ? "soft" : "outline"} size="sm" aria-expanded={aberta} onClick={() => setAberto(aberta ? null : i.id)}>
                           <Users size={15} /> Clientes afetados <ChevronDown size={14} className={clsx("rede-seta", aberta && "aberta")} />
                         </Button>
                       ) : null}
-                      <Button variant={explicando === i.id ? "soft" : "outline"} size="sm" aria-expanded={explicando === i.id} title="Texto simples para o atendimento repassar ao cliente" onClick={() => { setCopiadoTexto(false); setExplicando(explicando === i.id ? null : i.id); }}>
+                      <Button data-tour={t("rede-btn-explicar")} variant={explicando === i.id ? "soft" : "outline"} size="sm" aria-expanded={explicando === i.id} title="Texto simples para o atendimento repassar ao cliente" onClick={() => { setCopiadoTexto(false); setExplicando(explicando === i.id ? null : i.id); }}>
                         <MessageSquareText size={15} /> Explicar para o atendimento
                       </Button>
                       {verIgnorados ? (
@@ -305,7 +326,7 @@ export default function RedeOlt() {
                           <Eye size={15} /> Restaurar
                         </Button>
                       ) : (
-                        <Button variant="ghost" size="sm" title="Tira este alerta da lista e dos contadores" onClick={() => ignorar(i.id)}>
+                        <Button data-tour={t("rede-btn-ignorar")} variant="ghost" size="sm" title="Tira este alerta da lista e dos contadores" onClick={() => ignorar(i.id)}>
                           <EyeOff size={15} /> Ignorar
                         </Button>
                       )}
