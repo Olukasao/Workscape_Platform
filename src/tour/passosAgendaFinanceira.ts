@@ -3,7 +3,7 @@ import type { PassoTour } from "./tour";
 export const TOUR_AGENDA_FIN = "agenda-financeira-v1";
 
 /**
- * Quem recebe o convite automático (vai para a Agenda Financeira e o tour abre sozinho): as pessoas do financeiro (ids do Chat Interno, os mesmos
+ * Quem recebe o convite automático (vai para a Agenda Comercial e o tour abre sozinho): as pessoas do financeiro (ids do Chat Interno, os mesmos
  * de AGENDA_FINANCEIRA_USER_IDS no servidor da agenda) e quem é admin ou coordenador. Os demais veem o aviso de novidade e podem abrir o tour pelo
  * botão "Como usar" da própria aba.
  */
@@ -21,7 +21,7 @@ export const passosTourAgendaFinanceira: PassoTour[] = [
     id: "af-aba",
     rota: "/agenda",
     alvo: "af-aba",
-    titulo: "Nova: Agenda Financeira",
+    titulo: "Nova: Agenda Comercial",
     texto: "A fila de ativação de contratos do SGP agora tem uma agenda própria, ao lado da Agenda Instalação. Ela mostra quem está com cada ocorrência e deixa distribuir tudo em um lugar só. Vamos conhecer em um minuto.",
     lado: "baixo",
   },

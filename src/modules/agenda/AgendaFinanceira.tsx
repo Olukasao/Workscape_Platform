@@ -217,7 +217,7 @@ export default function AgendaFinanceira({ active }: { active: boolean }) {
   const ehHoje = data === (passo > 1 ? addDays(today(), -6) : today());
 
   return (
-    <section className="fin" aria-label="Agenda Financeira">
+    <section className="fin" aria-label="Agenda Comercial">
       <div className="toolbar agenda-toolbar">
         <div className="date-stepper" title="Escolhe o dia das ocorrências finalizadas; a fila de abertas é sempre a de agora">
           <Button variant="outline" size="icon" aria-label="Dia anterior" onClick={() => setData(addDays(dia, -passo))}>
@@ -304,7 +304,7 @@ export default function AgendaFinanceira({ active }: { active: boolean }) {
         <Button variant="outline" size="sm" data-tour="af-historico" onClick={() => setHistoricoAberto(true)} title="Quem moveu o quê, e o resultado no SGP">
           <History size={15} /> Histórico
         </Button>
-        <Button variant="outline" size="sm" onClick={comoUsar} title="Passo a passo de como usar a Agenda Financeira">
+        <Button variant="outline" size="sm" onClick={comoUsar} title="Passo a passo de como usar a Agenda Comercial">
           <HelpCircle size={15} /> Como usar
         </Button>
         <Button variant="outline" size="sm" onClick={() => void recarregar()} disabled={atualizando} title="Atualizar agora com o SGP">
@@ -457,7 +457,7 @@ function Indicadores({ ind, atualizadoEm, semana }: { ind: Indicadores; atualiza
   const itens: Array<[string, string, string?, Tone?]> = [
     ["Na fila", String(ind.total), "Ocorrências de ativação abertas, pendentes ou em atendimento no SGP"],
     ["Sem responsável", String(ind.semResponsavel), "Sem ninguém no SGP e sem distribuição na agenda", ind.semResponsavel ? "warn" : undefined],
-    ["Distribuídas", String(ind.distribuidas), "Com uma das colaboradoras do financeiro"],
+    ["Distribuídas", String(ind.distribuidas), "Com uma das colaboradoras da agenda"],
     ["Em atendimento", String(ind.emAtendimento), "Status “Em execução” no SGP"],
     semana
       ? ["Finalizadas na semana", String(ind.finalizadasNoPeriodo ?? 0), "Finalizadas nos 7 dias mostrados", "ok"]
@@ -604,7 +604,7 @@ function Cartao({ o, compacto = false, tour = false, podeDistribuir, selecionado
         {o.responsavelSgp ? <span title="Responsável no SGP" className="mono">SGP: {o.responsavelSgp}</span> : null}
       </div>
       {o.naoGravadoNoSgp ? <span className="fin-local" title="Distribuída só na agenda: o SGP ainda mostra outro responsável">não gravado no SGP</span> : null}
-      {o.outroResponsavel ? <span className="fin-local is-outro" title="O SGP tem outro responsável (fora do financeiro)">responsável no SGP: {o.outroResponsavel}</span> : null}
+      {o.outroResponsavel ? <span className="fin-local is-outro" title="O SGP tem outro responsável (fora da agenda)">responsável no SGP: {o.outroResponsavel}</span> : null}
       {!compacto && o.descricao ? <p className="fin-desc">{o.descricao}</p> : null}
     </article>
   );
@@ -651,7 +651,7 @@ function Detalhe({ o, colaboradoras, onFechar }: { o: Ocorrencia; colaboradoras:
           <Campo rotulo="Aberta por" valor={o.usuarioAbertura} />
           <Campo rotulo="Finalizada por" valor={o.usuarioFinalizacao} />
           <Campo rotulo="Responsável no SGP" valor={o.responsavelSgp} />
-          <Campo rotulo="Responsável na agenda" valor={o.responsavel ? nome(o.responsavelUsuario) : o.outroResponsavel ? `${o.outroResponsavel} (fora do financeiro)` : "Fila (sem responsável)"} />
+          <Campo rotulo="Responsável na agenda" valor={o.responsavel ? nome(o.responsavelUsuario) : o.outroResponsavel ? `${o.outroResponsavel} (fora da agenda)` : "Fila (sem responsável)"} />
           <Campo rotulo="Ordens de serviço" valor={o.ordensServico} />
         </div>
         <h4 className="fin-detalhe-sub">Descrição</h4>
@@ -707,7 +707,7 @@ function Historico({ colaboradoras, onFechar }: { colaboradoras: Colaboradora[];
     <div className="modal-backdrop is-drawer" onClick={onFechar}>
       <section className="detail-panel fin-detalhe" role="dialog" aria-modal="true" aria-label="Histórico de movimentações" onClick={(e) => e.stopPropagation()}>
         <div className="detail-head">
-          <span className="detail-kicker">Histórico da Agenda Financeira</span>
+          <span className="detail-kicker">Histórico da Agenda Comercial</span>
           <Button variant="ghost" size="icon" aria-label="Fechar histórico" onClick={onFechar}>
             <X size={17} />
           </Button>

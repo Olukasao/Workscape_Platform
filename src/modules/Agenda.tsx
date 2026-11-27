@@ -129,7 +129,7 @@ export default function Agenda({
     setError("");
     setVisitadas((v) => (v.has(a) ? v : new Set(v).add(a)));
   };
-  // Durante o tour da Agenda Financeira, a aba acompanha o passo.
+  // Durante o tour da Agenda Comercial, a aba acompanha o passo.
   const passoFinanceira = useTour((t) => (t.ativo?.id === TOUR_AGENDA_FIN ? t.ativo.passos[t.passo]?.id : undefined));
   useEffect(() => {
     if (passoFinanceira && aba !== "financeira") setAba("financeira");
@@ -492,7 +492,7 @@ export default function Agenda({
           [
             ["tecnica", "Agenda Manutenção", CalendarDays],
             ["instalacao", "Agenda Instalação", CalendarDays],
-            ["financeira", "Agenda Financeira", Wallet],
+            ["financeira", "Agenda Comercial", Wallet],
             ["rota", "Coordenador de Rota", Navigation],
             ["mapa", "Mapa de Chamados", MapPin],
             ["historico", "Histórico de Ações", History],

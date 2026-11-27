@@ -142,7 +142,7 @@ export function useAgendaFinanceira(data: string, active: boolean, dias = 1) {
     enabled: active && !!origin && !!user,
     queryFn: async () => {
       const { data: corpo } = await clients.agenda.get<AgendaFinanceira>("/agenda-financeira/agenda", { params: { data, dias }, timeout: 60000 });
-      if (!corpo || !Array.isArray(corpo.fila) || !corpo.colunas) throw new Error("Resposta inválida da Agenda Financeira.");
+      if (!corpo || !Array.isArray(corpo.fila) || !corpo.colunas) throw new Error("Resposta inválida da Agenda Comercial.");
       return corpo;
     },
     staleTime: 15000,

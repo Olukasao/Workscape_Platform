@@ -13,7 +13,7 @@ const ATRASO_MS = 1500;
 
 /**
  * Novidade da 0.6.80, logo que o app abre depois de atualizar (uma única vez por pessoa):
- *  - quem é do financeiro (ou admin/coordenador) é levado direto para a Agenda Financeira e o passo a passo abre sozinho;
+ *  - quem é do financeiro (ou admin/coordenador) é levado direto para a Agenda Comercial e o passo a passo abre sozinho;
  *  - os demais veem um aviso na tela, com botões para abrir a nova agenda (ou ver o passo a passo) ou dispensar.
  */
 export default function BoasVindasAgendaFinanceira({ ativo }: { ativo: boolean }) {
@@ -52,7 +52,7 @@ export default function BoasVindasAgendaFinanceira({ ativo }: { ativo: boolean }
       <section className="aviso-af" role="dialog" aria-modal="true" aria-labelledby="aviso-af-titulo" onClick={(e) => e.stopPropagation()}>
         <span className="aviso-af-icone" aria-hidden="true"><Wallet size={28} /></span>
         <span className="aviso-af-selo">NOVO</span>
-        <h2 id="aviso-af-titulo">Nova Agenda Financeira</h2>
+        <h2 id="aviso-af-titulo">Nova Agenda Comercial</h2>
         <p>A fila de ativação de contratos do SGP agora tem uma agenda própria, na aba da Agenda, ao lado da Agenda Instalação.</p>
         <ul>
           <li>Veja quem está com cada ocorrência e distribua arrastando.</li>
@@ -60,7 +60,7 @@ export default function BoasVindasAgendaFinanceira({ ativo }: { ativo: boolean }
           <li>Dois jeitos de ver: Quadro ou uma grade por horário, por dia ou 7 dias.</li>
         </ul>
         <div className="aviso-af-acoes">
-          <Button onClick={() => abrir(false)} autoFocus>Abrir a Agenda Financeira</Button>
+          <Button onClick={() => abrir(false)} autoFocus>Abrir a Agenda Comercial</Button>
           <Button variant="outline" onClick={() => abrir(true)}>Ver o passo a passo</Button>
           <Button variant="ghost" onClick={fechar}>Agora não</Button>
         </div>
