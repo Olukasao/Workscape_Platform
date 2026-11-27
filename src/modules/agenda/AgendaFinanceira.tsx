@@ -1,4 +1,4 @@
-import { Fragment, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import {
   AlertTriangle,
   ArrowRightLeft,
@@ -9,6 +9,7 @@ import {
   Clock,
   ExternalLink,
   GripVertical,
+  HelpCircle,
   History,
   RefreshCw,
   Search,
@@ -34,6 +35,9 @@ import {
   type MovimentoHistorico,
   type Ocorrencia,
 } from "../../services/agendaFinanceira";
+import { passosTourAgendaFinanceira, TOUR_AGENDA_FIN } from "../../tour/passosAgendaFinanceira";
+import { marcarVisto, useTour } from "../../tour/tour";
+import { useSession } from "../../stores/workspace";
 import { Button } from "../../components/ui/button";
 import { Badge, EmptyState, Segmented, Skeleton, type Tone } from "../../components/ui/primitives";
 
@@ -83,6 +87,25 @@ export default function AgendaFinanceira({ active }: { active: boolean }) {
   const [detalhe, setDetalhe] = useState<Ocorrencia | null>(null);
   const [historicoAberto, setHistoricoAberto] = useState(false);
   const [alvoDrop, setAlvoDrop] = useState<{ coluna: string; indice: number } | null>(null);
+  // Tour guiado: os passos "af-ag-*" são do modo Agenda e os demais do Quadro; a escolha salva de cada pessoa não muda.
+  const usuario = useSession((st) => st.user);
+  const iniciarTour = useTour((t) => t.iniciar);
+  const passoTour = useTour((t) => (t.ativo?.id === TOUR_AGENDA_FIN ? t.ativo.passos[t.passo]?.id : undefined));
+  const modoAntesDoTour = useRef<Modo | null>(null);
+  useEffect(() => {
+    if (passoTour) {
+      if (modoAntesDoTour.current === null) modoAntesDoTour.current = modo;
+      setModoEstado(passoTour.startsWith("af-ag-") ? "agenda" : "quadro");
+    } else if (modoAntesDoTour.current !== null) {
+      setModoEstado(modoAntesDoTour.current);
+      modoAntesDoTour.current = null;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [passoTour]);
+  const comoUsar = () => {
+    if (usuario) marcarVisto(TOUR_AGENDA_FIN, usuario.id, "convite");
+    iniciarTour(TOUR_AGENDA_FIN, passosTourAgendaFinanceira);
+  };
   const { agenda, carregando, atualizando, erro, recarregar } = useAgendaFinanceira(data, active, modo === "agenda" && periodo === "semana" ? 7 : 1);
   const busca = useBuscaFinanceira(filtros.busca, active && !!agenda);
 
@@ -211,6 +234,7 @@ export default function AgendaFinanceira({ active }: { active: boolean }) {
             {modo === "agenda" ? (periodo === "semana" ? `Semana de ${fmtDia.format(new Date(`${dia}T12:00:00Z`))} a ${fmtDia.format(new Date(`${addDays(dia, 6)}T12:00:00Z`))}` : dataLonga(dia)) : `Finalizadas em ${dataLonga(dia)}`}
           </span>
         </div>
+        <span className="fin-inline" data-tour="af-modo">
         <Segmented
           label="Modo de visualização"
           value={modo}
@@ -220,7 +244,9 @@ export default function AgendaFinanceira({ active }: { active: boolean }) {
           ]}
           onChange={setModo}
         />
+        </span>
         {modo === "agenda" ? (
+          <span className="fin-inline" data-tour="af-periodo">
           <Segmented
             label="Período"
             value={periodo}
@@ -230,8 +256,9 @@ export default function AgendaFinanceira({ active }: { active: boolean }) {
             ]}
             onChange={setPeriodo}
           />
+          </span>
         ) : null}
-        <label className="search-box">
+        <label className="search-box" data-tour="af-filtros">
           <Search size={16} />
           <input aria-label="Pesquisar ocorrências" placeholder="Cliente, CPF, contrato ou nº da ocorrência" value={filtros.busca} onChange={(e) => setFiltros({ ...filtros, busca: e.target.value })} />
           {filtros.busca ? (
@@ -274,8 +301,11 @@ export default function AgendaFinanceira({ active }: { active: boolean }) {
         <label className="fin-check">
           <input type="checkbox" checked={filtros.semResponsavel} onChange={(e) => setFiltros({ ...filtros, semResponsavel: e.target.checked })} /> Sem responsável
         </label>
-        <Button variant="outline" size="sm" onClick={() => setHistoricoAberto(true)} title="Quem moveu o quê, e o resultado no SGP">
+        <Button variant="outline" size="sm" data-tour="af-historico" onClick={() => setHistoricoAberto(true)} title="Quem moveu o quê, e o resultado no SGP">
           <History size={15} /> Histórico
+        </Button>
+        <Button variant="outline" size="sm" onClick={comoUsar} title="Passo a passo de como usar a Agenda Financeira">
+          <HelpCircle size={15} /> Como usar
         </Button>
         <Button variant="outline" size="sm" onClick={() => void recarregar()} disabled={atualizando} title="Atualizar agora com o SGP">
           <RefreshCw size={15} className={atualizando ? "fin-gira" : undefined} /> Atualizar
@@ -288,7 +318,7 @@ export default function AgendaFinanceira({ active }: { active: boolean }) {
         </div>
       ) : null}
       {agenda && !agenda.sgp.gravaResponsavel ? (
-        <div className="fin-aviso is-info" role="note">
+        <div className="fin-aviso is-info" role="note" data-tour="af-aviso-sgp">
           <AlertTriangle size={16} />
           <span>
             A distribuição é registrada <b>na agenda</b> (com histórico e tempo real). O SGP ainda não recebe a troca de responsável, então os cards movidos aqui mostram <b>“não gravado no SGP”</b>. Se alguém mudar o responsável no próprio SGP, o SGP passa a valer.
@@ -373,9 +403,10 @@ export default function AgendaFinanceira({ active }: { active: boolean }) {
               onDrop={aoSoltar}
               fila
             />
-            {agenda.colaboradoras.map((c) => (
+            {agenda.colaboradoras.map((c, idx) => (
               <Coluna
                 key={c.id}
+                primeira={idx === 0}
                 id={c.id}
                 titulo={c.nome}
                 subtitulo={c.usuarioSgp}
@@ -441,7 +472,7 @@ function Indicadores({ ind, atualizadoEm, semana }: { ind: Indicadores; atualiza
     ],
   ];
   return (
-    <div className="fin-kpis" role="list" aria-label="Indicadores da fila">
+    <div className="fin-kpis" role="list" aria-label="Indicadores da fila" data-tour="af-kpis">
       {itens.map(([rotulo, valor, dica, tom]) => (
         <div key={rotulo} className={`fin-kpi${tom ? ` is-${tom}` : ""}`} role="listitem" title={dica}>
           <span className="fin-kpi-valor">{valor}</span>
@@ -473,12 +504,14 @@ interface ColunaProps {
   onDragLeave: () => void;
   onDrop: (e: React.DragEvent, coluna: string) => void;
   fila?: boolean;
+  /** primeira coluna de colaboradora (alvo do tour) */
+  primeira?: boolean;
 }
 
 function Coluna(p: ColunaProps) {
   const marcador = p.alvoDrop?.coluna === p.id ? p.alvoDrop.indice : null;
   return (
-    <section className={`fin-coluna${p.fila ? " is-fila" : ""}${marcador !== null ? " is-alvo" : ""}`} aria-label={`Coluna ${p.titulo}`}>
+    <section className={`fin-coluna${p.fila ? " is-fila" : ""}${marcador !== null ? " is-alvo" : ""}`} aria-label={`Coluna ${p.titulo}`} data-tour={p.fila ? "af-fila" : p.primeira ? "af-colunas" : undefined}>
       <header className="fin-coluna-cab">
         <span className="fin-avatar" aria-hidden="true">{p.fila ? "↧" : p.titulo.charAt(0)}</span>
         <div className="fin-coluna-nome">
@@ -507,7 +540,7 @@ function Coluna(p: ColunaProps) {
         {p.lista.map((o, i) => (
           <div key={o.id} data-card-id={o.id}>
             {marcador === i ? <div className="fin-marca" aria-hidden="true" /> : null}
-            <Cartao o={o} podeDistribuir={p.podeDistribuir} selecionado={p.selecionados.has(o.id)} pendente={!!p.pendentes[o.id]} onSelecionar={p.onSelecionar} onAbrir={p.onAbrir} onIniciarArraste={p.onIniciarArraste} />
+            <Cartao o={o} tour={!!p.fila && i === 0} podeDistribuir={p.podeDistribuir} selecionado={p.selecionados.has(o.id)} pendente={!!p.pendentes[o.id]} onSelecionar={p.onSelecionar} onAbrir={p.onAbrir} onIniciarArraste={p.onIniciarArraste} />
           </div>
         ))}
         {marcador !== null && marcador >= p.lista.length ? <div className="fin-marca" aria-hidden="true" /> : null}
@@ -516,9 +549,10 @@ function Coluna(p: ColunaProps) {
   );
 }
 
-function Cartao({ o, compacto = false, podeDistribuir, selecionado, pendente, onSelecionar, onAbrir, onIniciarArraste }: {
+function Cartao({ o, compacto = false, tour = false, podeDistribuir, selecionado, pendente, onSelecionar, onAbrir, onIniciarArraste }: {
   o: Ocorrencia;
   compacto?: boolean;
+  tour?: boolean;
   podeDistribuir: boolean;
   selecionado: boolean;
   pendente: boolean;
@@ -529,6 +563,7 @@ function Cartao({ o, compacto = false, podeDistribuir, selecionado, pendente, on
   const aberta = o.statusId !== 1;
   return (
     <article
+      data-tour={tour ? "af-card" : undefined}
       className={`fin-card is-${o.prioridade}${selecionado ? " is-sel" : ""}${pendente ? " is-pendente" : ""}${compacto ? " is-compacto" : ""}`}
       draggable={podeDistribuir && aberta && !pendente}
       onDragStart={(e) => onIniciarArraste(e, o)}
@@ -775,7 +810,7 @@ function GradeAgenda({ agenda, data, dias, colunas, finalizadas, podeDistribuir,
   );
 
   return (
-    <div className={`fin-grade${semana ? " is-semana" : ""}`}>
+    <div className={`fin-grade${semana ? " is-semana" : ""}`} data-tour="af-grade">
       <div className="agenda-legend fin-legenda" aria-label="Legenda das cores">
         <span><i className="is-0" /> Aberta</span>
         <span><i className="is-2" /> Em atendimento</span>

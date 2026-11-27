@@ -42,6 +42,8 @@ import {
 import { orderTone } from "./agendaStatus";
 import CoordenadorRota from "./agenda/CoordenadorRota";
 import AgendaFinanceira from "./agenda/AgendaFinanceira";
+import { TOUR_AGENDA_FIN } from "../tour/passosAgendaFinanceira";
+import { useTour } from "../tour/tour";
 import AgendaWeb from "./agenda/AgendaWeb";
 import MapaChamados from "./agenda/MapaChamados";
 import HistoricoAcoes from "./agenda/HistoricoAcoes";
@@ -127,6 +129,12 @@ export default function Agenda({
     setError("");
     setVisitadas((v) => (v.has(a) ? v : new Set(v).add(a)));
   };
+  // Durante o tour da Agenda Financeira, a aba acompanha o passo.
+  const passoFinanceira = useTour((t) => (t.ativo?.id === TOUR_AGENDA_FIN ? t.ativo.passos[t.passo]?.id : undefined));
+  useEffect(() => {
+    if (passoFinanceira && aba !== "financeira") setAba("financeira");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [passoFinanceira]);
   const dates = useMemo(
     () => Array.from({ length: weekly ? 7 : 1 }, (_, i) => addDays(date, i)),
     [date, weekly],
@@ -494,6 +502,7 @@ export default function Agenda({
             key={id}
             type="button"
             role="tab"
+            data-tour={id === "financeira" ? "af-aba" : undefined}
             aria-selected={aba === id}
             onClick={() => setAba(id)}
           >
