@@ -10,6 +10,14 @@ export interface ChangelogEntry {
 
 export const changelog: ChangelogEntry[] = [
   {
+    versao: "0.6.82",
+    data: "2026-11-27",
+    itens: [
+      "Novo passo a passo da tela Rede (OLT): ao abrir o Workspace depois de atualizar, você é levado direto para a Rede e o tour explica cada parte. Para rever, use o botão Ver o tour no topo da tela.",
+      "As telas abrem mais rápido: o Workspace prepara as mais usadas em segundo plano e não pisca a tela de espera quando a página carrega depressa.",
+    ],
+  },
+  {
     versao: "0.6.81",
     data: "2026-11-27",
     itens: [
