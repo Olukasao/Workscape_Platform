@@ -58,16 +58,17 @@ import { useApplicationZoom } from "../services/useApplicationZoom";
 import { useAparencia } from "../services/aparencia";
 import { useRenovarSessao } from "../services/sessaoRenovacao";
 import Home from "../modules/Home";
-const Resumo = lazy(() => import("../modules/Resumo"));
-const Contratacoes = lazy(() => import("../modules/Contratacoes"));
-const Changelog = lazy(() => import("../modules/Changelog"));
-const Lembretes = lazy(() => import("../modules/Lembretes"));
-const SuporteRemoto = lazy(() => import("../modules/SuporteRemoto"));
-const RoteadorCliente = lazy(() => import("../modules/RoteadorCliente"));
-const Marketing = lazy(() => import("../modules/Marketing"));
-const Escritorio3D = lazy(() => import("../modules/escritorio/Escritorio3D"));
-const Cursos = lazy(() => import("../modules/cursos/Cursos"));
-const Chamados = lazy(() => import("../modules/Chamados"));
+import { carregar, precarregarTelasComuns } from "./prefetchRotas";
+const Resumo = lazy(carregar.Resumo);
+const Contratacoes = lazy(carregar.Contratacoes);
+const Changelog = lazy(carregar.Changelog);
+const Lembretes = lazy(carregar.Lembretes);
+const SuporteRemoto = lazy(carregar.SuporteRemoto);
+const RoteadorCliente = lazy(carregar.RoteadorCliente);
+const Marketing = lazy(carregar.Marketing);
+const Escritorio3D = lazy(carregar.Escritorio3D);
+const Cursos = lazy(carregar.Cursos);
+const Chamados = lazy(carregar.Chamados);
 import ContratacoesFlutuante from "../components/ContratacoesFlutuante";
 import AssistenteFlutuante from "../components/AssistenteFlutuante";
 import AvisoChamadosAtrasados from "../components/AvisoChamadosAtrasados";
@@ -96,9 +97,9 @@ import { useContratacoes, useContratacoesFeed } from "../services/contratacoes";
 import { useAvaliacoesFeed } from "../services/avaliacoes";
 import { useTrocasWifiAviso } from "../services/trocasWifi";
 import { useMarketingWifiAviso } from "../services/marketingWifi";
-const Agenda = lazy(() => import("../modules/Agenda"));
-const Profile = lazy(() => import("../modules/Profile"));
-const Notifications = lazy(() => import("../modules/Notifications"));
+const Agenda = lazy(carregar.Agenda);
+const Profile = lazy(carregar.Profile);
+const Notifications = lazy(carregar.Notifications);
 import { useAccess, allowedIds } from "../services/access";
 import { useFuncoes } from "../services/funcoes";
 import { useDashboardConnection } from "../services/dashboard";
@@ -118,19 +119,20 @@ import {
   PageSkeleton,
 } from "../components/ui/primitives";
 import FundoUsuario from "../components/FundoUsuario";
-const Dashboard = lazy(() => import("../modules/Dashboard"));
-const Chat = lazy(() => import("../modules/Chat"));
-const Navegador = lazy(() => import("../modules/Navegador"));
-const RedeOlt = lazy(() => import("../modules/RedeOlt"));
-const RotasBgp = lazy(() => import("../modules/RotasBgp"));
+const Dashboard = lazy(carregar.Dashboard);
+const Chat = lazy(carregar.Chat);
+const Navegador = lazy(carregar.Navegador);
+const RedeOlt = lazy(carregar.RedeOlt);
+const RotasBgp = lazy(carregar.RotasBgp);
 import InternalNoticeManager from "../legacy/components/InternalNoticeManager";
-const TerminalSsh = lazy(() => import("../modules/Terminal"));
-const AtendimentoChat = lazy(() => import("../modules/Atendimento"));
-const Workspaces = lazy(() => import("../modules/Workspaces"));
-const Assistente = lazy(() => import("../modules/Assistente"));
-const Tools = lazy(() => import("../modules/Tools"));
+const TerminalSsh = lazy(carregar.TerminalSsh);
+const AtendimentoChat = lazy(carregar.AtendimentoChat);
+const Workspaces = lazy(carregar.Workspaces);
+const Assistente = lazy(carregar.Assistente);
+const Tools = lazy(carregar.Tools);
 const query = new QueryClient({
-  defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: true } },
+  // staleTime: voltar a uma tela em até 30 s mostra os dados guardados na hora, sem refazer a consulta; depois disso atualiza por baixo.
+  defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: true, staleTime: 30_000, gcTime: 10 * 60_000 } },
 });
 /** Avisos internos obrigatórios: valem em qualquer tela do Workspace, mesmo sem ter aberto o Chat. */
 function AvisosInternos() {
@@ -157,6 +159,9 @@ function useRouteTransition(path: string) {
   }, [path]);
 }
 function Shell() {
+  useEffect(() => {
+    if (!JANELA_DESTACADA) precarregarTelasComuns();
+  }, []);
   useRenovarSessao();
   useDashboardConnection();
   useContratacoesFeed();

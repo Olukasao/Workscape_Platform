@@ -463,3 +463,8 @@
     .an-skeleton,
     .an-spinner { animation-duration: 0s; }
 }
+
+/* Tela de espera só aparece se a página demorar (>150 ms): carregamentos rápidos não piscam esqueleto. */
+.page-espera { animation: page-espera-entra 160ms ease 150ms both; }
+@keyframes page-espera-entra { from { opacity: 0; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .page-espera { animation-duration: 1ms; } }

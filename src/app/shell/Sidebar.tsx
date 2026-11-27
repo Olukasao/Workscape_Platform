@@ -5,6 +5,7 @@ import { clsx } from "clsx";
 import logo from "../../assets/brand/logo-acessanet.png";
 import type { User } from "../../stores/workspace";
 import { Avatar, Kbd, StatusDot } from "../../components/ui/primitives";
+import { precarregarRota } from "../prefetchRotas";
 import SituacaoUsuario from "../../components/SituacaoUsuario";
 
 export type NavEntry = {
@@ -51,6 +52,8 @@ function NavList({
             aria-label={i.label}
             key={i.path}
             onClick={() => navigate(i.path)}
+            onPointerEnter={() => precarregarRota(i.path)}
+            onFocus={() => precarregarRota(i.path)}
             aria-current={on ? "page" : undefined}
           >
             <span className="nav-trace" aria-hidden="true" />

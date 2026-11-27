@@ -205,7 +205,7 @@ export function Skeleton({
 
 export function PageSkeleton() {
   return (
-    <div className="page" aria-busy="true" aria-label="Carregando">
+    <div className="page page-espera" aria-busy="true" aria-label="Carregando">
       <div className="skeleton skeleton-title" />
       <div className="skeleton-grid">
         <div className="skeleton h-28" />
