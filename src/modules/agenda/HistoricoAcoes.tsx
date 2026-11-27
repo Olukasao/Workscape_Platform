@@ -31,6 +31,7 @@ const TIPOS = [
   ["ausencia", "Ausências"],
   ["horario", "Horários"],
   ["mapa", "Mapa"],
+  ["financeira", "Agenda Financeira"],
 ] as const;
 const POR_PAGINA = 80;
 const fmtDia = new Intl.DateTimeFormat("en-CA", {
