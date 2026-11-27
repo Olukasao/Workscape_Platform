@@ -117,6 +117,8 @@ const AGENDA_WRITES: [RegExp, RegExp][] = [
   [/^(POST)$/, /^\/api\/agenda-instalacao\/ausencias$/],
   [/^(PUT|DELETE)$/, new RegExp(`^/api/agenda-instalacao/ausencias/${id}$`)],
   [/^(POST)$/, new RegExp(`^/api/agenda-tecnicos/ordens-servico/${id}/tecnico-responsavel$`)],
+  // Agenda Financeira: distribuir ocorrências da fila de ativação entre as colaboradoras
+  [/^(POST)$/, /^\/api\/agenda-financeira\/mover$/],
 ];
 export function isAgendaWrite(service: string, method: string, pathname: string, session?: string) {
   return service === "agenda" && !!session && AGENDA_WRITES.some(([m, p]) => m.test(method) && p.test(pathname));

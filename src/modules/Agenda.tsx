@@ -20,6 +20,7 @@ import {
   Maximize2,
   Minimize2,
   PanelTopClose,
+  Wallet,
 } from "lucide-react";
 import { clients, errorMessage } from "../services/api";
 import {
@@ -40,14 +41,15 @@ import {
 } from "../components/ui/primitives";
 import { orderTone } from "./agendaStatus";
 import CoordenadorRota from "./agenda/CoordenadorRota";
+import AgendaFinanceira from "./agenda/AgendaFinanceira";
 import AgendaWeb from "./agenda/AgendaWeb";
 import MapaChamados from "./agenda/MapaChamados";
 import HistoricoAcoes from "./agenda/HistoricoAcoes";
 import GerenciarAgenda, { type Tecnico } from "./agenda/GerenciarAgenda";
 import AgendaInterativa, { INICIO_AGENDA, TIPOS_BLOQUEIO, inicioPeloClique, type Popup } from "./agenda/AgendaInterativa";
 
-type Aba = "instalacao" | "tecnica" | "rota" | "mapa" | "historico";
-const ABAS: Aba[] = ["tecnica", "instalacao", "rota", "mapa", "historico"];
+type Aba = "instalacao" | "financeira" | "tecnica" | "rota" | "mapa" | "historico";
+const ABAS: Aba[] = ["tecnica", "instalacao", "financeira", "rota", "mapa", "historico"];
 interface Absence {
   id?: number;
   ref?: string;
@@ -482,6 +484,7 @@ export default function Agenda({
           [
             ["tecnica", "Agenda Manutenção", CalendarDays],
             ["instalacao", "Agenda Instalação", CalendarDays],
+            ["financeira", "Agenda Financeira", Wallet],
             ["rota", "Coordenador de Rota", Navigation],
             ["mapa", "Mapa de Chamados", MapPin],
             ["historico", "Histórico de Ações", History],
@@ -499,6 +502,11 @@ export default function Agenda({
           </button>
         ))}
       </nav>
+      {visitadas.has("financeira") ? (
+        <div hidden={aba !== "financeira"}>
+          <AgendaFinanceira active={pageActive && aba === "financeira"} />
+        </div>
+      ) : null}
       {visitadas.has("rota") ? (
         <div hidden={aba !== "rota"}>
           <CoordenadorRota date={date} active={pageActive && aba === "rota"} />
