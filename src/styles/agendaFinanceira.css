@@ -99,3 +99,15 @@
 @media (max-width: 1300px) {
   .fin-quadro { grid-template-columns: repeat(5, 260px); }
 }
+
+/* Modo "Agenda": reaproveita a grade da Agenda dos Técnicos (.tg) com chips curtos */
+.fin-grade .tg-head { flex-direction: column; align-items: flex-start; gap: 4px; }
+.fin-grade .tg-hour { font-size: var(--fs-xs); }
+.fin-chip { cursor: pointer; }
+.fin-chip[draggable="true"] { cursor: grab; }
+.fin-chip.is-urgente { box-shadow: inset 0 0 0 2px var(--crit); }
+.fin-chip.is-atencao { box-shadow: inset 0 0 0 2px var(--warn); }
+.fin-chip.is-sel { outline: 2px solid var(--primary); outline-offset: 1px; }
+.fin-chip.is-pendente { opacity: 0.5; pointer-events: none; }
+.fin-chip-prio { flex: none; font-size: 10px; font-weight: 800; letter-spacing: -0.5px; }
+.fin-chip-local { flex: none; font-size: 14px; line-height: 1; opacity: 0.9; }
