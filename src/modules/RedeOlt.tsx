@@ -21,6 +21,7 @@ import {
   useIgnorados,
   useIncidentesFiltrados,
   usePanoramaRede,
+  precarregarAnalisesRede,
   type IncidenteRede,
   type PanoramaRede,
 } from "../services/redeOlt";
@@ -209,6 +210,7 @@ export default function RedeOlt() {
   const comecarTour = () => {
     if (usuario) marcarVisto(TOUR_REDE, usuario.id, "convite");
     setAba("incidentes");
+    precarregarAnalisesRede(client, usuario?.id);
     iniciarTour(TOUR_REDE, passosTourRede);
   };
   useEffect(() => {

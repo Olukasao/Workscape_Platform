@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { create } from "zustand";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, type QueryClient } from "@tanstack/react-query";
 import { isAxiosError } from "axios";
 import { clients } from "./api";
 import { useSession } from "../stores/workspace";
@@ -200,16 +200,32 @@ export interface RankingResposta { configurada: boolean; atualizadoEm?: string; 
 
 // A primeira leitura dos 10 mil equipamentos leva ~20 s: prazo maior que o padrão.
 const LONGO = { timeout: 90000 };
+function opcoesAnalise<T>(chave: string, caminho: string, userId: number | string | undefined, extra: Record<string, unknown> = {}) {
+  return {
+    queryKey: ["rede", chave, userId, extra],
+    staleTime: 60000,
+    queryFn: async () => (await clients.chat.get<T>(caminho, { ...LONGO, params: extra })).data,
+  };
+}
 function useAnalise<T>(chave: string, caminho: string, habilitado: boolean, extra: Record<string, unknown> = {}) {
   const user = useSession((s) => s.user);
   return useQuery({
-    queryKey: ["rede", chave, user?.id, extra],
+    ...opcoesAnalise<T>(chave, caminho, user?.id, extra),
     enabled: !!user && habilitado,
-    staleTime: 60000,
     refetchInterval: 5 * 60000,
     retry: 1,
-    queryFn: async () => (await clients.chat.get<T>(caminho, { ...LONGO, params: extra })).data,
   });
+}
+/** Lê as quatro análises em segundo plano (cada uma leva até 30 s): o tour da Rede mostra as abas já com os dados, sem tela de espera. */
+export function precarregarAnalisesRede(client: QueryClient, userId: number | string | undefined) {
+  if (userId === undefined) return;
+  const lote: Array<[string, string, Record<string, unknown>?]> = [
+    ["sinal", "/integrations/olt/sinal", { dbm: -27 }],
+    ["instaveis", "/integrations/olt/instaveis"],
+    ["ranking", "/integrations/olt/ranking"],
+    ["nao-autorizadas", "/integrations/olt/nao-autorizadas"],
+  ];
+  for (const [chave, caminho, extra] of lote) void client.prefetchQuery({ ...opcoesAnalise(chave, caminho, userId, extra), retry: 0 });
 }
 export const useSinalCritico = (dbm: number, habilitado: boolean) => useAnalise<SinalResposta>("sinal", "/integrations/olt/sinal", habilitado, { dbm });
 export const useInstaveis = (habilitado: boolean) => useAnalise<InstaveisResposta>("instaveis", "/integrations/olt/instaveis", habilitado);

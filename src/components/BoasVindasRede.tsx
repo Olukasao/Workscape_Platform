@@ -1,5 +1,7 @@
 import { useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
+import { precarregarAnalisesRede } from "../services/redeOlt";
 import { useSession } from "../stores/workspace";
 import { jaViu, marcarVisto, useTour } from "../tour/tour";
 import { passosTourRede, TOUR_REDE } from "../tour/passosRede";
@@ -17,6 +19,7 @@ export default function BoasVindasRede({ ativo, aguardarAgenda }: { ativo: boole
   const usuario = useSession((s) => s.user);
   const iniciar = useTour((s) => s.iniciar);
   const navigate = useNavigate();
+  const client = useQueryClient();
   const feito = useRef(false);
   const elegivel = ativo && !!usuario && !jaViu(TOUR_REDE, usuario.id, "convite") && !jaViu(TOUR_REDE, usuario.id, "visto");
 
@@ -29,12 +32,13 @@ export default function BoasVindasRede({ ativo, aguardarAgenda }: { ativo: boole
       if (useTour.getState().ativo || agendaPendente || document.querySelector(".aviso-af")) { t = window.setTimeout(tentar, REPETIR_MS); return; }
       feito.current = true;
       marcarVisto(TOUR_REDE, usuario.id, "convite");
+      precarregarAnalisesRede(client, usuario.id); // as abas de análise demoram a ler: começa antes de o tour chegar nelas
       navigate("/rede");
       iniciar(TOUR_REDE, passosTourRede);
     };
     t = window.setTimeout(tentar, ATRASO_MS);
     return () => window.clearTimeout(t);
-  }, [elegivel, aguardarAgenda, usuario, navigate, iniciar]);
+  }, [elegivel, aguardarAgenda, usuario, navigate, iniciar, client]);
 
   return null;
 }
